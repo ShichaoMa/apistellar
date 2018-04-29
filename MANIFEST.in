@@ -1,0 +1,3 @@
+include README.rst
+include requirements.txt
+recursive-include star_builder/templates *

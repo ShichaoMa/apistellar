@@ -5,13 +5,13 @@ except:
     from distutils.core import setup
 
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 AUTHOR = "cn"
 
 AUTHOR_EMAIL = "cnaafhvk@foxmail.com"
 
-URL = "https://www.github.com/ShichaoMa/star-buidler"
+URL = "https://www.github.com/ShichaoMa/star_builder"
 
 NAME = "star-builder"
 
@@ -43,6 +43,11 @@ setup(
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     url=URL,
+    entry_points={
+        'console_scripts': [
+            'apistar-create = star_builder:main',
+        ],
+    },
     license=LICENSE,
     packages=PACKAGES,
     install_requires=["apistar"],

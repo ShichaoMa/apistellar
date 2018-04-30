@@ -5,27 +5,34 @@ from apistar import Include
 from argparse import Action, _SubParsersAction
 
 
-def look_for_services(current_path):
+def load_packages(current_path):
+    """
+    加载当前路径下的所有package，使得其中的Service子类得以激活
+    加载一个包时，如果包下面有子包，只需要导入子包，父包也会一起
+    被加载。项目约定service子类必须定义在包中(__init__.py)。
+    所以只考虑加载所有包，不考虑加载其它模块。
+    :param current_path:
+    :return:
+    """
     files = glob.glob(os.path.join(current_path, "*"))
+    find_dir = False
 
     for file in files:
         if os.path.isdir(file):
-            services_from_package(file)
-            look_for_services(file)
+            find_dir = True
+            if not load_packages(file):
+                __import__(file.replace("/", ".").strip("."))
+
+    return find_dir
 
 
-def services_from_package(package_path):
-    module_str = package_path.replace("/", ".").strip(".")
-    __import__(module_str, fromlist=module_str.split(".")[-1])
-
-
-def collect_route(service):
-    routes = list()
-    routes.append(get_include(service, None))
-    return routes
-
-
-def get_include(service, parent_prefix):
+def routing(service, parent_prefix):
+    """
+    获取当前Service下所有route及其子Service组成的Include
+    :param service:
+    :param parent_prefix:
+    :return:
+    """
     if not hasattr(service, "prefix") or service.prefix == parent_prefix:
         raise RuntimeError(f"{service} is not routed! ")
     routes = []
@@ -36,7 +43,7 @@ def get_include(service, parent_prefix):
             routes.append(prop.route)
 
     for child_service in service.children:
-        child_include = get_include(child_service, service.prefix)
+        child_include = routing(child_service, service.prefix)
         if child_include:
             routes.append(child_include)
 

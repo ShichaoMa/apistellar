@@ -35,6 +35,7 @@ class Command(object):
             template = env.get_template(join(self.type, 'start.py.tmpl'))
             with open(join(name, "start.py"), "w") as f:
                 f.write(template.render())
+            print(f"{name} 项目已完成创建。")
 
     def create_service(self, env):
         father = None
@@ -49,6 +50,8 @@ class Command(object):
             template = env.get_template(join(self.type, '__init__.py.tmpl'))
             with open(join(name, "__init__.py"), "w") as f:
                 f.write(template.render(father=father or "Service", service=name))
+
+        print("、".join(self.names), "服务模块已完成创建。")
 
     def parse_args(self):
         base_parser = ArgumentParser(

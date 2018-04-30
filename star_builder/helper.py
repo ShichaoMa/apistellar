@@ -47,7 +47,8 @@ def routing(service, parent_prefix):
         if child_include:
             routes.append(child_include)
 
-    return Include(service.prefix, service.name, routes)
+    if routes:
+        return Include(service.prefix, service.name, routes)
 
 
 class ArgparseHelper(Action):

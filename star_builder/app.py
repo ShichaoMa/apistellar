@@ -1,9 +1,13 @@
+import logging
+
 from apistar import ASyncApp
 
 from .helper import load_packages, routing
 from .service import Service
 
 __all__ = ["Application"]
+
+logger = logging.getLogger("app")
 
 
 class Application(ASyncApp):
@@ -19,8 +23,13 @@ class Application(ASyncApp):
                  event_hooks=None):
         load_packages(".")
         include = routing(Service, None)
+        if include:
+            routes = [include]
+        else:
+            logger.info("Noting to route. ")
+            routes = []
         super(Application, self).__init__(
-            [include],
+            routes,
             template_dir,
             static_dir,
             schema_url,

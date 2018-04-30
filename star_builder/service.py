@@ -4,6 +4,9 @@ from .route import route
 
 
 class ServiceMeta(type):
+    """
+    元类的主要作用是建立Service继承树，以便发现所有Service。
+    """
     def __new__(mcs, class_name, bases, props):
         cls = super(ServiceMeta, mcs).__new__(mcs, class_name, bases, props)
         cls.children = []

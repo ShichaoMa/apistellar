@@ -6,9 +6,10 @@ from star_builder import Application, ServiceComponent
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
-    run(Application(components=[ServiceComponent()],
+    app = Application(components=[ServiceComponent()],
                     static_dir="static",
-                    template_dir="templates"))
+                    template_dir="templates")
+    run(app)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import logging
 
 from apistar import ASyncApp
 
-from .helper import load_packages, routing
+from .helper import load_packages, routing, print_routing
 from .service import Service
 
 __all__ = ["Application"]
@@ -25,6 +25,7 @@ class Application(ASyncApp):
         include = routing(Service, None)
         if include:
             routes = [include]
+            print_routing(routes, callback=logger.debug)
         else:
             logger.info("Noting to route. ")
             routes = []

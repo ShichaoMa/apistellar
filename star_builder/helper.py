@@ -5,6 +5,16 @@ from apistar import Include
 from argparse import Action, _SubParsersAction
 
 
+def print_routing(routes, callback=print, parent=""):
+    for route in routes:
+        if isinstance(route, Include):
+            print_routing(route.routes, callback ,route.url)
+        else:
+            callback(
+                f"Route method: {route.method}, "
+                f"url: {parent + route.url} to {route.name}.")
+
+
 def load_packages(current_path):
     """
     加载当前路径下的所有package，使得其中的Service子类得以激活
@@ -38,9 +48,10 @@ def routing(service, parent_prefix):
     routes = []
     for name in dir(service):
         prop = getattr(service, name)
-        if hasattr(prop, "route"):
-            prop.route.service = service
-            routes.append(prop.route)
+        if hasattr(prop, "routes"):
+            for route in prop.routes:
+                route.service = service
+            routes.extend(prop.routes)
 
     for child_service in service.children:
         child_include = routing(child_service, service.prefix)

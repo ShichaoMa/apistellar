@@ -48,7 +48,7 @@ class Command(object):
         for name in self.names:
             words = re.findall(r"([A-Za-z0-9]+)", name)
             if words[0][0].isdigit():
-                print("spider name cannot start with number!")
+                print("Service name cannot start with number!")
                 exit(1)
             makedirs(name, exist_ok=True)
             template = env.get_template(join(self.type, '__init__.py.tmpl'))

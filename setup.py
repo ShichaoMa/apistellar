@@ -1,11 +1,19 @@
 # -*- coding:utf-8 -*-
+import os
+import re
 try:
     from setuptools import setup, find_packages
 except:
     from distutils.core import setup
 
 
-VERSION = '0.0.7'
+def get_version(package):
+    """
+    Return package version as listed in `__version__` in `__init__.py`.
+    """
+    init_py = open(os.path.join(package, '__init__.py')).read()
+    return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
+
 
 AUTHOR = "cn"
 
@@ -30,7 +38,7 @@ PACKAGES = ["star_builder"]
 
 setup(
     name=NAME,
-    version=VERSION,
+    version=get_version("star_builder"),
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     classifiers=[

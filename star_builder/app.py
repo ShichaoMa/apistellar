@@ -17,23 +17,30 @@ class Application(ASyncApp):
     def __init__(self,
                  template_dir=None,
                  static_dir=None,
+                 packages=None,
                  schema_url='/schema/',
+                 docs_url='/docs/',
                  static_url='/static/',
                  components=None,
-                 event_hooks=None):
+                 event_hooks=None, debug=True):
         load_packages(".")
         include = routing(Service, None)
+
         if include:
             routes = [include]
             print_routing(routes, callback=logger.debug)
         else:
             logger.info("Noting to route. ")
             routes = []
+
         super(Application, self).__init__(
             routes,
-            template_dir,
-            static_dir,
-            schema_url,
-            static_url,
-            components,
-            event_hooks)
+            template_dir=template_dir,
+            static_dir=static_dir,
+            packages=packages,
+            schema_url=schema_url,
+            docs_url=docs_url,
+            static_url=static_url,
+            components=components,
+            event_hooks=event_hooks)
+        self.debug = debug

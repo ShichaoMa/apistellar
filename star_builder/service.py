@@ -21,7 +21,7 @@ class ServiceMeta(type):
         return cls
 
 
-@route("")
+@route("", name="全部模块")
 class Service(metaclass=ServiceMeta):
     """
     所有一级模块业务类都需要继承于Service类

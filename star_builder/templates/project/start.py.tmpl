@@ -3,15 +3,11 @@ import logging
 from uvicorn import run
 from star_builder import Application, ServiceComponent
 
+logging.basicConfig(level=logging.DEBUG)
 app = Application(components=[ServiceComponent()],
                     static_dir="static",
                     template_dir="templates")
 
 
-def main():
-    logging.basicConfig(level=logging.DEBUG)
-    run(app)
-
-
 if __name__ == "__main__":
-    main()
+    run(app)

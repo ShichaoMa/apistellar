@@ -8,7 +8,7 @@ from argparse import Action, _SubParsersAction
 def print_routing(routes, callback=print, parent=""):
     for route in routes:
         if isinstance(route, Include):
-            print_routing(route.routes, callback ,route.url)
+            print_routing(route.routes, callback ,parent + route.url)
         else:
             callback(
                 f"Route method: {route.method}, "
@@ -46,7 +46,7 @@ def routing(service, parent_prefix):
     if not hasattr(service, "prefix") or service.prefix == parent_prefix:
         raise RuntimeError(f"{service} is not routed! ")
     routes = []
-    for name in dir(service):
+    for name in vars(service).keys():
         prop = getattr(service, name)
         if hasattr(prop, "routes"):
             for route in prop.routes:

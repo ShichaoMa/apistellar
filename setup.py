@@ -62,7 +62,7 @@ setup(
     },
     license=LICENSE,
     packages=PACKAGES,
-    install_requires=["apistar", "tookity>=1.7.6"],
+    install_requires=["apistar", "toolkity>=1.7.6"],
     include_package_data=True,
     zip_safe=True,
 )

@@ -5,4 +5,4 @@ from .service import Service
 from .route import route, get, post, delete, put, options
 
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"

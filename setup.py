@@ -56,7 +56,7 @@ setup(
         ],
     },
     license="MIT",
-    packages=["star_builder"],
+    packages=["star_builder", "star_builder.build"],
     install_requires=install_requires(),
     include_package_data=True,
     zip_safe=True,

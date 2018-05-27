@@ -19,31 +19,26 @@ def get_version(package):
         raise RuntimeError("Cannot find version!")
 
 
-AUTHOR = "cn"
-
-AUTHOR_EMAIL = "cnaafhvk@foxmail.com"
-
-URL = "https://www.github.com/ShichaoMa/star_builder"
-
-NAME = "star-builder"
-
-DESCRIPTION = "enhance apistar web framework. "
+def install_requires():
+    """
+    Return requires in requirements.txt
+    :return:
+    """
+    try:
+        with open("requirements.txt") as f:
+            return [line.strip() for line in f.readlines() if line.strip()]
+    except OSError:
+        return []
 
 try:
     LONG_DESCRIPTION = open("README.rst").read()
 except UnicodeDecodeError:
     LONG_DESCRIPTION = open("README.rst", encoding="utf-8").read()
 
-KEYWORDS = "apistar"
-
-LICENSE = "MIT"
-
-PACKAGES = ["star_builder"]
-
 setup(
-    name=NAME,
+    name="star-builder",
     version=get_version("star_builder"),
-    description=DESCRIPTION,
+    description="enhance apistar web framework. ",
     long_description=LONG_DESCRIPTION,
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -51,18 +46,18 @@ setup(
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
     ],
-    keywords=KEYWORDS,
-    author=AUTHOR,
-    author_email=AUTHOR_EMAIL,
-    url=URL,
+    keywords="apistar",
+    author="cn",
+    author_email="cnaafhvk@foxmail.com",
+    url="https://www.github.com/ShichaoMa/star_builder",
     entry_points={
         'console_scripts': [
             'apistar-create = star_builder:main',
         ],
     },
-    license=LICENSE,
-    packages=PACKAGES,
-    install_requires=["apistar", "toolkity>=1.7.6"],
+    license="MIT",
+    packages=["star_builder"],
+    install_requires=install_requires(),
     include_package_data=True,
     zip_safe=True,
 )

@@ -12,7 +12,11 @@ def get_version(package):
     Return package version as listed in `__version__` in `__init__.py`.
     """
     init_py = open(os.path.join(package, '__init__.py')).read()
-    return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
+    mth = re.search("__version__\s?=\s?['\"]([^'\"]+)['\"]", init_py)
+    if mth:
+        return mth.group(1)
+    else:
+        raise RuntimeError("Cannot find version!")
 
 
 AUTHOR = "cn"
@@ -58,7 +62,7 @@ setup(
     },
     license=LICENSE,
     packages=PACKAGES,
-    install_requires=["apistar"],
+    install_requires=["apistar", "tookity>=1.7.6"],
     include_package_data=True,
     zip_safe=True,
 )

@@ -4,9 +4,7 @@ from uvicorn import run
 from star_builder import Application, ServiceComponent
 
 logging.basicConfig(level=logging.DEBUG)
-app = Application(components=[ServiceComponent()],
-                    static_dir="static",
-                    template_dir="templates")
+app = Application()
 
 
 if __name__ == "__main__":

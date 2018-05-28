@@ -28,7 +28,7 @@ class Project(Task):
         task = kwargs.pop("task")
         names = kwargs.pop("name")
         for name in names:
-            makedirs(name, exist_ok=True)
+            makedirs(join(name, name), exist_ok=True)
             template = env.get_template(join(task, 'start.py.tmpl'))
             with open(join(name, "start.py"), "w") as f:
                 f.write(template.render())

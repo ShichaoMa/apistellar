@@ -4,10 +4,13 @@ from apistar import exceptions, Route
 from toolkit.frozen import FrozenSettings
 from toolkit.settings import SettingsLoader
 
+from . import Meta
 from .service import Service
 
 
-class Component:
+class Component(metaclass=Meta):
+    order = 1000
+
     def identity(self, parameter: inspect.Parameter):
         """
         Each component needs a unique identifier string that we use for lookups
@@ -53,6 +56,8 @@ class ServiceComponent(Component):
     """
     注入Service
     """
+    order = 1
+
     def resolve(self, route: Route) -> Service:
         return route.service
 
@@ -62,6 +67,7 @@ class SettingsComponent(Component):
     注入Settings
     """
     settings_path = None
+    order = 0
 
     def __init__(self):
         self.settings = SettingsLoader().load(self.settings_path or "settings")

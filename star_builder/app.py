@@ -2,8 +2,8 @@ import logging
 
 from apistar import ASyncApp, App
 
-from .service import Service
-from .components import ServiceComponent, SettingsComponent
+from . import Service
+from .bases.components import Component, SettingsComponent
 from .helper import load_packages, routing, print_routing
 
 __all__ = ["Application"]
@@ -29,7 +29,23 @@ def application(template_dir=None,
     load_packages(".")
     include = routing(Service, None)
     SettingsComponent.register_path(settings_path)
-    components = [ServiceComponent(), SettingsComponent()] + (components or [])
+    loaded, unloaded = [], []
+
+    def find_children(components):
+        children = []
+        for component in components:
+            children.append(component)
+            children.extend(find_children(component.children))
+        return children
+
+    for child in find_children(Component.children):
+        if child._instance:
+            loaded.append(child._instance)
+        else:
+            unloaded.append(child)
+
+    components = [c() for c in sorted(unloaded, key=lambda x: -x.order)] + \
+                 (components or []) + loaded
 
     if include:
         routes = [include]

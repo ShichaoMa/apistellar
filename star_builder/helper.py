@@ -46,11 +46,12 @@ def routing(service, parent_prefix):
     if not hasattr(service, "prefix") or service.prefix == parent_prefix:
         raise RuntimeError(f"{service} is not routed! ")
     routes = []
+    instance = service()
     for name in vars(service).keys():
         prop = getattr(service, name)
         if hasattr(prop, "routes"):
             for route in prop.routes:
-                route.service = service
+                route.service = instance
             routes.extend(prop.routes)
 
     for child_service in service.children:

@@ -2,7 +2,7 @@ import logging
 
 from apistar import ASyncApp, App
 
-from . import Service
+from .bases.service import Service
 from .bases.components import Component, SettingsComponent
 from .helper import load_packages, routing, print_routing
 

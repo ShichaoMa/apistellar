@@ -1,9 +1,10 @@
 from threading import RLock
+from apistar import Component
 
 
 class Meta(type):
     """
-    元类的主要作用是建立继承树，以便发现所有Service/Component，同时保持单例。
+    元类的主要作用是建立继承树，以便发现所有Service/Component。
     """
     lock = RLock()
 
@@ -14,12 +15,21 @@ class Meta(type):
         if len(bases) > 1:
             raise RuntimeError(f"{class_name} unsupprt multi inherit!")
 
-        cls = super(Meta, mcs).__new__(mcs, class_name, bases, props)
-        if not bases or bases[0] == object:
+        cls = super().__new__(mcs, class_name, bases, props)
+        if not bases or bases[0] in [object, Component]:
             return cls
 
         bases[0].children.append(cls)
         return cls
+
+
+class ComponentMeta(Meta):
+    """
+    单例，修改resolve return annotation
+    """
+    def __new__(mcs, class_name, bases, props):
+        props["_instance"] = None
+        return super().__new__(mcs, class_name, bases, props)
 
     def __call__(cls, *args, **kwargs):
         with cls.lock:

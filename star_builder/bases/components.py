@@ -1,5 +1,3 @@
-import inspect
-
 from toolkit.frozen import FrozenSettings
 from toolkit.settings import SettingsLoader
 from apistar import Route, Component as _Component

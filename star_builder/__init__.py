@@ -9,4 +9,4 @@ from .types import Type, TypeEncoder, validators
 from .route import route, get, post, delete, put, options
 
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"

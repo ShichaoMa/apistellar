@@ -1,6 +1,11 @@
-from star_builder import Type, validators
+from star_builder import Type, validators, Component
 
 
 class {{model.capitalize()}}(Type):
 {% for name, type in fields %}    {{name}} = validators.{{type}}()
 {% endfor %}
+
+
+class {{model.capitalize()}}Component(Component):
+
+    async def resolve(self) -> {{model.capitalize()}}:

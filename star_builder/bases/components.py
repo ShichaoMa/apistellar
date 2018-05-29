@@ -9,7 +9,6 @@ from .service import Service
 
 
 class Component(_Component, metaclass=ComponentMeta):
-    order = 1000
 
     def resolve(self, *args, **kwargs):
         raise NotImplementedError()
@@ -19,8 +18,6 @@ class ServiceComponent(Component):
     """
     注入Service
     """
-    order = 1
-
     def resolve(self, route: Route) -> Service:
         return route.service
 
@@ -30,7 +27,6 @@ class SettingsComponent(Component):
     注入Settings
     """
     settings_path = None
-    order = 0
 
     def __init__(self):
         self.settings = SettingsLoader().load(self.settings_path or "settings")

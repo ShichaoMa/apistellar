@@ -44,8 +44,7 @@ def application(template_dir=None,
         else:
             unloaded.append(child)
 
-    components = [c() for c in sorted(unloaded, key=lambda x: -x.order)] + \
-                 (components or []) + loaded
+    components = [c() for c in unloaded] + (components or []) + loaded
 
     if include:
         routes = [include]

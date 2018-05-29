@@ -2,6 +2,7 @@ import logging
 
 from apistar import ASyncApp, App, exceptions
 from apistar.http import Response, JSONResponse
+from apistar.server.components import ReturnValue
 
 from .bases.hooks import ErrorHook
 from .bases.service import Service
@@ -20,6 +21,11 @@ class FixedAsyncApp(ASyncApp):
             return JSONResponse(exc.detail, exc.status_code, exc.get_headers())
         raise exc
 
+    def error_handler(self, return_value: ReturnValue) -> Response:
+        if isinstance(return_value, Response):
+            return return_value
+        return super().error_handler()
+
 
 class FixedApp(App):
 
@@ -27,6 +33,11 @@ class FixedApp(App):
         if isinstance(exc, exceptions.HTTPException):
             return JSONResponse(exc.detail, exc.status_code, exc.get_headers())
         raise exc
+
+    def error_handler(self, return_value: ReturnValue) -> Response:
+        if isinstance(return_value, Response):
+            return return_value
+        return super().error_handler()
 
 
 def application(template_dir=None,

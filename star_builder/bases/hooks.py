@@ -9,7 +9,7 @@ class ErrorHook(object):
     """
     default_error_code = {999: "Unknown error"}
 
-    def on_error(self, error: Exception, resp: Response) -> JSONResponse:
+    def on_error(self, error: Exception) -> JSONResponse:
         """
         Handle error
         """
@@ -29,7 +29,6 @@ class ErrorHook(object):
         if message is None:
             message = self.default_error_code.get(code, "Not configured error")
 
-        resp.status_code = 200
         payload = {
             "code": code,
             "value": None,

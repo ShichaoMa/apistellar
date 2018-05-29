@@ -7,4 +7,4 @@ from .bases.components import Component
 from .route import route, get, post, delete, put, options
 
 
-__version__ = "0.1.12"
+__version__ = "0.2.0"

@@ -1,6 +1,5 @@
 import traceback
-
-from apistar.http import Response, JSONResponse
+from apistar.http import JSONResponse
 
 
 class ErrorHook(object):

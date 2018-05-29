@@ -1,11 +1,12 @@
 import re
 
-from os import makedirs
+from os import makedirs, sep
 from os.path import join, exists
 from abc import ABC, abstractmethod
+from star_builder.types import validators
 
 
-__all__ = ["Task", "Project", "Service"]
+__all__ = ["Task", "Project", "Service", "Model"]
 
 
 class Task(ABC):
@@ -67,3 +68,45 @@ class Service(Task):
     @classmethod
     def enrich_parser(cls, sub_parser):
         sub_parser.add_argument("name", nargs="+", help="服务模块名称")
+
+
+class Model(Task):
+    """
+    model
+    """
+    def create(self, env, **kwargs):
+        task = kwargs.pop("task")
+        name = kwargs.pop("name")
+        path = kwargs.pop("path").replace(".", sep)
+        fields = kwargs.pop("fields", [])
+
+        words = re.findall(r"([A-Za-z0-9]+)", name)
+        assert words, f"name: {name} invalid!"
+        assert words[0][0].isalpha(), f"name: {name} start with number!"
+
+        fields = [f.split(":", 1) for f in fields]
+        if fields:
+            types = dict()
+            for p in dir(validators):
+                obj = getattr(validators, p)
+                if isinstance(obj, type) and \
+                        issubclass(obj, validators.Validator):
+                    types[obj.__name__.lower()] = obj.__name__
+            new_fields = []
+            for k, v in fields[:]:
+                new_fields.append((k, types.get(v.lower(), "")))
+            fields = new_fields
+
+        makedirs(path, exist_ok=True)
+        init = env.get_template(join(task, 'model.py.tmpl'))
+        with open(join(path, f"{name}.py"), "w") as f:
+            f.write(init.render(model=name, fields=fields))
+
+        print(f"{name} model已完成创建。")
+
+    @classmethod
+    def enrich_parser(cls, sub_parser):
+        sub_parser.add_argument("-n", "--name", required=True, help="models名称")
+        sub_parser.add_argument(
+            "-p", "--path", required=True, help="model地址, eg:uploader.s3")
+        sub_parser.add_argument("fields", nargs="*", help="字段，eg: id:int")

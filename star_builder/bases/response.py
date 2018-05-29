@@ -21,7 +21,6 @@ class FileResponse(Response):
                  if_modified_since: str=None,
                  ranges: str=None,
     ) -> None:
-        super(FileResponse, self).__init__(content, status_code, headers, exc_info)
         self.filename = filename
         self.media_type = media_type or self.media_type
         self.charset = charset
@@ -29,6 +28,7 @@ class FileResponse(Response):
         self.last_modified = last_modified
         self.if_modified_since = if_modified_since
         self.ranges = ranges
+        super(FileResponse, self).__init__(content, status_code, headers, exc_info)
 
     def render(self, content: typing.Any) -> bytes:
         if hasattr(content, "read"):
@@ -89,7 +89,7 @@ class FileResponse(Response):
                     self.status_code = 416
                 offset, end = self.ranges[0]
                 self.headers["Content-Range"] = "bytes %d-%d/%d" % (
-                offset, end - 1, len(self.content))
+                    offset, end - 1, len(self.content))
                 self.headers["Content-Length"] = str(end - offset)
                 self.content = file_iter_range(self.content, offset, end - offset)
                 self.status_code = 206

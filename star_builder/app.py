@@ -1,7 +1,9 @@
 import logging
 
-from apistar import ASyncApp, App
+from apistar import ASyncApp, App, exceptions
+from apistar.http import Response, JSONResponse
 
+from .bases.hooks import ErrorHook
 from .bases.service import Service
 from .bases.components import Component, SettingsComponent
 from .helper import load_packages, routing, print_routing
@@ -9,6 +11,22 @@ from .helper import load_packages, routing, print_routing
 __all__ = ["Application"]
 
 logger = logging.getLogger("star_builder.app")
+
+
+class FixedAsyncApp(ASyncApp):
+
+    def exception_handler(self, exc: Exception) -> Response:
+        if isinstance(exc, exceptions.HTTPException):
+            return JSONResponse(exc.detail, exc.status_code, exc.get_headers())
+        raise exc
+
+
+class FixedApp(App):
+
+    def exception_handler(self, exc: Exception) -> Response:
+        if isinstance(exc, exceptions.HTTPException):
+            return JSONResponse(exc.detail, exc.status_code, exc.get_headers())
+        raise exc
 
 
 def application(template_dir=None,
@@ -53,7 +71,7 @@ def application(template_dir=None,
         logger.info("Noting to route. ")
         routes = []
 
-    app = (ASyncApp if async else App)(
+    app = (FixedAsyncApp if async else FixedApp)(
         routes,
         template_dir=template_dir,
         static_dir=static_dir,
@@ -62,7 +80,7 @@ def application(template_dir=None,
         docs_url=docs_url,
         static_url=static_url,
         components=components,
-        event_hooks=event_hooks)
+        event_hooks=[ErrorHook()] + event_hooks or [])
 
     app.debug = debug
     return app

@@ -31,7 +31,10 @@ class Project(Task):
         for name in names:
             makedirs(join(name, name), exist_ok=True)
             template = env.get_template(join(task, 'start.py.tmpl'))
-            with open(join(name, "start.py"), "w") as f:
+            fn = join(name, "start.py")
+            if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
+                exit(0)
+            with open(fn, "w") as f:
                 f.write(template.render())
             print(f"{name} 项目已完成创建。")
 
@@ -60,7 +63,10 @@ class Service(Task):
             assert words[0][0].isalpha(), f"name: {name} start with number!"
             makedirs(name, exist_ok=True)
             init = env.get_template(join(task, '__init__.py.tmpl'))
-            with open(join(name, "__init__.py"), "w") as f:
+            fn = join(name, "__init__.py")
+            if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
+                exit(0)
+            with open(fn, "w") as f:
                 f.write(init.render(father=father or "Service", service=name))
 
         print("、".join(names), "服务模块已完成创建。")
@@ -72,7 +78,7 @@ class Service(Task):
 
 class Model(Task):
     """
-    model
+    模型层
     """
     def create(self, env, **kwargs):
         task = kwargs.pop("task")
@@ -98,9 +104,12 @@ class Model(Task):
             fields = new_fields
 
         makedirs(path, exist_ok=True)
-        init = env.get_template(join(task, 'model.py.tmpl'))
-        with open(join(path, f"{name}.py"), "w") as f:
-            f.write(init.render(model=name, fields=fields))
+        model = env.get_template(join(task, 'model.py.tmpl'))
+        fn = join(path, f"{name}.py")
+        if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
+            exit(0)
+        with open(fn, "w") as f:
+            f.write(model.render(model=name, fields=fields))
 
         print(f"{name} model已完成创建。")
 

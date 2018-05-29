@@ -1,0 +1,6 @@
+from star_builder import Type, validators
+
+
+class {{model.capitalize()}}(Type):
+{% for name, type in fields %}    {{name}} = validators.{{type}}()
+{% endfor %}

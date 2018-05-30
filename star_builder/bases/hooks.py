@@ -1,4 +1,7 @@
+import typing
 import traceback
+
+from apistar import App
 from apistar.http import JSONResponse
 
 
@@ -6,9 +9,9 @@ class ErrorHook(object):
     """
     处理assert异常
     """
-    default_error_code = {999: "Unknown error"}
+    errors = {999: "Unknown error"}
 
-    def on_error(self, error: Exception) -> JSONResponse:
+    def on_error(self, error: Exception, app:App) -> JSONResponse:
         """
         Handle error
         """
@@ -26,13 +29,20 @@ class ErrorHook(object):
         code = int(code)
 
         if message is None:
-            message = self.default_error_code.get(code, "Not configured error")
+            message = self.errors.get(code, "Not configured error")
 
         payload = {
             "code": code,
             "value": None,
             "errcode": code,
             "message": message,
-            "detail": traceback.format_exc()
         }
+        if app.debug:
+            payload["detail"] = "".join(traceback.format_exc())
         return JSONResponse(payload)
+
+    @classmethod
+    def register(cls,
+                 errors: typing.Union[typing.List[typing.Tuple[int, str]],
+                                      typing.Mapping[int, str]]):
+        cls.errors.update(errors)

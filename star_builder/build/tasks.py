@@ -119,3 +119,33 @@ class Model(Task):
         sub_parser.add_argument(
             "-p", "--path", required=True, help="model地址, eg:uploader.s3")
         sub_parser.add_argument("fields", nargs="*", help="字段，eg: id:int")
+
+
+class Repository(Task):
+    """
+    业务层
+    """
+    def create(self, env, **kwargs):
+        task = kwargs.pop("task")
+        name = kwargs.pop("name")
+        path = kwargs.pop("path").replace(".", sep)
+
+        words = re.findall(r"([A-Za-z0-9]+)", name)
+        assert words, f"name: {name} invalid!"
+        assert words[0][0].isalpha(), f"name: {name} start with number!"
+
+        makedirs(path, exist_ok=True)
+        repository = env.get_template(join(task, 'repository.py.tmpl'))
+        fn = join(path, "repository.py")
+        if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
+            exit(0)
+        with open(fn, "w") as f:
+            f.write(repository.render(repository=name))
+
+        print(f"{name} 仓库已完成创建。")
+
+    @classmethod
+    def enrich_parser(cls, sub_parser):
+        sub_parser.add_argument("-n", "--name", required=True, help="仓库名称")
+        sub_parser.add_argument(
+            "-p", "--path", required=True, help="仓库地址, eg:uploader.s3")

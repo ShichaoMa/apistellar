@@ -1,15 +1,31 @@
+import typing
+import inspect
+
+from toolkit.singleton import Singleton
 from toolkit.frozen import FrozenSettings
 from toolkit.settings import SettingsLoader
-from apistar import Route, Component as _Component
+from apistar import Route, exceptions, Component as _Component
 
-from . import ComponentMeta
 from .service import Service
 
 
-class Component(_Component, metaclass=ComponentMeta):
+class Component(_Component, metaclass=Singleton):
 
     def resolve(self, *args, **kwargs):
         raise NotImplementedError()
+
+    def can_handle_parameter(self, parameter: inspect.Parameter):
+        """重写这个方法是为了增加typing.Union类型的判定"""
+        return_annotation = inspect.signature(self.resolve).return_annotation
+        if return_annotation is inspect.Signature.empty:
+            msg = (
+                'Component "%s" must include a return annotation on the '
+                '`resolve()` method, or override `can_handle_parameter`'
+            )
+            raise exceptions.ConfigurationError(msg % self.__class__.__name__)
+        return type(return_annotation) == typing._Union and \
+               parameter.annotation in return_annotation.__args__ or \
+               parameter.annotation is return_annotation
 
 
 class ServiceComponent(Component):

@@ -1,5 +1,7 @@
 import json
+
 from abc import ABCMeta
+from collections.abc import Mapping
 
 from apistar.exceptions import ConfigurationError, ValidationError
 
@@ -11,7 +13,7 @@ class TypeMetaclass(ABCMeta):
     def __new__(mcs, name, bases, attrs):
         properties = []
         for key, value in list(attrs.items()):
-            if key in ['values', 'get', 'validator']:
+            if key in ['keys', 'items', 'values', 'get', 'validator']:
                 msg = (
                     'Cannot use reserved name "%s" on Type "%s", as it '
                     'clashes with the class interface.'
@@ -58,7 +60,9 @@ class TypeMetaclass(ABCMeta):
         return cls
 
 
-class Type(object, metaclass=TypeMetaclass):
+class Type(Mapping, metaclass=TypeMetaclass):
+
+    driver = None
 
     def __init__(self, *args, **kwargs):
         definitions = None
@@ -131,9 +135,6 @@ class Type(object, metaclass=TypeMetaclass):
         value = self.validator.properties[key].validate(value)
         self._dict[key] = value
 
-    def keys(self):
-        return self._dict.keys()
-
     def __getattr__(self, key):
         try:
             return self._dict[key]
@@ -150,11 +151,6 @@ class Type(object, metaclass=TypeMetaclass):
             formatter = validators.FORMATS[validator.format]
             return formatter.to_string(value)
         return value
-
-    def items(self):
-        self.format()
-        keys = self.keys()
-        return [(key, self[key]) for key in keys]
 
     def __len__(self):
         return len(self._dict)

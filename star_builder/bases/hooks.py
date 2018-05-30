@@ -39,6 +39,7 @@ class ErrorHook(object):
         }
         if app.debug:
             payload["detail"] = "".join(traceback.format_exc())
+        traceback.print_exc()
         return JSONResponse(payload)
 
     @classmethod

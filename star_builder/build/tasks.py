@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from star_builder.types import validators
 
 
-__all__ = ["Task", "Project", "Service", "Model"]
+__all__ = ["Task", "Project", "Service", "Model", "Repository"]
 
 
 class Task(ABC):

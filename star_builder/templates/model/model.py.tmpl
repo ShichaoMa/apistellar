@@ -2,10 +2,11 @@ from star_builder import Type, validators, Component
 
 
 class {{model.capitalize()}}(Type):
-{% for name, type in fields %}    {{name}} = validators.{{type}}()
-{% endfor %}
-
+{% if fields %}{% for name, type in fields %}    {{name}} = validators.{{type}}()
+{% endfor %}{% else %}    pass
+{% endif %}
 
 class {{model.capitalize()}}Component(Component):
 
     async def resolve(self) -> {{model.capitalize()}}:
+        pass

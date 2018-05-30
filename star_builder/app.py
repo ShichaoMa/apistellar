@@ -60,14 +60,14 @@ def application(template_dir=None,
     SettingsComponent.register_path(settings_path)
     loaded, unloaded = [], []
 
-    # def find_children(components):
-    #     children = []
-    #     for component in components:
-    #         children.append(component)
-    #         children.extend(find_children(component.children))
-    #     return children
+    def find_children(components):
+        children = []
+        for component in components:
+            children.append(component)
+            children.extend(find_children(component.__subclasses__()))
+        return children
 
-    for child in Component.__subclasses__():
+    for child in find_children(Component.__subclasses__()):
         if child._instance:
             loaded.append(child._instance)
         else:

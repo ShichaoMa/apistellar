@@ -164,6 +164,10 @@ class Type(Mapping, metaclass=TypeMetaclass):
         for k, v in kwargs.items():
             setattr(cls, k, v)
 
+    def update(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
     def to_json(self, force_format=True):
         if force_format:
             return json.loads(json.dumps(self, cls=TypeEncoder))

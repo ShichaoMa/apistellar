@@ -59,7 +59,7 @@ def routing(service, parent_prefix):
                 route.service = instance
             routes.extend(prop.routes)
 
-    for child_service in service.__subclasses__:
+    for child_service in service.__subclasses__():
         child_include = routing(child_service, service.prefix)
         if child_include:
             routes.append(child_include)

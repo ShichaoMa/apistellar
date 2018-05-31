@@ -138,7 +138,9 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
     def __getattr__(self, key):
         try:
-            return self._dict[key]
+            if "key" != "_dict":
+                return self._dict[key]
+            return object.__getattribute__(self, key)
         except (KeyError,):
             raise AttributeError('Invalid attribute "%s"' % key)
 

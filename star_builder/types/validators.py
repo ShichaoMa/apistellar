@@ -132,6 +132,8 @@ class String(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.allow_null:
+            if callable(self.default):
+                return self.default()
             return self.default
         elif value is None:
             self.error('null', value)
@@ -207,7 +209,9 @@ class NumericType(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.allow_null:
-            return None
+            if callable(self.default):
+                return self.default()
+            return self.default
         elif value is None:
             self.error('null', value)
         elif isinstance(value, bool):

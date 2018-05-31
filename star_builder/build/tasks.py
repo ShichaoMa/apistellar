@@ -85,6 +85,7 @@ class Model(Task):
         name = kwargs.pop("name")
         path = kwargs.pop("path").replace(".", sep)
         fields = kwargs.pop("fields", [])
+        extra = self.extra(**kwargs)
 
         words = re.findall(r"([A-Za-z0-9]+)", name)
         assert words, f"name: {name} invalid!"
@@ -109,9 +110,12 @@ class Model(Task):
         if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
             exit(0)
         with open(fn, "w") as f:
-            f.write(model.render(model=name, fields=fields))
+            f.write(model.render(model=name, fields=fields, **extra))
 
         print(f"{name} model已完成创建。")
+
+    def extra(self, **kwargs):
+        return dict()
 
     @classmethod
     def enrich_parser(cls, sub_parser):

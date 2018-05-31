@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from apistar.exceptions import ConfigurationError, ValidationError
 
 from . import validators
+from ..helper import TypeEncoder
 
 
 class TypeMetaclass(ABCMeta):
@@ -172,11 +173,3 @@ class Type(Mapping, metaclass=TypeMetaclass):
         if force_format:
             return json.loads(json.dumps(self, cls=TypeEncoder))
         return self._dict
-
-
-class TypeEncoder(json.JSONEncoder):
-
-    def default(self, obj):
-        if isinstance(obj, Type):
-            return dict(obj)
-        return json.JSONEncoder.default(self, obj)

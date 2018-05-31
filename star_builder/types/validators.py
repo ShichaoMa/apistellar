@@ -1,9 +1,10 @@
 import re
 import numbers
 
-from . import formats
-dict_type = dict
+from collections.abc import Mapping
 from apistar.exceptions import ValidationError
+
+from . import formats
 
 NO_DEFAULT = object()
 
@@ -12,6 +13,8 @@ FORMATS = {
     'time': formats.TimeFormat(),
     'datetime': formats.DateTimeFormat()
 }
+
+dict_type = dict
 
 
 class ErrorMessage(str):
@@ -347,7 +350,7 @@ class Object(Validator):
             return None
         elif value is None:
             self.error('null', value)
-        elif not isinstance(value, dict):
+        elif not isinstance(value, Mapping):
             self.error('type', value)
 
         definitions = self.get_definitions(definitions)

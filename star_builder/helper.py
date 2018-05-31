@@ -1,10 +1,13 @@
 import os
+import json
 import time
 import glob
 import email
 
-from apistar import Include
+from collections.abc import Mapping
 from argparse import Action, _SubParsersAction
+
+from apistar import Include
 
 
 def print_routing(routes, callback=print, parent=""):
@@ -56,7 +59,7 @@ def routing(service, parent_prefix):
                 route.service = instance
             routes.extend(prop.routes)
 
-    for child_service in service.children:
+    for child_service in service.__subclasses__:
         child_include = routing(child_service, service.prefix)
         if child_include:
             routes.append(child_include)
@@ -145,3 +148,11 @@ def file_iter_range(fp, offset, bytes, maxread=1024*1024):
         if not part: break
         bytes -= len(part)
         yield part
+
+
+class TypeEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, Mapping):
+            return dict(obj)
+        return json.JSONEncoder.default(self, obj)

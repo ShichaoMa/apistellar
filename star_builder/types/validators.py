@@ -386,7 +386,11 @@ class Object(Validator):
         for key, child_schema in self.properties.items():
             if key not in value:
                 if child_schema.has_default():
-                    validated[key] = child_schema.default
+                    if callable(child_schema.default):
+                        default = child_schema.default()
+                    else:
+                        default = child_schema.default
+                    validated[key] = default
                 continue
             item = value[key]
             try:

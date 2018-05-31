@@ -44,7 +44,10 @@ class DateFormat(BaseFormat):
         return datetime.date(**kwargs)
 
     def to_string(self, value):
-        return value.isoformat()
+        try:
+            return value.isoformat()
+        except AttributeError:
+            return str(value)
 
 
 class TimeFormat(BaseFormat):
@@ -62,7 +65,10 @@ class TimeFormat(BaseFormat):
         return datetime.time(**kwargs)
 
     def to_string(self, value):
-        return value.isoformat()
+        try:
+            return value.isoformat()
+        except AttributeError:
+            return str(value)
 
 
 class DateTimeFormat(BaseFormat):
@@ -91,7 +97,10 @@ class DateTimeFormat(BaseFormat):
         return datetime.datetime(**kwargs)
 
     def to_string(self, value):
-        value = value.isoformat()
-        if value.endswith('+00:00'):
-            value = value[:-6] + 'Z'
-        return value
+        try:
+            value = value.isoformat()
+            if value.endswith('+00:00'):
+                value = value[:-6] + 'Z'
+            return value
+        except AttributeError:
+            return str(value)

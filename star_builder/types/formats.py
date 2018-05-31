@@ -1,4 +1,5 @@
 import re
+import uuid
 import datetime
 
 from apistar.exceptions import ValidationError
@@ -104,3 +105,14 @@ class DateTimeFormat(BaseFormat):
             return value
         except AttributeError:
             return str(value)
+
+
+class UUIDFormat(BaseFormat):
+    def is_native_type(self, value):
+        return isinstance(value, (str, uuid.UUID))
+
+    def validate(self, value):
+        return True
+
+    def to_string(self, value):
+        return str(value)

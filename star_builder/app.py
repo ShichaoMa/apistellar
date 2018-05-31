@@ -7,11 +7,12 @@ from apistar.server.components import ReturnValue
 from .bases.hooks import ErrorHook
 from .bases.service import Service
 from .bases.components import Component, SettingsComponent
-from .helper import load_packages, routing, print_routing
+from .helper import load_packages, routing, print_routing, TypeEncoder
 
 __all__ = ["Application"]
 
 logger = logging.getLogger("star_builder.app")
+JSONResponse.options["default"] = TypeEncoder().default
 
 
 class FixedAsyncApp(ASyncApp):

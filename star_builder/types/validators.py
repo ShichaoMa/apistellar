@@ -11,7 +11,9 @@ NO_DEFAULT = object()
 FORMATS = {
     'date': formats.DateFormat(),
     'time': formats.TimeFormat(),
-    'datetime': formats.DateTimeFormat()
+    'datetime': formats.DateTimeFormat(),
+    "UUID": formats.UUIDFormat(),
+
 }
 
 dict_type = dict

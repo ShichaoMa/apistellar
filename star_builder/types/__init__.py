@@ -120,7 +120,11 @@ class Type(Mapping, metaclass=TypeMetaclass):
         return False
 
     def __repr__(self):
-        args = ['%s=%s' % (key, repr(value)) for key, value in self.items()]
+        if self.formatted:
+            pair = self.items()
+        else:
+            pair = self._dict.items()
+        args = ['%s=%s' % (key, repr(value)) for key, value in pair]
         arg_string = ', '.join(args)
         return '<%s(%s)>' % (self.__class__.__name__, arg_string)
 
@@ -138,28 +142,27 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
     def __getattr__(self, key):
         try:
-            if "key" != "_dict":
+            if key != "_dict":
                 return self._dict[key]
             return object.__getattribute__(self, key)
         except (KeyError,):
             raise AttributeError('Invalid attribute "%s"' % key)
 
     def __getitem__(self, key):
-        self.format()
         value = self._dict[key]
         if value is None:
             return None
-        validator = self.validator.properties[key]
-        if hasattr(validator, 'format') and validator.format in validators.FORMATS:
-            formatter = validators.FORMATS[validator.format]
-            return formatter.to_string(value)
+        if self.formatted:
+            validator = self.validator.properties[key]
+            if hasattr(validator, 'format') and validator.format in validators.FORMATS:
+                formatter = validators.FORMATS[validator.format]
+                return formatter.to_string(value)
         return value
 
     def __len__(self):
         return len(self._dict)
 
     def __iter__(self):
-        self.format()
         return iter(self._dict)
 
     @classmethod
@@ -171,7 +174,5 @@ class Type(Mapping, metaclass=TypeMetaclass):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def to_json(self, force_format=True):
-        if force_format:
-            return json.loads(json.dumps(self, cls=TypeEncoder))
-        return self._dict
+    def to_json(self):
+        return json.loads(json.dumps(self, cls=TypeEncoder))

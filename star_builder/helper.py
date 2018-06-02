@@ -151,8 +151,14 @@ def file_iter_range(fp, offset, bytes, maxread=1024*1024):
 
 
 class TypeEncoder(json.JSONEncoder):
+    options = {Mapping: dict}
+
+    @classmethod
+    def register(cls, type_mapping):
+        cls.options.update(type_mapping)
 
     def default(self, obj):
-        if isinstance(obj, Mapping):
-            return dict(obj)
+        for key, val in self.options.items():
+            if isinstance(obj, key):
+                return val(obj)
         return json.JSONEncoder.default(self, obj)

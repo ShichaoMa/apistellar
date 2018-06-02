@@ -7,7 +7,7 @@ from apistar.http import JSONResponse
 
 class ErrorHook(object):
     """
-    处理assert异常
+    处理异常
     """
     errors = {999: "Unknown error"}
 

@@ -49,13 +49,14 @@ class TypeMetaclass(ABCMeta):
 
         cls = super(TypeMetaclass, mcs).__new__(mcs, name, bases, attrs)
 
+        default = cls.has_default() or validators.NO_DEFAULT
         cls.validator = validators.Object(
             def_name=name,
             properties=properties,
             required=required,
             additional_properties=None,
             model=cls,
-            default=cls.has_default()
+            default=default
         )
 
         return cls
@@ -79,15 +80,18 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
             if args[0] is None or isinstance(args[0], (bool, int, float, list)):
                 raise ValidationError('Must be an object.')
-            elif isinstance(args[0], dict):
+            elif isinstance(args[0], Mapping):
                 # Instantiated with a dict.
                 value = args[0]
             else:
                 # Instantiated with an object instance.
-                value = {
-                    key: getattr(args[0], key)
-                    for key in self.validator.properties.keys()
-                }
+                value = {}
+                for key, val in self.validator.properties.items():
+                    v = getattr(args[0], key, None)
+                    if not v and val.has_default():
+                        v = val.get_default()
+                    if v:
+                        value[key] = v
         else:
             # Instantiated with keyword arguments.
             value = kwargs
@@ -117,7 +121,19 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
     @classmethod
     def has_default(cls):
+        """
+        或者直接返回default值
+        :return:
+        """
         return False
+
+    @classmethod
+    def get_default(cls):
+        default = cls.has_default()
+        assert default, (778, f"{cls} haven't got a value/default value!")
+        if callable(default):
+            return default()
+        return default
 
     def __repr__(self):
         if self.formatted:
@@ -152,11 +168,11 @@ class Type(Mapping, metaclass=TypeMetaclass):
         value = self._dict[key]
         if value is None:
             return None
-        if self.formatted:
-            validator = self.validator.properties[key]
-            if hasattr(validator, 'format') and validator.format in validators.FORMATS:
-                formatter = validators.FORMATS[validator.format]
-                return formatter.to_string(value)
+        validator = self.validator.properties[key]
+        if hasattr(validator, 'format') and validator.format in validators.FORMATS:
+            formatter = validators.FORMATS[validator.format]
+            return formatter.to_string(value)
+
         return value
 
     def __len__(self):

@@ -66,6 +66,13 @@ class Validator(object):
             return False
         return True
 
+    def get_default(self):
+        assert self.has_default(), (
+            778, f"{self.__class__} haven't got a value/default value!")
+        if callable(self.default):
+            return self.default()
+        return self.default
+
     def has_default(self):
         return hasattr(self, 'default')
 
@@ -134,9 +141,7 @@ class String(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.allow_null:
-            if callable(self.default):
-                return self.default()
-            return self.default
+            return self.get_default()
         elif value is None:
             self.error('null', value)
         elif self.format in FORMATS and FORMATS[self.format].is_native_type(value):

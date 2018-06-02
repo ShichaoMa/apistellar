@@ -1,4 +1,3 @@
-import os
 import logging
 
 from apistar import ASyncApp, App, exceptions
@@ -50,16 +49,14 @@ def application(template_dir=None,
                 static_url='/static/',
                 components=None,
                 event_hooks=None,
-                settings_path="settings.py",
-                app_path=".",
+                settings_path="settings",
                 debug=True,
                 async=True):
     """
        参数指定选择使用异步app还是同步app
        可以动态发现当前项目根目录下所有routes的service中的handler
     """
-    settings_path = os.path.join(app_path, settings_path)
-    load_packages(app_path)
+    load_packages(".")
     include = routing(Service, None)
     SettingsComponent.register_path(settings_path)
     loaded, unloaded = [], []

@@ -35,7 +35,7 @@ class Project(Task):
             if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
                 exit(0)
             with open(fn, "w") as f:
-                f.write(template.render())
+                f.write(template.render(project=name))
             print(f"{name} 项目已完成创建。")
 
     @classmethod

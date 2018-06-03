@@ -24,12 +24,8 @@ class Task(ABC):
         self.kwargs.update(kwargs)
         for name in names:
             self.enrich_kwargs(self.validate_name(name))
-            try:
-                dir = self.kwargs["dirname"]
-                makedirs(dir)
-            except OSError:
-                if input(f"目录{dir}已存在，是否继续y/n?") not in ["y", "yes"]:
-                    exit(0)
+            dir = self.kwargs["dirname"]
+            makedirs(dir, exist_ok=True)
 
             self.copytree(env, task)
         print("、".join(names), "已创建。")
@@ -61,6 +57,9 @@ class Task(ABC):
                 template = env.get_template(file.replace(self.templates, ""))
                 file = self.render_path_name(file)
                 filename = join(dest_path, basename(file)).replace(".tmpl", "")
+                if exists(filename) and \
+                        input(f"{filename}已存在，是否继续y/n?") not in ["y", "yes"]:
+                    exit(0)
                 with open(filename, "w") as f:
                     f.write(template.render(**self.kwargs))
                     f.write("\n")
@@ -75,12 +74,12 @@ class Project(Task):
     """
     def validate_name(self, name):
         assert re.search(r'^[_a-zA-Z]\w*$', name), \
-            'Error: 项目名称只能包含数字、字母、下划线并以字母开头！'
+            '项目名称只能包含数字、字母、下划线并以字母开头！'
         try:
             mod = import_module(name)
         except ImportError:
             mod = None
-        assert mod is None, f'Error: 模块 {name} 已存在！'
+        assert mod is None, f'模块 {name} 已存在！'
         return name
 
     @classmethod
@@ -157,4 +156,4 @@ class Model(ModuleTask):
             "-n", "--name", required=True, type=cls.to_list, help="models名称")
         sub_parser.add_argument(
             "-p", "--path", help="所属服务路径 eg: article/comment")
-        sub_parser.add_argument("fields", nargs="*", help="字段 eg: id:int")
+        sub_parser.add_argument("fields", nargs="*", help="字段 eg: id:integer")

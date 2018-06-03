@@ -2,6 +2,7 @@ import os
 import sys
 
 from argparse import ArgumentParser
+from os.path import join, abspath, dirname
 from jinja2 import PackageLoader, Environment, FileSystemLoader
 
 from ..helper import ArgparseHelper
@@ -15,14 +16,12 @@ class Command(object):
     def __init__(self, tasks):
         self.tasks = tasks
         self.args = self.parse_args()
-        self.templates_path = self.args.templates
+        self.templates = [self.args.templates or join(
+            abspath(dirname(dirname(__file__))), "templates")]
         self.task = tasks[self.args.task.lower()]()
 
     def create(self):
-        if self.templates_path:
-            env = Environment(loader=FileSystemLoader(self.templates_path))
-        else:
-            env = Environment(loader=PackageLoader('star_builder', 'templates'))
+        env = Environment(loader=FileSystemLoader(self.templates))
         try:
             self.task.create(env, **vars(self.args))
         except AssertionError as e:

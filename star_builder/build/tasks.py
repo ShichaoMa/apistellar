@@ -1,155 +1,160 @@
 import re
+import glob
+import string
 
 from os import makedirs, sep
-from os.path import join, exists
 from abc import ABC, abstractmethod
+from importlib import import_module
 from star_builder.types import validators
+from os.path import join, exists, abspath, dirname, isdir, basename
 
 
-__all__ = ["Task", "Project", "Service", "Model", "Repository"]
+__all__ = ["Task", "Project", "Service", "Model"]
 
 
 class Task(ABC):
+    def __init__(self):
+        self.templates =join(
+            abspath(dirname(dirname(__file__))), "templates")
+        self.kwargs = {}
 
-    @abstractmethod
     def create(self, env, **kwargs):
-        pass
+        task = kwargs.pop("task")
+        names = kwargs.pop("name")
+        self.kwargs.update(kwargs)
+        for name in names:
+            self.enrich_kwargs(self.validate_name(name))
+            try:
+                dir = self.kwargs["dirname"]
+                makedirs(dir)
+            except OSError:
+                if input(f"目录{dir}已存在，是否继续y/n?") not in ["y", "yes"]:
+                    exit(0)
+
+            self.copytree(env, task)
+        print("、".join(names), "已创建。")
+
+    def validate_name(self, name):
+        return name
+
+    def enrich_kwargs(self, name):
+        self.kwargs["name"] = name
+        self.kwargs["dirname"] = name
 
     @classmethod
     @abstractmethod
-    def enrich_parser(self, sub_parser):
+    def enrich_parser(cls, sub_parser):
         pass
+
+    def copytree(self, env, task, dest_path=None):
+        if dest_path is None:
+            dest_path = self.kwargs["dirname"]
+        copy_path = join(self.templates, task)
+        for file in glob.glob(join(copy_path, "*")):
+            if file.count("__pycache__"):
+                continue
+            if isdir(file):
+                dir_name = join(dest_path, self.render_path_name(file))
+                makedirs(dir_name, exist_ok=True)
+                self.copytree(env, file, dir_name)
+            else:
+                template = env.get_template(file.replace(self.templates, ""))
+                file = self.render_path_name(file)
+                filename = join(dest_path, basename(file)).replace(".tmpl", "")
+                with open(filename, "w") as f:
+                    f.write(template.render(**self.kwargs))
+                    f.write("\n")
+
+    def render_path_name(self, path):
+        return string.Template(basename(path)).substitute(**self.kwargs)
 
 
 class Project(Task):
     """
     项目
     """
-    def create(self, env, **kwargs):
-        task = kwargs.pop("task")
-        names = kwargs.pop("name")
-        for name in names:
-            makedirs(join(name, name), exist_ok=True)
-            template = env.get_template(join(task, 'start.py.tmpl'))
-            fn = join(name, "start.py")
-            if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
-                exit(0)
-            with open(fn, "w") as f:
-                f.write(template.render(project=name))
-            print(f"{name} 项目已完成创建。")
+    def validate_name(self, name):
+        assert re.search(r'^[_a-zA-Z]\w*$', name), \
+            'Error: 项目名称只能包含数字、字母、下划线并以字母开头！'
+        try:
+            mod = import_module(name)
+        except ImportError:
+            mod = None
+        assert mod is None, f'Error: 模块 {name} 已存在！'
+        return name
 
     @classmethod
     def enrich_parser(cls, sub_parser):
         sub_parser.add_argument("name", nargs=1, help="项目名称")
 
 
-class Service(Task):
+class ModuleTask(Task):
+
+    def validate_name(self, name):
+        words = re.findall(r"([A-Za-z0-9]+)", name)
+        assert words, f"name: {name} invalid!"
+        assert words[0][0].isalpha(), f"name: {name} start with number!"
+        return words
+
+    def enrich_kwargs(self, words):
+        class_name = "".join(word.capitalize() for word in words)
+        module_name = "_".join(word.lower() for word in words)
+        self.kwargs["class_name"] = class_name
+        self.kwargs["module_name"] = module_name
+        self.kwargs["dirname"] = module_name
+
+
+class Service(ModuleTask):
     """
     服务
     """
-    def create(self, env, **kwargs):
-        task = kwargs.pop("task")
-        names = kwargs.pop("name")
+
+    def enrich_kwargs(self, words):
+        super().enrich_kwargs(words)
         father = None
+
         if exists("__init__.py"):
             regex = re.compile(r"class\s+(\w*?Service)\(\w*Service\):")
             mth = regex.search(open("__init__.py").read())
             if mth:
                 father = mth.group(1)
-
-        for name in names:
-            words = re.findall(r"([A-Za-z0-9]+)", name)
-            assert words, f"name: {name} invalid!"
-            assert words[0][0].isalpha(), f"name: {name} start with number!"
-            makedirs(name, exist_ok=True)
-            init = env.get_template(join(task, '__init__.py.tmpl'))
-            fn = join(name, "__init__.py")
-            if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
-                exit(0)
-            with open(fn, "w") as f:
-                f.write(init.render(father=father or "Service", service=name))
-
-        print("、".join(names), "服务模块已完成创建。")
+        self.kwargs["father"] = father or "Service"
 
     @classmethod
     def enrich_parser(cls, sub_parser):
         sub_parser.add_argument("name", nargs="+", help="服务模块名称")
 
 
-class Model(Task):
+class Model(ModuleTask):
     """
     模型层
     """
-    def create(self, env, **kwargs):
-        task = kwargs.pop("task")
-        name = kwargs.pop("name")
-        path = kwargs.pop("path").replace(".", sep)
-        fields = kwargs.pop("fields", [])
-        extra = self.extra(**kwargs)
+    @staticmethod
+    def to_list(val):
+        """用来兼容接口"""
+        return [val]
 
-        words = re.findall(r"([A-Za-z0-9]+)", name)
-        assert words, f"name: {name} invalid!"
-        assert words[0][0].isalpha(), f"name: {name} start with number!"
+    def enrich_kwargs(self, name):
+        super().enrich_kwargs(name)
+        fields = [f.split(":", 1) for f in self.kwargs.get("fields", [])]
+        types = dict()
 
-        fields = [f.split(":", 1) for f in fields]
-        if fields:
-            types = dict()
-            for p in dir(validators):
-                obj = getattr(validators, p)
-                if isinstance(obj, type) and \
-                        issubclass(obj, validators.Validator):
-                    types[obj.__name__.lower()] = obj.__name__
-            new_fields = []
-            for k, v in fields[:]:
-                new_fields.append((k, types.get(v.lower(), "")))
-            fields = new_fields
+        for p in dir(validators):
+            obj = getattr(validators, p)
+            if isinstance(obj, type) and \
+                    issubclass(obj, validators.Validator):
+                types[obj.__name__.lower()] = obj.__name__
 
-        makedirs(path, exist_ok=True)
-        model = env.get_template(join(task, 'model.py.tmpl'))
-        fn = join(path, f"{name}.py")
-        if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
-            exit(0)
-        with open(fn, "w") as f:
-            f.write(model.render(model=name, fields=fields, **extra))
-
-        print(f"{name} model已完成创建。")
-
-    def extra(self, **kwargs):
-        return dict()
+        new_fields = []
+        for k, v in fields[:]:
+            new_fields.append((k, types.get(v.lower(), "")))
+        self.kwargs["fields"] = new_fields
+        self.kwargs["dirname"] = self.kwargs.get("path") or self.kwargs["dirname"]
 
     @classmethod
     def enrich_parser(cls, sub_parser):
-        sub_parser.add_argument("-n", "--name", required=True, help="models名称")
         sub_parser.add_argument(
-            "-p", "--path", required=True, help="model地址, eg:uploader.s3")
-        sub_parser.add_argument("fields", nargs="*", help="字段，eg: id:int")
-
-
-class Repository(Task):
-    """
-    业务层
-    """
-    def create(self, env, **kwargs):
-        task = kwargs.pop("task")
-        name = kwargs.pop("name")
-        path = kwargs.pop("path").replace(".", sep)
-
-        words = re.findall(r"([A-Za-z0-9]+)", name)
-        assert words, f"name: {name} invalid!"
-        assert words[0][0].isalpha(), f"name: {name} start with number!"
-
-        makedirs(path, exist_ok=True)
-        repository = env.get_template(join(task, 'repository.py.tmpl'))
-        fn = join(path, "repository.py")
-        if exists(fn) and input(f"文件{fn}已存在，是否覆盖y/n?") not in ["y", "yes"]:
-            exit(0)
-        with open(fn, "w") as f:
-            f.write(repository.render(repository=name))
-
-        print(f"{name} 仓库已完成创建。")
-
-    @classmethod
-    def enrich_parser(cls, sub_parser):
-        sub_parser.add_argument("-n", "--name", required=True, help="仓库名称")
+            "-n", "--name", required=True, type=cls.to_list, help="models名称")
         sub_parser.add_argument(
-            "-p", "--path", required=True, help="仓库地址, eg:uploader.s3")
+            "-p", "--path", help="所属服务路径 eg: article/comment")
+        sub_parser.add_argument("fields", nargs="*", help="字段 eg: id:int")

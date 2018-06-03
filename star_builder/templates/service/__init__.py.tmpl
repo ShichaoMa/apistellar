@@ -1,7 +1,7 @@
-from apistar import App, http
+from apistar import http
 from star_builder import Service, route, get, post
 {{'' if father == 'Service' else 'from .. import ' + father + '\n'}}
 
-@route("/{{service}}")
-class {{service.capitalize()}}Service({{father}}):
+@route("/{{module_name}}")
+class {{class_name}}Service({{father}}):
     pass

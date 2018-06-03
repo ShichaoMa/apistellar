@@ -23,7 +23,10 @@ class Command(object):
             env = Environment(loader=FileSystemLoader(self.templates_path))
         else:
             env = Environment(loader=PackageLoader('star_builder', 'templates'))
-        self.task.create(env, **vars(self.args))
+        try:
+            self.task.create(env, **vars(self.args))
+        except AssertionError as e:
+            print(e.args[0])
 
     def parse_args(self):
         base_parser = ArgumentParser(

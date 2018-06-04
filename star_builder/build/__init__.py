@@ -3,7 +3,7 @@ import sys
 
 from argparse import ArgumentParser
 from os.path import join, abspath, dirname
-from jinja2 import PackageLoader, Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 
 from ..helper import ArgparseHelper
 from .tasks import *

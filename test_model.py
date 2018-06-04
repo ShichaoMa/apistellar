@@ -39,20 +39,21 @@ book = {
 # 创建Book对象， 当指定Book(book, force_format=True)时，会强制校验数据合法性
 b = Book(book)
 # 赋值时会校验数据合法性
-#b.name = "13444" # 这条数据会报错
-#
-# # 下面的数据不会报错
-# b.name = "<<流畅的python>>"
-# b.publisher = "人民邮电出版社"
-# b.author = "Luciano Ramalho"
-# b.publish_date = "2017-5-15"
-#
-# # 直接dumps,需要指定cls=TypeEncoder, 同时会校验数据合法性
-# print(json.dumps(b, cls=TypeEncoder, indent=2))
-# # to_json返回json字典，同时会校验数据合法性，当to_json(force_format=False)时，数据合法性不会校验
-# print(b.to_json())
-#
+b.name = "13444" # 这条数据会报错
 
+# 下面的数据不会报错
+b.name = "<<流畅的python>>"
+b.publisher = "人民邮电出版社"
+b.author = "Luciano Ramalho"
+b.publish_date = "2017-5-15"
+
+# 直接dumps,需要指定cls=TypeEncoder, 同时会校验数据合法性
+print(json.dumps(b, cls=TypeEncoder, indent=2))
+# to_json返回json字典，同时会校验数据合法性，当to_json(force_format=False)时，数据合法性不会校验
+print(b.to_json())
+
+
+# model可以从对象中获取
 class A:
     def __init__(self):
         self.name = "<<流畅的python>>"

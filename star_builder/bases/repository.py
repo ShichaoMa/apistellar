@@ -19,4 +19,6 @@ class RepositoryMeta(Singleton):
 
 
 class Repository(Component, metaclass=RepositoryMeta):
-    pass
+    # 需要定义一下，不然会找到的父类的resolove。
+    def resolve(self, *args, **kwargs):
+        raise NotImplementedError()

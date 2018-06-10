@@ -14,8 +14,7 @@ __all__ = ["Task", "Project", "Service", "Model"]
 
 class Task(ABC):
     def __init__(self):
-        self.templates =join(
-            abspath(dirname(dirname(__file__))), "templates")
+        self.template = None
         self.kwargs = {}
 
     def create(self, env, **kwargs):
@@ -45,7 +44,7 @@ class Task(ABC):
     def copytree(self, env, task, dest_path=None):
         if dest_path is None:
             dest_path = self.kwargs["dirname"]
-        copy_path = join(self.templates, task)
+        copy_path = join(self.template, task)
         for file in glob.glob(join(copy_path, "*")):
             if file.count("__pycache__"):
                 continue
@@ -54,7 +53,7 @@ class Task(ABC):
                 makedirs(dir_name, exist_ok=True)
                 self.copytree(env, file, dir_name)
             else:
-                template = env.get_template(file.replace(self.templates, ""))
+                template = env.get_template(file.replace(self.template, ""))
                 file = self.render_path_name(file)
                 filename = join(dest_path, basename(file)).replace(".tmpl", "")
                 if exists(filename) and \

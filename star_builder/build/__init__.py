@@ -2,7 +2,7 @@ import os
 import sys
 
 from argparse import ArgumentParser
-from os.path import join, abspath, dirname
+from os.path import join, abspath, dirname, exists
 from jinja2 import Environment, FileSystemLoader
 
 from ..helper import ArgparseHelper
@@ -13,19 +13,30 @@ class Command(object):
     """
     项目构建工具
     """
+
     def __init__(self, tasks):
         self.tasks = tasks
         self.args = self.parse_args()
-        self.templates = [self.args.templates or join(
-            abspath(dirname(dirname(__file__))), "templates")]
+        self.templates = [self.args.templates,
+                          join(abspath(dirname(dirname(__file__))),
+                               "templates")]
         self.task = tasks[self.args.task.lower()]()
 
     def create(self):
+        self.task.template = self.make_sure_templates()
         env = Environment(loader=FileSystemLoader(self.templates))
         try:
             self.task.create(env, **vars(self.args))
         except AssertionError as e:
             print(e.args[0])
+
+    def make_sure_templates(self):
+        for template in self.templates[:]:
+            if not template:
+                self.templates.remove(template)
+            else:
+                if exists(join(template, self.args.task.lower())):
+                    return template
 
     def parse_args(self):
         base_parser = ArgumentParser(
@@ -56,15 +67,15 @@ def find_tasks():
     try:
         model = __import__("tasks")
         for k in dir(model):
-            cls = getattr(model, k)
-            if cls is not Task and isinstance(cls, type) and issubclass(cls, Task):
-                tasks[k.lower()] = cls
+            v = getattr(model, k)
+            if v is not Task and isinstance(v, type) and issubclass(v, Task):
+                tasks[k.lower()] = v
     except ImportError:
         pass
 
-    for name, prop in globals().items():
-        if prop is not Task and isinstance(prop, type) and issubclass(prop, Task):
-            tasks[name.lower()] = prop
+    for k, v in globals().items():
+        if v is not Task and isinstance(v, type) and issubclass(v, Task):
+            tasks[k.lower()] = v
     return tasks
 
 

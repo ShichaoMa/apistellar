@@ -36,7 +36,7 @@ class DateFormat(BaseFormat):
     type = datetime.date
 
     def is_native_type(self, value):
-        return isinstance(value, datetime.date)
+        return isinstance(value, self.type)
 
     def validate(self, value):
         match = DATE_REGEX.match(value)
@@ -57,7 +57,7 @@ class TimeFormat(BaseFormat):
     type = datetime.time
 
     def is_native_type(self, value):
-        return isinstance(value, datetime.time)
+        return isinstance(value, self.type)
 
     def validate(self, value):
         match = TIME_REGEX.match(value)
@@ -80,7 +80,7 @@ class DateTimeFormat(BaseFormat):
     type = datetime.datetime
 
     def is_native_type(self, value):
-        return isinstance(value, type)
+        return isinstance(value, self.type)
 
     def validate(self, value):
         match = DATETIME_REGEX.match(value)
@@ -117,7 +117,7 @@ class UUIDFormat(BaseFormat):
     type = uuid.UUID
 
     def is_native_type(self, value):
-        return isinstance(value, type)
+        return isinstance(value, self.type)
 
     def validate(self, value):
         return value

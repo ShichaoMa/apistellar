@@ -165,10 +165,16 @@ class Type(Mapping, metaclass=TypeMetaclass):
             raise AttributeError('Invalid attribute "%s"' % key)
 
     def __getitem__(self, key):
-        value = self._dict[key]
-        if value is None:
-            return None
         validator = self.validator.properties[key]
+        try:
+            value = self._dict[key]
+        except KeyError as e:
+            try:
+                value = validator.get_default()
+                self[key] = value
+            except AssertionError:
+                raise e
+
         if hasattr(validator, 'format') and validator.format in validators.FORMATS:
             formatter = validators.FORMATS[validator.format]
             return formatter.to_string(value)

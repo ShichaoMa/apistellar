@@ -7,7 +7,7 @@ import email
 from collections.abc import Mapping
 from argparse import Action, _SubParsersAction
 
-from apistar import Include
+from apistar import Include, Component
 
 
 def bug_fix():
@@ -20,6 +20,29 @@ def bug_fix():
             self.protocol.check_resume_reading()
         return message
     RequestResponseCycle.receive = receive
+
+
+def find_children(cls=Component):
+    """
+    获取所有(component)的子类的实例。
+    :param cls: 父类
+    :return:
+    """
+    def _load(cs):
+        children = []
+        for c in cs:
+            children.append(c)
+            children.extend(_load(c.__subclasses__()))
+        return children
+
+    loaded, unloaded = [], []
+    for child in _load(cls.__subclasses__()):
+        if getattr(child, "_instance", None):
+            loaded.append(child._instance)
+        else:
+            unloaded.append(child)
+
+    return [c() for c in unloaded] + loaded
 
 
 def print_routing(routes, callback=print, parent=""):

@@ -7,7 +7,8 @@ from apistar.server.components import ReturnValue
 from .bases.service import Service
 from .bases.hooks import ErrorHook, AccessLogHook
 from .bases.components import Component, SettingsComponent
-from .helper import load_packages, routing, print_routing, TypeEncoder, bug_fix
+from .helper import load_packages, routing, print_routing, TypeEncoder, \
+    bug_fix, find_children
 
 # 修复uvicorn bug
 bug_fix()
@@ -50,7 +51,6 @@ def application(template_dir=None,
                 schema_url='/schema/',
                 docs_url='/docs/',
                 static_url='/static/',
-                components=None,
                 event_hooks=None,
                 settings_path="settings",
                 debug=True,
@@ -62,22 +62,6 @@ def application(template_dir=None,
     load_packages(".")
     include = routing(Service, None)
     SettingsComponent.register_path(settings_path)
-    loaded, unloaded = [], []
-
-    def find_children(components):
-        children = []
-        for component in components:
-            children.append(component)
-            children.extend(find_children(component.__subclasses__()))
-        return children
-
-    for child in find_children(Component.__subclasses__()):
-        if child._instance:
-            loaded.append(child._instance)
-        else:
-            unloaded.append(child)
-
-    components = [c() for c in unloaded] + (components or []) + loaded
 
     if include:
         routes = [include]
@@ -94,7 +78,7 @@ def application(template_dir=None,
         schema_url=schema_url,
         docs_url=docs_url,
         static_url=static_url,
-        components=components,
+        components=find_children(),
         event_hooks=[AccessLogHook(), ErrorHook()] + event_hooks or [])
 
     app.debug = debug

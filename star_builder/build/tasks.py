@@ -1,10 +1,9 @@
 import re
-import glob
 import string
 
-from os import makedirs, sep
 from abc import ABC, abstractmethod
 from importlib import import_module
+from os import makedirs, sep, listdir
 from star_builder.types import validators
 from os.path import join, exists, abspath, dirname, isdir, basename
 
@@ -45,7 +44,8 @@ class Task(ABC):
         if dest_path is None:
             dest_path = self.kwargs["dirname"]
         copy_path = join(self.template, task)
-        for file in glob.glob(join(copy_path, "*")):
+        for file in listdir(copy_path):
+            file = join(copy_path, file)
             if file.count("__pycache__"):
                 continue
             if isdir(file):

@@ -1,8 +1,9 @@
+import sys
 import typing
+import logging
 import traceback
 
-from apistar import App
-from apistar.http import JSONResponse
+from apistar import App, http
 
 
 class ErrorHook(object):
@@ -11,7 +12,7 @@ class ErrorHook(object):
     """
     errors = {999: "Unknown error"}
 
-    def on_error(self, error: Exception, app:App) -> JSONResponse:
+    def on_error(self, error: Exception, app:App) -> http.Response:
         """
         Handle error
         """
@@ -40,10 +41,53 @@ class ErrorHook(object):
         if app.debug:
             payload["detail"] = "".join(traceback.format_exc())
         traceback.print_exc()
-        return JSONResponse(payload)
+        return http.JSONResponse(payload)
 
     @classmethod
     def register(cls,
                  errors: typing.Union[typing.List[typing.Tuple[int, str]],
                                       typing.Mapping[int, str]]):
         cls.errors.update(errors)
+
+
+class AccessLogHook(object):
+    fmt = '{host} - - [{asctime}] {method} {path} {protocol}' \
+          ' {status} {content_length} {agent}'
+
+    def __init__(self):
+        self.logger = logging.getLogger("access")
+        self.logger.propagate = False
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(10)
+        handler.setFormatter(logging.Formatter(self.fmt, style="{"))
+        self.logger.addHandler(handler)
+
+    def on_response(self,
+                    host: http.Host,
+                    path: http.Path,
+                    protocol: http.Scheme,
+                    method: http.Method,
+                    resp: http.Response,
+                    user_agent: http.Header):
+        self.log(host, path, protocol, method, resp.status_code,
+                 resp.headers["Content-Length"], user_agent)
+
+    def on_error(self,
+                 host: http.Host,
+                 path: http.Path,
+                 protocol: http.Scheme,
+                 method: http.Method,
+                 resp: http.Response,
+                 user_agent: http.Header) -> http.Response:
+        self.log(host, path, protocol, method, resp.status_code,
+                 resp.headers["Content-Length"], user_agent)
+        return resp
+
+    def log(self, host, path, protocol, method, status, content_length, agent):
+        self.logger.info("", extra={"host": host,
+                                    "path": path,
+                                    "protocol": protocol,
+                                    "method": method,
+                                    "status": status,
+                                    "content_length": content_length,
+                                    "agent": agent})

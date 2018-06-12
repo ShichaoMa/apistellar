@@ -10,6 +10,18 @@ from argparse import Action, _SubParsersAction
 from apistar import Include
 
 
+def bug_fix():
+    from uvicorn.protocols.http import RequestResponseCycle
+
+    async def receive(self):
+        message = await self.receive_queue.get()
+        self.protocol.buffer_size -= len(message.get('body', b''))
+        if self.protocol.buffer_size <= 0 and message.get("more_body"):
+            self.protocol.check_resume_reading()
+        return message
+    RequestResponseCycle.receive = receive
+
+
 def print_routing(routes, callback=print, parent=""):
     for route in routes:
         if isinstance(route, Include):

@@ -4,10 +4,13 @@ from apistar import ASyncApp, App, exceptions
 from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 
-from .bases.hooks import ErrorHook
 from .bases.service import Service
+from .bases.hooks import ErrorHook, AccessLogHook
 from .bases.components import Component, SettingsComponent
-from .helper import load_packages, routing, print_routing, TypeEncoder
+from .helper import load_packages, routing, print_routing, TypeEncoder, bug_fix
+
+# 修复uvicorn bug
+bug_fix()
 
 __all__ = ["Application"]
 
@@ -92,7 +95,7 @@ def application(template_dir=None,
         docs_url=docs_url,
         static_url=static_url,
         components=components,
-        event_hooks=[ErrorHook()] + event_hooks or [])
+        event_hooks=[AccessLogHook(), ErrorHook()] + event_hooks or [])
 
     app.debug = debug
     return app

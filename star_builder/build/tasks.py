@@ -57,8 +57,8 @@ class Task(ABC):
                 file = self.render_path_name(file)
                 filename = join(dest_path, basename(file)).replace(".tmpl", "")
                 if exists(filename) and \
-                        input(f"{filename}已存在，是否继续y/n?") not in ["y", "yes"]:
-                    exit(0)
+                        input(f"{filename}已存在，是否覆盖y/n?") not in ["y", "yes"]:
+                    continue
                 with open(filename, "w") as f:
                     f.write(template.render(**self.kwargs))
                     f.write("\n")

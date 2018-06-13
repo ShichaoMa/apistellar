@@ -11,7 +11,7 @@ from .service import Service
 
 class Component(_Component, metaclass=Singleton):
 
-    def resolve(self, *args, **kwargs):
+    def resolve(self, *args, **kwargs) -> object:
         raise NotImplementedError()
 
     def can_handle_parameter(self, parameter: inspect.Parameter):

@@ -22,10 +22,11 @@ def bug_fix():
     RequestResponseCycle.receive = receive
 
 
-def find_children(cls=Component):
+def find_children(cls=Component, initialize=True):
     """
-    获取所有(component)的子类的实例。
+    获取所有(component)的子类或其实例。
     :param cls: 父类
+    :param initialize: 是否生成实例
     :return:
     """
     def _load(cs):
@@ -37,12 +38,12 @@ def find_children(cls=Component):
 
     loaded, unloaded = [], []
     for child in _load(cls.__subclasses__()):
-        if getattr(child, "_instance", None):
+        if initialize and getattr(child, "_instance", None):
             loaded.append(child._instance)
         else:
             unloaded.append(child)
 
-    return [c() for c in unloaded] + loaded
+    return [c() for c in unloaded] + loaded if initialize else unloaded
 
 
 def print_routing(routes, callback=print, parent=""):

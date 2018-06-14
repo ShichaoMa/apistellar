@@ -3,12 +3,12 @@ import string
 
 from abc import ABC, abstractmethod
 from importlib import import_module
-from os import makedirs, sep, listdir
+from os import makedirs, sep, listdir, getcwd
 from star_builder.types import validators
 from os.path import join, exists, abspath, dirname, isdir, basename
 
 
-__all__ = ["Task", "Project", "Service", "Model"]
+__all__ = ["Task", "Project", "Service", "Model", "Solo"]
 
 
 class Task(ABC):
@@ -49,13 +49,13 @@ class Task(ABC):
             if file.count("__pycache__"):
                 continue
             if isdir(file):
-                dir_name = join(dest_path, self.render_path_name(file))
+                dir_name = abspath(join(dest_path, self.render_path_name(file)))
                 makedirs(dir_name, exist_ok=True)
                 self.copytree(env, file, dir_name)
             else:
                 template = env.get_template(file.replace(self.template, ""))
                 file = self.render_path_name(file)
-                filename = join(dest_path, basename(file)).replace(".tmpl", "")
+                filename = abspath(join(dest_path, file).replace(".tmpl", ""))
                 if exists(filename) and \
                         input(f"{filename}已存在，是否覆盖y/n?") not in ["y", "yes"]:
                     continue
@@ -132,8 +132,8 @@ class Model(ModuleTask):
         """用来兼容接口"""
         return [val]
 
-    def enrich_kwargs(self, name):
-        super().enrich_kwargs(name)
+    def enrich_kwargs(self, words):
+        super().enrich_kwargs(words)
         fields = [f.split(":", 1) for f in self.kwargs.get("fields", [])]
         types = dict()
 
@@ -156,3 +156,18 @@ class Model(ModuleTask):
         sub_parser.add_argument(
             "-p", "--path", help="所属服务路径 eg: article/comment")
         sub_parser.add_argument("fields", nargs="*", help="字段 eg: id:integer")
+
+
+class Solo(ModuleTask):
+    """
+    独立任务程序
+    """
+    def enrich_kwargs(self, words):
+        super().enrich_kwargs(words)
+        project_name = basename(abspath(getcwd()))
+        self.kwargs["dirname"] = join(project_name, self.kwargs["dirname"])
+        self.kwargs["back_trace"] = ".." + sep + ".." + sep
+
+    @classmethod
+    def enrich_parser(cls, sub_parser):
+        sub_parser.add_argument("name", nargs="+", help="独立任务程序名称")

@@ -9,9 +9,12 @@ from .bases.components import Component
 from .bases.repository import Repository
 from .bases.response import FileResponse
 
+from .solo import Solo
+from .solo.manager import SoloManager
+
 from .types import Type, TypeEncoder, validators
 
 from .route import route, get, post, delete, put, options
 
 
-__version__ = "0.4.8"
+__version__ = "0.5.0"

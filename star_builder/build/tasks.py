@@ -165,6 +165,7 @@ class Solo(ModuleTask):
     def enrich_kwargs(self, words):
         super().enrich_kwargs(words)
         project_name = basename(abspath(getcwd()))
+        self.kwargs["project_name"] = project_name
         self.kwargs["dirname"] = join(project_name, self.kwargs["dirname"])
         self.kwargs["back_trace"] = ".." + sep + ".." + sep
 

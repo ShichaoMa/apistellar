@@ -7,7 +7,9 @@ import email
 from collections.abc import Mapping
 from argparse import Action, _SubParsersAction
 
-from apistar import Include, Component
+from apistar import Include
+
+from .bases.components import Component
 
 
 def bug_fix():

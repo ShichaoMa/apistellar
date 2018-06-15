@@ -3,12 +3,6 @@ from star_builder import Solo
 
 class {{class_name}}(Solo):
 
-    def __init__(self, initial, scope, **kwargs):
-        """
-        kwargs中有其余的命令行参数
-        """
-        super().__init__(initial, scope)
-
     async def setup(self):
         """
         初始化
@@ -30,7 +24,8 @@ class {{class_name}}(Solo):
     @classmethod
     def enrich_parser(cls, sub_parser):
         """
-        自定义命令行参数
+        自定义命令行参数，若定义了，则可通过__init__获取
+        注意在__init__中使用kwargs来保留其它参数
         :param sub_parser:
         :return:
         """

@@ -1,17 +1,41 @@
 import os
 import sys
-import json
 import uvloop
 import signal
 import asyncio
 import logging
 
-from argparse import ArgumentParser
 from toolkit import cache_property
+from argparse import ArgumentParser
+
+from apistar import Route
+from apistar.http import PathParams, Response
+from apistar.server.injector import ASyncInjector
+from apistar.server.asgi import ASGI_COMPONENTS, \
+    ASGIReceive, ASGIScope, ASGISend
 
 from . import Solo
 from ..bases.components import SettingsComponent
 from ..helper import find_children, ArgparseHelper, load_packages
+
+
+class MySelf(object):
+    def __getattr__(self, item):
+        return self
+
+    def __getitem__(self, item):
+        return self
+
+    def __call__(self, *args, **kwargs):
+        return self
+
+    def __bool__(self):
+        return False
+
+    def __str__(self):
+        return ""
+
+    __repr__ = __str__
 
 
 class SoloManager(object):
@@ -26,6 +50,27 @@ class SoloManager(object):
                       for solo in find_children(Solo, False)}
         self.args = self.parse_args()
         SettingsComponent.register_path(self.args.settings)
+        initial_components = {
+            'scope': ASGIScope,
+            'receive': ASGIReceive,
+            'send': ASGISend,
+            'exc': Exception,
+            'app': SoloManager,
+            'path_params': PathParams,
+            'route': Route,
+            'response': Response,
+        }
+        self.state = {
+                'scope': MySelf(),
+                'receive': MySelf(),
+                'send': MySelf(),
+                'exc': None,
+                'app': self,
+                'path_params': MySelf(),
+                'route': MySelf()
+            }
+        self.injector = ASyncInjector(
+            list(ASGI_COMPONENTS) + find_children(), initial_components)
         self.solo = self.solos[self.args.solo](**vars(self.args))
         self.task = None
 
@@ -35,10 +80,7 @@ class SoloManager(object):
         可以选择覆盖这个属性
         :return:
         """
-        logger = logging.getLogger("solo")
-        logger.setLevel(10)
-        logger.addHandler(logging.StreamHandler(sys.stdout))
-        return logger
+        return logging.getLogger("solo")
 
     def start(self):
         asyncio.get_event_loop().close()
@@ -55,8 +97,8 @@ class SoloManager(object):
                                 signal.SIGABRT, None)
 
         self.task = loop.create_task(
-            self.solo.injector.run_async(
-                [self.solo.setup, self.solo.run], dict(self.solo.scope)))
+            self.injector.run_async(
+                [self.solo.setup, self.solo.run], dict(self.state)))
         loop.create_task(self.tick(loop))
 
         self.logger.info(f'Starting worker [{os.getpid()}]')
@@ -68,10 +110,11 @@ class SoloManager(object):
             if self.task.done():
                 break
             await asyncio.sleep(1)
-        await self.solo.injector.run_async(
-            [self.solo.teardown], dict(self.solo.scope))
+        await self.injector.run_async(
+            [self.solo.teardown], dict(self.state))
         self.logger.warning(f"Stopping [{os.getpid()}]")
         loop.stop()
+        self.solo.tasks.append(self.task)
         for task in self.solo.tasks:
             try:
                 self.logger.info(task.result())
@@ -88,10 +131,6 @@ class SoloManager(object):
             description=self.__class__.__doc__, add_help=False)
         base_parser.add_argument(
             "--settings", help="配置模块路径.", default="settings")
-        base_parser.add_argument(
-            "-s", "--scope", help="配置全局注入值. eg: '{\"name\": \"tom\"}'")
-        base_parser.add_argument(
-            "-i", "--initial", help="配置初始化注入类型. eg: '{\"name\": \"str\"}'")
 
         parser = ArgumentParser(description="独立任务程序构建工具", add_help=False)
         parser.add_argument(

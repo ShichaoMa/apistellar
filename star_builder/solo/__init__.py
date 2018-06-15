@@ -1,28 +1,11 @@
-import json
-
-from toolkit import load_class
 from abc import ABC, abstractmethod
-from apistar.server.injector import ASyncInjector
-from ..helper import find_children
 
 
 class Solo(ABC):
     """
     独立任务程序子任务接口定义
     """
-    def __init__(self, initial, scope, **kwargs):
-        if initial:
-            initial = {name: __builtins__.get("int") or load_class(cls)
-                       for name, cls in json.loads(initial).items()}
-        else:
-            initial = {}
-
-        if scope:
-            self.scope = json.loads(scope)
-        else:
-            self.scope = {}
-
-        self.injector = ASyncInjector(find_children(), initial)
+    def __init__(self, **kwargs):
         self.tasks = []
 
     @abstractmethod

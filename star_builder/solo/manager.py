@@ -117,9 +117,11 @@ class SoloManager(object):
         self.solo.tasks.append(self.task)
         for task in self.solo.tasks:
             try:
-                self.logger.info(task.result())
-            except Exception as e:
-                self.logger.error(e)
+                rs = task.result()
+                if rs is not None:
+                    self.logger.info(task.result())
+            except Exception:
+                self.logger.exception(f"Error in task: {task}")
 
     def handle_exit(self, sig, frame):
         self.alive = False

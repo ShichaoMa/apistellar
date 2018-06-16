@@ -31,7 +31,6 @@ def get_real_method(obj, name):
     """
     import types
     import inspect
-    import ipdb;ipdb.set_trace()
     try:
         canary = getattr(obj, '_ipython_canary_method_should_not_exist_', None)
         if isinstance(canary, Future):

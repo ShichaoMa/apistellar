@@ -76,7 +76,7 @@ class ConsoleManager(object):
     @staticmethod
     def await(awaitable):
         loop = asyncio.get_event_loop()
-        task = loop.create_task(awaitable.__await__)
+        task = loop.create_task(awaitable.__await__())
         loop.run_until_complete(task)
         return task.result()
 

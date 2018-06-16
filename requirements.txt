@@ -1,4 +1,4 @@
-apistar
+apistar==0.5.39
 uvicorn
 toolkity
-ipython
+ipython==6.4.0

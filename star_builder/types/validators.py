@@ -1,6 +1,7 @@
 import re
 import numbers
 
+from math import isfinite
 from collections.abc import Mapping
 from apistar.exceptions import ValidationError
 
@@ -30,7 +31,8 @@ class Validator(object):
     errors = {}
     _creation_counter = 0
 
-    def __init__(self, title='', description='', default=NO_DEFAULT, allow_null=False, definitions=None, def_name=None, model=None):
+    def __init__(self, title='', description='', default=NO_DEFAULT,
+                 allow_null=False, definitions=None, def_name=None, model=None):
         definitions = {} if (definitions is None) else dict_type(definitions)
 
         assert isinstance(title, str)
@@ -51,6 +53,7 @@ class Validator(object):
         self.definitions = definitions
         self.def_name = def_name
         self.model = model
+
         # We need this global counter to determine what order fields have
         # been declared in when used with `Type`.
         self._creation_counter = Validator._creation_counter
@@ -76,12 +79,12 @@ class Validator(object):
     def has_default(self):
         return hasattr(self, 'default')
 
-    def error(self, code, value):
-        message = self.error_message(code)
-        raise ValidationError(message, value)
+    def error(self, code, **context):
+        message = self.error_message(code, **context)
+        raise ValidationError(message)
 
-    def error_message(self, code):
-        message = self.errors[code].format(**self.__dict__)
+    def error_message(self, code, **context):
+        message = self.errors[code].format(**self.__dict__, **context)
         return ErrorMessage(message, code)
 
     def get_definitions(self, definitions=None):
@@ -143,32 +146,32 @@ class String(Validator):
         if value is None and self.allow_null:
             return self.get_default()
         elif value is None:
-            self.error('null', value)
+            self.error('null')
         elif self.format in FORMATS and FORMATS[self.format].is_native_type(value):
             return value
         elif not isinstance(value, str):
-            self.error('type', value)
+            self.error('type')
 
         if self.enum is not None:
             if value not in self.enum:
                 if len(self.enum) == 1:
-                    self.error('exact', value)
-                self.error('enum', value)
+                    self.error('exact')
+                self.error('enum')
 
         if self.min_length is not None:
             if len(value) < self.min_length:
                 if self.min_length == 1:
-                    self.error('blank', value)
+                    self.error('blank')
                 else:
-                    self.error('min_length', value)
+                    self.error('min_length')
 
         if self.max_length is not None:
             if len(value) > self.max_length:
-                self.error('max_length', value)
+                self.error('max_length')
 
         if self.pattern is not None:
             if not re.search(self.pattern, value):
-                self.error('pattern', value)
+                self.error('pattern')
 
         if self.format in FORMATS:
             return FORMATS[self.format].validate(value)
@@ -185,6 +188,7 @@ class NumericType(Validator):
         'type': 'Must be a number.',
         'null': 'May not be null.',
         'integer': 'Must be an integer.',
+        'finite': 'Must be finite.',
         'minimum': 'Must be greater than or equal to {minimum}.',
         'exclusive_minimum': 'Must be greater than {minimum}.',
         'maximum': 'Must be less than or equal to {maximum}.',
@@ -196,7 +200,7 @@ class NumericType(Validator):
     def __init__(self, minimum=None, maximum=None, exclusive_minimum=False,
                  exclusive_maximum=False, multiple_of=None, enum=None,
                  format=None, **kwargs):
-        super(NumericType, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         assert minimum is None or isinstance(minimum, (int, float))
         assert maximum is None or isinstance(maximum, (int, float))
@@ -220,48 +224,50 @@ class NumericType(Validator):
                 return self.default()
             return self.default
         elif value is None:
-            self.error('null', value)
+            self.error('null')
         elif isinstance(value, bool):
-            self.error('type', value)
+            self.error('type')
         elif self.numeric_type is int and isinstance(value, float) and not value.is_integer():
-            self.error('integer', value)
+            self.error('integer')
         elif not isinstance(value, (int, float)) and not allow_coerce:
-            self.error('type', value)
+            self.error('type')
+        elif isinstance(value, float) and not isfinite(value):
+            self.error('finite')
 
         try:
             value = self.numeric_type(value)
         except (TypeError, ValueError):
-            self.error('type', value)
+            self.error('type')
 
         if self.enum is not None:
             if value not in self.enum:
                 if len(self.enum) == 1:
-                    self.error('exact', value)
-                self.error('enum', value)
+                    self.error('exact')
+                self.error('enum')
 
         if self.minimum is not None:
             if self.exclusive_minimum:
                 if value <= self.minimum:
-                    self.error('exclusive_minimum', value)
+                    self.error('exclusive_minimum')
             else:
                 if value < self.minimum:
-                    self.error('minimum', value)
+                    self.error('minimum')
 
         if self.maximum is not None:
             if self.exclusive_maximum:
                 if value >= self.maximum:
-                    self.error('exclusive_maximum', value)
+                    self.error('exclusive_maximum')
             else:
                 if value > self.maximum:
-                    self.error('maximum', value)
+                    self.error('maximum')
 
         if self.multiple_of is not None:
             if isinstance(self.multiple_of, float):
                 if not (value * (1 / self.multiple_of)).is_integer():
-                    self.error('multiple_of', value)
+                    self.error('multiple_of')
             else:
                 if value % self.multiple_of:
-                    self.error('multiple_of', value)
+                    self.error('multiple_of')
 
         return value
 
@@ -299,12 +305,12 @@ class Boolean(Validator):
             return None
 
         elif value is None:
-            self.error('null', value)
+            self.error('null')
 
         elif not isinstance(value, bool):
             if allow_coerce and isinstance(value, str):
                 if self.allow_null:
-                    values = dict(self.values)
+                    values = dict(self.value)
                     values.update(self.null_values)
                 else:
                     values = self.values
@@ -312,7 +318,7 @@ class Boolean(Validator):
                     return values[value.lower()]
                 except KeyError:
                     pass
-            self.error('type', value)
+            self.error('type')
 
         return value
 
@@ -322,7 +328,7 @@ class Object(Validator):
         'type': 'Must be an object.',
         'null': 'May not be null.',
         'invalid_key': 'Object keys must be strings.',
-        'required': 'This field is required.',
+        'required': 'The "{field_name}" field is required.',
         'invalid_property': 'Invalid property name.',
         'empty': 'Must not be empty.',
         'max_properties': 'Must have no more than {max_properties} properties.',
@@ -333,7 +339,7 @@ class Object(Validator):
                  additional_properties=True, min_properties=None,
                  max_properties=None, required=None,
                  **kwargs):
-        super(Object, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         properties = {} if (properties is None) else dict_type(properties)
         pattern_properties = {} if (pattern_properties is None) else dict_type(pattern_properties)
@@ -360,9 +366,9 @@ class Object(Validator):
         if value is None and self.allow_null:
             return None
         elif value is None:
-            self.error('null', value)
+            self.error('null')
         elif not isinstance(value, Mapping):
-            self.error('type', value)
+            self.error('type')
 
         definitions = self.get_definitions(definitions)
         validated = dict_type()
@@ -377,17 +383,17 @@ class Object(Validator):
         if self.min_properties is not None:
             if len(value) < self.min_properties:
                 if self.min_properties == 1:
-                    self.error('empty', value)
+                    self.error('empty')
                 else:
-                    self.error('min_properties', value)
+                    self.error('min_properties')
         if self.max_properties is not None:
             if len(value) > self.max_properties:
-                self.error('max_properties', value)
+                self.error('max_properties')
 
         # Required properties
         for key in self.required:
             if key not in value:
-                errors[key] = self.error_message('required')
+                errors[key] = self.error_message('required', field_name=key)
 
         # Properties
         for key, child_schema in self.properties.items():
@@ -449,7 +455,7 @@ class Object(Validator):
                     errors[key] = exc.detail
 
         if errors:
-            raise ValidationError(errors, value)
+            raise ValidationError(errors)
 
         return validated
 
@@ -468,7 +474,7 @@ class Array(Validator):
 
     def __init__(self, items=None, additional_items=None, min_items=None,
                  max_items=None, unique_items=False, **kwargs):
-        super(Array, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         items = list(items) if isinstance(items, (list, tuple)) else items
 
@@ -491,23 +497,23 @@ class Array(Validator):
         if value is None and self.allow_null:
             return None
         elif value is None:
-            self.error('null', value)
+            self.error('null')
         elif not isinstance(value, list):
-            self.error('type', value)
+            self.error('type')
 
         definitions = self.get_definitions(definitions)
         validated = []
 
         if self.min_items is not None and self.min_items == self.max_items and len(value) != self.min_items:
-            self.error('exact_items', value)
+            self.error('exact_items')
         if self.min_items is not None and len(value) < self.min_items:
             if self.min_items == 1:
-                self.error('empty', value)
-            self.error('min_items', value)
+                self.error('empty')
+            self.error('min_items')
         elif self.max_items is not None and len(value) > self.max_items:
-            self.error('max_items', value)
+            self.error('max_items')
         elif isinstance(self.items, list) and (self.additional_items is False) and len(value) > len(self.items):
-            self.error('additional_items', value)
+            self.error('additional_items')
 
         # Ensure all items are of the right type.
         errors = {}
@@ -538,7 +544,7 @@ class Array(Validator):
 
                 if self.unique_items:
                     if item in seen_items:
-                        self.error('unique_items', value)
+                        self.error('unique_items')
                     else:
                         seen_items.add(item)
 
@@ -547,24 +553,24 @@ class Array(Validator):
                 errors[pos] = exc.detail
 
         if errors:
-            raise ValidationError(errors, value)
+            raise ValidationError(errors)
 
         return validated
 
 
 class Date(String):
     def __init__(self, **kwargs):
-        super(Date, self).__init__(format='date', **kwargs)
+        super().__init__(format='date', **kwargs)
 
 
 class Time(String):
     def __init__(self, **kwargs):
-        super(Time, self).__init__(format='time', **kwargs)
+        super().__init__(format='time', **kwargs)
 
 
 class DateTime(String):
     def __init__(self, **kwargs):
-        super(DateTime, self).__init__(format='datetime', **kwargs)
+        super().__init__(format='datetime', **kwargs)
 
 
 class Any(Validator):
@@ -580,7 +586,7 @@ class Union(Validator):
     }
 
     def __init__(self, items, **kwargs):
-        super(Union, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         assert isinstance(items, list) and all(isinstance(i, Validator) for i in items)
         self.items = list(items)
 
@@ -588,7 +594,7 @@ class Union(Validator):
         if value is None and self.allow_null:
             return None
         elif value is None:
-            self.error('null', value)
+            self.error('null')
 
         for item in self.items:
             try:
@@ -599,12 +605,12 @@ class Union(Validator):
                 )
             except ValidationError:
                 pass
-        self.error('union', value)
+        self.error('union')
 
 
 class Ref(Validator):
     def __init__(self, ref, **kwargs):
-        super(Ref, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         assert isinstance(ref, str)
         self.ref = ref
 
@@ -616,7 +622,7 @@ class Ref(Validator):
         return child_schema.validate(
             value,
             definitions=definitions,
-            allow_coerce=allow_coerce,
+            allow_coerce=allow_coerce
         )
 
 

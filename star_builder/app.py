@@ -79,7 +79,7 @@ def application(template_dir=None,
         docs_url=docs_url,
         static_url=static_url,
         components=find_children(),
-        event_hooks=[AccessLogHook(), ErrorHook()] + event_hooks or [])
+        event_hooks=[AccessLogHook(), ErrorHook()] + (event_hooks or []))
 
     app.debug = debug
     return app

@@ -11,6 +11,23 @@ from .service import Service
 
 class Component(_Component, metaclass=Singleton):
 
+    def identity(self, parameter: inspect.Parameter):
+        """
+        Each component needs a unique identifier string that we use for lookups
+        from the `state` dictionary when we run the dependency injection.
+        """
+        parameter_name = parameter.name.lower()
+        annotation_name = str(parameter.annotation)
+
+        # If `resolve_parameter` includes `Parameter` then we use an identifier
+        # that is additionally parameterized by the parameter name.
+        args = inspect.signature(self.resolve).parameters.values()
+        if inspect.Parameter in [arg.annotation for arg in args]:
+            return annotation_name + ':' + parameter_name
+
+        # Standard case is to use the class name, lowercased.
+        return annotation_name
+
     def resolve(self, *args, **kwargs) -> object:
         raise NotImplementedError()
 

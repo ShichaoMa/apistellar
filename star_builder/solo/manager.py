@@ -11,8 +11,9 @@ from argparse import ArgumentParser
 from apistar import Route
 from apistar.http import PathParams, Response
 from apistar.server.injector import ASyncInjector
-from apistar.server.asgi import ASGI_COMPONENTS, \
-    ASGIReceive, ASGIScope, ASGISend
+from apistar.server.validation import VALIDATION_COMPONENTS
+from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive, \
+    ASGIScope, ASGISend
 
 from . import Solo
 from ..bases.components import SettingsComponent
@@ -70,7 +71,8 @@ class SoloManager(object):
                 'route': MySelf()
             }
         self.injector = ASyncInjector(
-            list(ASGI_COMPONENTS) + find_children(), initial_components)
+            list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + find_children(),
+            initial_components)
         self.solo = self.solos[self.args.solo](**vars(self.args))
         self.task = None
 

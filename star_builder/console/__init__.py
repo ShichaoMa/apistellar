@@ -1,6 +1,7 @@
 import asyncio
 
 from IPython import embed
+from IPython.core import formatters
 from toolkit import cache_property
 
 from apistar import Route
@@ -12,7 +13,10 @@ from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive,\
 
 from ..solo.manager import MySelf
 from ..bases.components import SettingsComponent
-from ..helper import find_children, load_packages
+from ..helper import find_children, load_packages, get_real_method
+
+# bug fix
+formatters.get_real_method = get_real_method
 
 
 class ConsoleManager(object):

@@ -4,6 +4,7 @@ import time
 import glob
 import email
 
+from asyncio import Future
 from collections.abc import Mapping
 from argparse import Action, _SubParsersAction
 
@@ -22,6 +23,40 @@ def bug_fix():
             self.protocol.check_resume_reading()
         return message
     RequestResponseCycle.receive = receive
+
+
+def get_real_method(obj, name):
+    """
+    IPython bug fix.
+    """
+    import types
+    import inspect
+    import ipdb;ipdb.set_trace()
+    try:
+        canary = getattr(obj, '_ipython_canary_method_should_not_exist_', None)
+        if isinstance(canary, Future):
+            canary.cancel()
+    except Exception:
+        return None
+
+    if canary is not None:
+        # It claimed to have an attribute it should never have
+        return None
+
+    try:
+        m = getattr(obj, name, None)
+        if isinstance(canary, Future):
+            canary.cancel()
+    except Exception:
+        return None
+
+    if inspect.isclass(obj) and not isinstance(m, types.MethodType):
+        return None
+
+    if callable(m):
+        return m
+
+    return None
 
 
 def find_children(cls=Component, initialize=True):

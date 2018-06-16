@@ -1,3 +1,5 @@
+import os
+import sys
 import asyncio
 
 from IPython import embed
@@ -22,6 +24,7 @@ formatters.get_real_method = get_real_method
 class ConsoleManager(object):
 
     def __init__(self):
+        sys.path.insert(0, os.getcwd())
         load_packages(".")
         SettingsComponent.register_path("settings")
         initial_components = {
@@ -73,7 +76,7 @@ class ConsoleManager(object):
     @staticmethod
     def await(awaitable):
         loop = asyncio.get_event_loop()
-        task = loop.create_task(awaitable)
+        task = loop.create_task(awaitable.__await__)
         loop.run_until_complete(task)
         return task.result()
 

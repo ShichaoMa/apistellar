@@ -25,6 +25,8 @@ class MySelf(object):
         return self
 
     def __getitem__(self, item):
+        if item == 'type':
+            return "http.request"
         return self
 
     def __call__(self, *args, **kwargs):
@@ -35,6 +37,18 @@ class MySelf(object):
 
     def __str__(self):
         return ""
+
+    def __radd__(self, obj):
+        return obj + type(obj)(self)
+
+    def __iter__(self):
+        return iter([])
+
+    def __await__(self):
+        loop = asyncio.get_event_loop()
+        future = loop.create_future()
+        future.set_result(self)
+        return future.__await__()
 
     __repr__ = __str__
 

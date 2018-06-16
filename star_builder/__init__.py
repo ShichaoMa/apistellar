@@ -12,9 +12,11 @@ from .bases.response import FileResponse
 from .solo import Solo
 from .solo.manager import SoloManager
 
+from .console import main as console
+
 from .types import Type, TypeEncoder, validators
 
 from .route import route, get, post, delete, put, options
 
 
-__version__ = "0.5.4"
+__version__ = "0.5.6"

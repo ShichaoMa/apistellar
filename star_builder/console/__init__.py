@@ -76,3 +76,7 @@ class ConsoleManager(object):
     def start(self):
         await = self.await
         embed()
+
+
+def main():
+    ConsoleManager().start()

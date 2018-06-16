@@ -53,6 +53,7 @@ setup(
     entry_points={
         'console_scripts': [
             'apistar-create = star_builder:main',
+            'apistar-console = star_builder:console'
         ],
     },
     license="MIT",

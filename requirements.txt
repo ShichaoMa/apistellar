@@ -1,3 +1,4 @@
 apistar
 uvicorn
 toolkity
+ipython

@@ -1,4 +1,4 @@
-from star_builder import Component
+from .components import Component
 from toolkit.singleton import Singleton
 
 

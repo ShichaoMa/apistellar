@@ -4,6 +4,22 @@ import logging
 import traceback
 
 from apistar import App, http
+from flask.sessions import SecureCookieSessionInterface
+
+from .components import DummyFlaskApp
+from .session import Session
+
+
+class SessionHook(object):
+
+    def __init__(self):
+        self.session_interface = SecureCookieSessionInterface()
+
+    def on_response(self,
+                    app: DummyFlaskApp,
+                    resp: http.Response,
+                    session: Session):
+        self.session_interface.save_session(app, session, resp)
 
 
 class ErrorHook(object):
@@ -28,6 +44,10 @@ class ErrorHook(object):
             code, message = error.args[0][:2]
 
         code = int(code)
+        # apistar不支持在on_request时打断后续执行直接返回response
+        # 所以在只能通过raise异常来通过异常参数传递响应。
+        if isinstance(message, http.Response):
+            return message
 
         if message is None:
             message = self.errors.get(code, "Not configured error")

@@ -58,11 +58,18 @@ class ConsoleManager(object):
 
     def __getattr__(self, item):
         assert item in self.beans, f"{item} cannot inject!"
-        return self.await(self.resolve(self.beans[item]))
+        beans = self.beans[item]
+        if len(beans) == 1:
+            bean, _ = beans[0]
+        else:
+            i = input("Same bean name: {}: ".format(
+                ", ".join(f"({index+1}) of {module}" for index, (_, module)
+                                                in enumerate(beans))))
+            bean = beans[int(i) - 1][0]
+        return self.await(self.resolve(bean))
 
     def __getitem__(self, item):
-        assert item in self.beans, f"{item} cannot inject!"
-        return self.await(self.resolve(self.beans[item]))
+        return self.__getattr__(item)
 
     @cache_property
     def beans(self):
@@ -70,7 +77,7 @@ class ConsoleManager(object):
         beans = dict()
         for component in components:
             type = component.resolve.__annotations__["return"]
-            beans[type.__name__] = type
+            beans.setdefault(type.__name__, []).append((type, type.__module__))
         return beans
 
     @staticmethod

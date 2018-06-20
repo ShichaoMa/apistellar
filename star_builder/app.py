@@ -5,10 +5,10 @@ from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 
 from .bases.service import Service
-from .bases.hooks import ErrorHook, AccessLogHook
-from .bases.components import Component, SettingsComponent
+from .bases.hooks import ErrorHook, AccessLogHook, SessionHook
+from .bases.components import SettingsComponent
 from .helper import load_packages, routing, print_routing, TypeEncoder, \
-    bug_fix, find_children
+    bug_fix, find_children, enhance_response
 
 # 修复uvicorn bug
 bug_fix()
@@ -16,6 +16,7 @@ bug_fix()
 __all__ = ["Application"]
 
 logger = logging.getLogger("star_builder.app")
+enhance_response(Response)
 JSONResponse.options["default"] = TypeEncoder().default
 
 
@@ -69,7 +70,7 @@ def application(template_dir=None,
     else:
         logger.info("Noting to route. ")
         routes = []
-
+    hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + (event_hooks or [])
     app = (FixedAsyncApp if async else FixedApp)(
         routes,
         template_dir=template_dir,
@@ -79,7 +80,7 @@ def application(template_dir=None,
         docs_url=docs_url,
         static_url=static_url,
         components=find_children(),
-        event_hooks=[AccessLogHook(), ErrorHook()] + (event_hooks or []))
+        event_hooks=hooks)
 
     app.debug = debug
     return app

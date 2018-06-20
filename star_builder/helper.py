@@ -9,6 +9,9 @@ from collections.abc import Mapping
 from argparse import Action, _SubParsersAction
 
 from apistar import Include
+from werkzeug._compat import string_types
+from werkzeug.http import dump_cookie, dump_header, parse_set_header
+from werkzeug.wrappers import CommonResponseDescriptorsMixin
 
 from .bases.components import Component
 
@@ -56,6 +59,94 @@ def get_real_method(obj, name):
         return m
 
     return None
+
+
+def enhance_response(resp):
+
+    def set_cookie(self, key, value='', max_age=None, expires=None,
+                   path='/', domain=None, secure=False, httponly=False,
+                   samesite=None):
+        """Sets a cookie. The parameters are the same as in the cookie `Morsel`
+        object in the Python standard library but it accepts unicode data, too.
+
+        A warning is raised if the size of the cookie header exceeds
+        :attr:`max_cookie_size`, but the header will still be set.
+
+        :param key: the key (name) of the cookie to be set.
+        :param value: the value of the cookie.
+        :param max_age: should be a number of seconds, or `None` (default) if
+                        the cookie should last only as long as the client's
+                        browser session.
+        :param expires: should be a `datetime` object or UNIX timestamp.
+        :param path: limits the cookie to a given path, per default it will
+                     span the whole domain.
+        :param domain: if you want to set a cross-domain cookie.  For example,
+                       ``domain=".example.com"`` will set a cookie that is
+                       readable by the domain ``www.example.com``,
+                       ``foo.example.com`` etc.  Otherwise, a cookie will only
+                       be readable by the domain that set it.
+        :param secure: If `True`, the cookie will only be available via HTTPS
+        :param httponly: disallow JavaScript to access the cookie.  This is an
+                         extension to the cookie standard and probably not
+                         supported by all browsers.
+        :param samesite: Limits the scope of the cookie such that it will only
+                         be attached to requests if those requests are
+                         "same-site".
+        """
+        self.headers['Set-Cookie'] = dump_cookie(
+            key,
+            value=value,
+            max_age=max_age,
+            expires=expires,
+            path=path,
+            domain=domain,
+            secure=secure,
+            httponly=httponly,
+            charset=self.charset,
+            max_size=self.max_cookie_size,
+            samesite=samesite
+        )
+
+    def delete_cookie(self, key, path='/', domain=None):
+        """Delete a cookie.  Fails silently if key doesn't exist.
+
+        :param key: the key (name) of the cookie to be deleted.
+        :param path: if the cookie that should be deleted was limited to a
+                     path, the path has to be defined here.
+        :param domain: if the cookie that should be deleted was limited to a
+                       domain, that domain has to be defined here.
+        """
+        self.set_cookie(key, expires=0, max_age=0, path=path, domain=domain)
+
+    setattr(resp, "set_cookie", set_cookie)
+    setattr(resp, "delete_cookie", delete_cookie)
+
+    def _set_property(name, doc=None):
+        def fget(self):
+            def on_update(header_set):
+                if not header_set and name in self.headers:
+                    del self.headers[name]
+                elif header_set:
+                    self.headers[name] = header_set.to_header()
+
+            return parse_set_header(self.headers.get(name), on_update)
+
+        def fset(self, value):
+            if not value:
+                del self.headers[name]
+            elif isinstance(value, string_types):
+                self.headers[name] = value
+            else:
+                self.headers[name] = dump_header(value)
+
+        return property(fget, fset, doc=doc)
+
+    setattr(resp, "vary", _set_property(
+        "vary", doc='''
+         The Vary field value indicates the set of request-header fields that
+         fully determines, while the response is fresh, whether a cache is
+         permitted to use the response to reply to a subsequent request
+         without revalidation.'''))
 
 
 def find_children(cls=Component, initialize=True):
@@ -234,3 +325,11 @@ class TypeEncoder(json.JSONEncoder):
             if isinstance(obj, key):
                 return val(obj)
         return json.JSONEncoder.default(self, obj)
+
+
+class HookReturn(Exception):
+    pass
+
+
+def Return(resp):
+    raise HookReturn(resp)

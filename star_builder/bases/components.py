@@ -1,10 +1,13 @@
 import typing
 import inspect
 
+from inspect import Parameter
+from datetime import timedelta
+from collections import namedtuple
 from toolkit.singleton import Singleton
 from toolkit.frozen import FrozenSettings
 from toolkit.settings import SettingsLoader
-from apistar import Route, exceptions, Component as _Component
+from apistar import Route, exceptions, http, Component as _Component
 
 from .service import Service
 
@@ -68,3 +71,52 @@ class SettingsComponent(Component):
     @classmethod
     def register_path(cls, settings_path):
         cls.settings_path = settings_path
+
+
+Cookie = typing.NewType('Cookie', str)
+
+
+class CookiesComponent(Component):
+    def resolve(self, cookie: http.Header) -> typing.Dict[str, Cookie]:
+        cookies = dict()
+        if cookie:
+            for c in cookie.split(";"):
+                key, val = c.strip().split("=", 1)
+                cookies[key] = Cookie(val)
+        return cookies
+
+
+class CookieComponent(Component):
+
+    def resolve(self,
+                parameter: Parameter,
+                cookies: typing.Dict[str, Cookie]) -> Cookie:
+        return cookies.get(parameter.name.replace('_', '-'))
+
+
+DummyFlaskApp = namedtuple(
+    "DummyFlaskApp",
+    "session_cookie_name,secret_key,permanent_session_lifetime, config")
+
+
+class DummyFlaskAppComponent(Component):
+
+    def __init__(self):
+        self.default_config = {
+            'SESSION_COOKIE_NAME': 'session',
+            'SESSION_COOKIE_DOMAIN': None,
+            'SESSION_COOKIE_PATH': None,
+            'SESSION_COOKIE_HTTPONLY': True,
+            'SESSION_COOKIE_SECURE': False,
+            'SESSION_COOKIE_SAMESITE': None,
+            'SESSION_REFRESH_EACH_REQUEST': True,
+        }
+
+    def resolve(self, settings: FrozenSettings) -> DummyFlaskApp:
+                return DummyFlaskApp(
+                    config=settings.get("SESSION_CONFIG", self.default_config),
+                    secret_key=settings.get("SECRET_KEY"),
+                    permanent_session_lifetime=timedelta(
+                        days=settings.get("PERMANENT_SESSION_LIFETIME", 31)),
+                    session_cookie_name=settings.get(
+                        "SESSION_COOKIE_NAME", "session"))

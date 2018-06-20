@@ -125,19 +125,22 @@ class SoloManager(object):
         while self.alive:
             if self.task.done():
                 break
+            for task in self.solo.tasks[:]:
+                try:
+                    if task.done():
+                        rs = task.result()
+                        if rs is not None:
+                            self.logger.info(task.result())
+                        self.solo.tasks.remove(task)
+                except Exception as e:
+                    self.logger.error(f"Error in task: {task} error: {e}")
+                    self.solo.tasks.remove(task)
+
             await asyncio.sleep(1)
         await self.injector.run_async(
             [self.solo.teardown], dict(self.state))
         self.logger.warning(f"Stopping [{os.getpid()}]")
         loop.stop()
-        self.solo.tasks.append(self.task)
-        for task in self.solo.tasks:
-            try:
-                rs = task.result()
-                if rs is not None:
-                    self.logger.info(task.result())
-            except Exception:
-                self.logger.exception(f"Error in task: {task}")
 
     def handle_exit(self, sig, frame):
         self.alive = False

@@ -130,7 +130,7 @@ class SoloManager(object):
                     if task.done():
                         rs = task.result()
                         if rs is not None:
-                            self.logger.info(task.result())
+                            self.logger.info(rs)
                         self.solo.tasks.remove(task)
                 except Exception as e:
                     self.logger.error(f"Error in task: {task} error: {e}")

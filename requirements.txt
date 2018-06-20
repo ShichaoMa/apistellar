@@ -2,3 +2,4 @@ apistar==0.5.39
 uvicorn
 toolkity
 ipython==6.4.0
+flask==1.0.2

@@ -65,8 +65,6 @@ class TypeMetaclass(ABCMeta):
 
 class Type(Mapping, metaclass=TypeMetaclass):
 
-    driver = None
-
     def __init__(self, *args, **kwargs):
         definitions = None
         allow_coerce = False

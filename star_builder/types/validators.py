@@ -143,8 +143,10 @@ class String(Validator):
         self.format = format
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.allow_null:
+        if value is None and self.has_default():
             return self.get_default()
+        elif value is None and self.allow_null:
+            return None
         elif value is None:
             self.error('null')
         elif self.format in FORMATS and FORMATS[self.format].is_native_type(value):
@@ -219,10 +221,10 @@ class NumericType(Validator):
         self.format = format
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.allow_null:
-            if callable(self.default):
-                return self.default()
-            return self.default
+        if value is None and self.has_default():
+            return self.get_default()
+        elif value is None and self.allow_null:
+            return None
         elif value is None:
             self.error('null')
         elif isinstance(value, bool):
@@ -301,9 +303,10 @@ class Boolean(Validator):
     }
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.allow_null:
+        if value is None and self.has_default():
+            return self.get_default()
+        elif value is None and self.allow_null:
             return None
-
         elif value is None:
             self.error('null')
 
@@ -363,7 +366,9 @@ class Object(Validator):
         self.required = required
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.allow_null:
+        if value is None and self.has_default():
+            return self.get_default()
+        elif value is None and self.allow_null:
             return None
         elif value is None:
             self.error('null')
@@ -494,7 +499,9 @@ class Array(Validator):
         self.unique_items = unique_items
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.allow_null:
+        if value is None and self.has_default():
+            return self.get_default()
+        elif value is None and self.allow_null:
             return None
         elif value is None:
             self.error('null')

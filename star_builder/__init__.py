@@ -20,4 +20,4 @@ from .types import Type, TypeEncoder, validators
 from .route import route, get, post, delete, put, options
 
 
-__version__ = "0.6.5"
+__version__ = "0.6.6"

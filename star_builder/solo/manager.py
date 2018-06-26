@@ -4,6 +4,7 @@ import uvloop
 import signal
 import asyncio
 import logging
+import traceback
 
 from toolkit import cache_property
 from argparse import ArgumentParser
@@ -137,6 +138,15 @@ class SoloManager(object):
                     self.solo.tasks.remove(task)
 
             await asyncio.sleep(1)
+        try:
+            if self.task.done():
+                rs = self.task.result()
+                if rs is not None:
+                    self.logger.info(rs)
+        except Exception as e:
+            self.logger.error(
+                f"Error in main coroutine, error: {traceback.format_exc()}")
+
         await self.injector.run_async(
             [self.solo.teardown], dict(self.state))
         self.logger.warning(f"Stopping [{os.getpid()}]")

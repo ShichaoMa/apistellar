@@ -47,10 +47,14 @@ class TypeMetaclass(ABCMeta):
         ]
         attrs['_creation_counter'] = validators.Validator._creation_counter
         validators.Validator._creation_counter += 1
-
         cls = super(TypeMetaclass, mcs).__new__(mcs, name, bases, attrs)
 
-        default = cls.has_default() or validators.NO_DEFAULT
+        if cls.has_default():
+            default = cls.validate({})
+            cls.default = default
+        else:
+            default = validators.NO_DEFAULT
+
         cls.validator = validators.Object(
             def_name=name,
             properties=properties,
@@ -120,19 +124,14 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
     @classmethod
     def has_default(cls):
-        """
-        或者直接返回default值
-        :return:
-        """
         return False
 
     @classmethod
     def get_default(cls):
-        default = cls.has_default()
-        assert default, (778, f"{cls} haven't got a value/default value!")
-        if callable(default):
-            return default()
-        return default
+        assert cls.has_default(), (778, f"{cls} haven't got a value/default value!")
+        if callable(cls.validator.default):
+            return cls.validator.default()
+        return cls.validator.default
 
     def __repr__(self):
         if self.formatted:

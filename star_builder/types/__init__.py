@@ -124,6 +124,10 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
     @classmethod
     def has_default(cls):
+        """
+        返回True会default=cls空对象
+        :return:
+        """
         return False
 
     @classmethod

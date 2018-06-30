@@ -198,8 +198,10 @@ class Type(Mapping, metaclass=TypeMetaclass):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def to_json(self):
+    def to_dict(self):
         return json.loads(json.dumps(self, cls=TypeEncoder))
+
+    to_json = to_dict
 
 
 class AsyncType(Type):

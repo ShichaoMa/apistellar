@@ -34,7 +34,7 @@ def wrapper_method(method_name):
             # 重新声明的变量不能是url, 下同，否则声明提前会覆盖闭包的变量
             u = url or "/" + handler.__name__
             routes = getattr(handler, "routes", [])
-            n = name or handler.__name__ + (f"_{len(routes)}" if routes else "")
+            n = name or handler.__name__# + (f"_{len(routes)}" if routes else "")
             route = Route(
                 u, method_name.upper(), handler, n, documented, standalone)
             handler.__dict__.setdefault("routes", []).append(route)

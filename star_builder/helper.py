@@ -18,15 +18,16 @@ from .bases.components import Component
 
 
 def bug_fix():
-    from uvicorn.protocols.http import RequestResponseCycle
+    # from uvicorn.protocols.http import RequestResponseCycle
 
-    async def receive(self):
-        message = await self.receive_queue.get()
-        self.protocol.buffer_size -= len(message.get('body', b''))
-        if self.protocol.buffer_size <= 0 and message.get("more_body"):
-            self.protocol.check_resume_reading()
-        return message
-    RequestResponseCycle.receive = receive
+    # async def receive(self):
+    #     message = await self.receive_queue.get()
+    #     self.protocol.buffer_size -= len(message.get('body', b''))
+    #     if self.protocol.buffer_size <= 0 and message.get("more_body"):
+    #         self.protocol.check_resume_reading()
+    #     return message
+    # RequestResponseCycle.receive = receive
+    pass
 
 
 def get_real_method(obj, name):
@@ -121,6 +122,7 @@ def enhance_response(resp):
 
     setattr(resp, "set_cookie", set_cookie)
     setattr(resp, "delete_cookie", delete_cookie)
+    setattr(resp, "max_cookie_size", 4093)
 
     def _set_property(name, doc=None):
         def fget(self):
@@ -181,7 +183,7 @@ def print_routing(routes, callback=print, parent=""):
         else:
             callback(
                 f"Route method: {route.method}, "
-                f"url: {parent + route.url} to {route.name}.")
+                f"url: {parent.rstrip('/') + route.url} to {route.name}.")
 
 
 def load_packages(current_path):
@@ -212,7 +214,7 @@ def routing(service, parent_prefix):
     :param parent_prefix:
     :return:
     """
-    if not hasattr(service, "prefix") or service.prefix == parent_prefix:
+    if not hasattr(service, "prefix"):# or service.prefix == parent_prefix:
         raise RuntimeError(f"{service} is not routed! ")
     routes = []
     instance = service()

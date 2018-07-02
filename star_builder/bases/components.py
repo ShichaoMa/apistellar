@@ -105,14 +105,16 @@ class DummyFlaskAppComponent(Component):
         self.default_config = {
             'SESSION_COOKIE_NAME': 'session',
             'SESSION_COOKIE_DOMAIN': None,
-            'SESSION_COOKIE_PATH': None,
+            'SESSION_COOKIE_PATH': '/',
             'SESSION_COOKIE_HTTPONLY': True,
             'SESSION_COOKIE_SECURE': False,
             'SESSION_COOKIE_SAMESITE': None,
             'SESSION_REFRESH_EACH_REQUEST': True,
+            'SERVER_NAME': None,
         }
 
-    def resolve(self, settings: FrozenSettings) -> DummyFlaskApp:
+    def resolve(self, settings: FrozenSettings, host: http.Host) -> DummyFlaskApp:
+                self.default_config["SERVER_NAME"] = host
                 return DummyFlaskApp(
                     config=settings.get("SESSION_CONFIG", self.default_config),
                     secret_key=settings.get("SECRET_KEY"),

@@ -1,5 +1,5 @@
 apistar==0.5.39
-uvicorn
+uvicorn==0.2.2
 toolkity
 ipython==6.4.0
 flask==1.0.2

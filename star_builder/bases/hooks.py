@@ -19,7 +19,8 @@ class SessionHook(object):
                     app: DummyFlaskApp,
                     resp: http.Response,
                     session: Session):
-        self.session_interface.save_session(app, session, resp)
+        if session is not None:
+            self.session_interface.save_session(app, session, resp)
 
 
 class ErrorHook(object):

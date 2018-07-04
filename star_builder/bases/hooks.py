@@ -35,14 +35,15 @@ class ErrorHook(object):
         """
         code = 999
         message = None
-        if not isinstance(error.args[0], (tuple, list)) \
-                or len(error.args[0]) < 2:
-            if isinstance(error.args[0], int):
-                code = error.args[0]
+        if error.args:
+            if not isinstance(error.args[0], (tuple, list)) \
+                    or len(error.args[0]) < 2:
+                if isinstance(error.args[0], int):
+                    code = error.args[0]
+                else:
+                    message = error.args[0]
             else:
-                message = error.args[0]
-        else:
-            code, message = error.args[0][:2]
+                code, message = error.args[0][:2]
 
         code = int(code)
         # apistar不支持在on_request时打断后续执行直接返回response

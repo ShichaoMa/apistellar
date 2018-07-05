@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from apistar import ASyncApp, App, exceptions
 from apistar.http import Response, JSONResponse
@@ -24,7 +25,15 @@ class FixedAsyncApp(ASyncApp):
 
     def exception_handler(self, exc: Exception) -> Response:
         if isinstance(exc, exceptions.HTTPException):
-            return JSONResponse(exc.detail, exc.status_code, exc.get_headers())
+            payload = {
+                "type": "http",
+                "code": exc.status_code,
+                "errcode": exc.status_code,
+                "message": exc.detail,
+            }
+            if self.debug:
+                payload["detail"] = "".join(traceback.format_exc())
+            return JSONResponse(payload, exc.status_code, exc.get_headers())
         raise exc
 
     def error_handler(self, return_value: ReturnValue) -> Response:
@@ -37,7 +46,15 @@ class FixedApp(App):
 
     def exception_handler(self, exc: Exception) -> Response:
         if isinstance(exc, exceptions.HTTPException):
-            return JSONResponse(exc.detail, exc.status_code, exc.get_headers())
+            payload = {
+                "type": "http",
+                "code": exc.status_code,
+                "errcode": exc.status_code,
+                "message": exc.detail,
+            }
+            if self.debug:
+                payload["detail"] = "".join(traceback.format_exc())
+            return JSONResponse(payload, exc.status_code, exc.get_headers())
         raise exc
 
     def error_handler(self, return_value: ReturnValue) -> Response:

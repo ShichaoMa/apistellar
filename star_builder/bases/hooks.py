@@ -29,7 +29,7 @@ class ErrorHook(object):
     """
     errors = {999: "Unknown error"}
 
-    def on_error(self, error: Exception, app:App) -> http.Response:
+    def on_error(self, error: Exception, app: App) -> http.Response:
         """
         Handle error
         """
@@ -55,8 +55,8 @@ class ErrorHook(object):
             message = self.errors.get(code, "Not configured error")
 
         payload = {
+            "type": "normal",
             "code": code,
-            "value": None,
             "errcode": code,
             "message": message,
         }

@@ -25,7 +25,7 @@ class {{class_name}}(Solo):
     def enrich_parser(cls, sub_parser):
         """
         自定义命令行参数，若定义了，则可通过__init__获取
-        注意在__init__中使用kwargs来保留其它参数
+        注意在__init__中使用kwargs来保留其它参数，并调用父类的__init__
         :param sub_parser:
         :return:
         """

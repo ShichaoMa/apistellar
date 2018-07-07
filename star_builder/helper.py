@@ -5,6 +5,7 @@ import glob
 import email
 
 from asyncio import Future
+from functools import reduce
 from collections.abc import Mapping
 from argparse import Action, _SubParsersAction
 
@@ -15,19 +16,6 @@ from werkzeug.utils import escape, text_type
 
 
 from .bases.components import Component
-
-
-def bug_fix():
-    # from uvicorn.protocols.http import RequestResponseCycle
-
-    # async def receive(self):
-    #     message = await self.receive_queue.get()
-    #     self.protocol.buffer_size -= len(message.get('body', b''))
-    #     if self.protocol.buffer_size <= 0 and message.get("more_body"):
-    #         self.protocol.check_resume_reading()
-    #     return message
-    # RequestResponseCycle.receive = receive
-    pass
 
 
 def get_real_method(obj, name):
@@ -176,21 +164,38 @@ def find_children(cls=Component, initialize=True):
     return [c() for c in unloaded] + loaded if initialize else unloaded
 
 
-def print_routing(routes, callback=print, parent=""):
+def logging_format(method, parttern, name, ca_name):
+    return f"Route method: {method}, url: {parttern} to {name}."
+
+
+def print_routing(routes, write=print, format=logging_format):
+    for route, parents in walk_route(routes):
+        name = reduce(lambda x, y: f"{x}:{y.name}", parents[1:], "view")\
+               + ":" + route.name
+        cont = route.controller.__class__
+        ca_name = f"{cont.__module__}:{cont.__name__}#{route.handler.__name__}"
+        pattern = reduce(
+            lambda x, y: x.rstrip('/') + y.url, parents, "").rstrip("/")\
+                  + route.url
+        write(format(route.method, pattern, name, ca_name))
+
+
+def walk_route(routes, parents=None):
+    if parents is None:
+        parents = []
     for route in routes:
         if isinstance(route, Include):
-            print_routing(route.routes, callback ,parent + route.url)
+            parents.append(route)
+            yield from walk_route(route.routes, parents[:])
         else:
-            callback(
-                f"Route method: {route.method}, "
-                f"url: {parent.rstrip('/') + route.url} to {route.name}.")
+            yield route, parents
 
 
 def load_packages(current_path):
     """
-    加载当前路径下的所有package，使得其中的Service子类得以激活
+    加载当前路径下的所有package，使得其中的Vontroller子类得以激活
     加载一个包时，如果包下面有子包，只需要导入子包，父包也会一起
-    被加载。项目约定service子类必须定义在包中(__init__.py)。
+    被加载。项目约定Controller子类必须定义在包中(__init__.py)。
     所以只考虑加载所有包，不考虑加载其它模块。
     :param current_path:
     :return:
@@ -207,31 +212,30 @@ def load_packages(current_path):
     return find_dir
 
 
-def routing(service, parent_prefix):
+def routing(controller):
     """
-    获取当前Service下所有route及其子Service组成的Include
-    :param service:
-    :param parent_prefix:
+    获取当前Controller下所有route及其子Controller组成的Include
+    :param controller:
     :return:
     """
-    if not hasattr(service, "prefix"):# or service.prefix == parent_prefix:
-        raise RuntimeError(f"{service} is not routed! ")
+    if not hasattr(controller, "prefix"):
+        raise RuntimeError(f"{controller} is not routed! ")
     routes = []
-    instance = service()
-    for name in vars(service).keys():
-        prop = getattr(service, name)
+    instance = controller()
+    for name in vars(controller).keys():
+        prop = getattr(controller, name)
         if hasattr(prop, "routes"):
             for route in prop.routes:
-                route.service = instance
+                route.controller = instance
             routes.extend(prop.routes)
 
-    for child_service in service.__subclasses__():
-        child_include = routing(child_service, service.prefix)
+    for child_controller in controller.__subclasses__():
+        child_include = routing(child_controller)
         if child_include:
             routes.append(child_include)
 
     if routes:
-        return Include(service.prefix, service.name, routes)
+        return Include(controller.prefix, controller.name, routes)
 
 
 class ArgparseHelper(Action):
@@ -339,7 +343,7 @@ def Return(resp):
 
 
 def redirect(location, code=302, Response=None):
-    """Returns a response object (a WSGI application) that, if called,
+    """Returns a response object (a ASGI application) that, if called,
     redirects the client to the target location.  Supported codes are 301,
     302, 303, 305, and 307.  300 is not supported because it's not a real
     redirect and 304 because it's the answer for a request with a request

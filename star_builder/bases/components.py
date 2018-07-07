@@ -9,7 +9,7 @@ from toolkit.frozen import FrozenSettings
 from toolkit.settings import SettingsLoader
 from apistar import Route, exceptions, http, Component as _Component
 
-from .service import Service
+from .controller import Controller
 
 
 class Component(_Component, metaclass=Singleton):
@@ -52,8 +52,8 @@ class ServiceComponent(Component):
     """
     注入Service
     """
-    def resolve(self, route: Route) -> Service:
-        return route.service
+    def resolve(self, route: Route) -> Controller:
+        return route.controller
 
 
 class SettingsComponent(Component):

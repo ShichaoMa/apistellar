@@ -112,11 +112,11 @@ class Service(ModuleTask):
         father = None
 
         if exists("__init__.py"):
-            regex = re.compile(r"class\s+(\w*?Service)\(\w*Service\):")
+            regex = re.compile(r"class\s+(\w*?Controller)\(\w*Controller\):")
             mth = regex.search(open("__init__.py").read())
             if mth:
                 father = mth.group(1)
-        self.kwargs["father"] = father or "Service"
+        self.kwargs["father"] = father or "Controller"
 
     @classmethod
     def enrich_parser(cls, sub_parser):

@@ -6,13 +6,13 @@ __all__ = ["route", "get", "post", "delete", "put", "options"]
 
 def route(prefix, name=None):
     """
-    route为service指定名称和路径前缀
+    route为Controller指定名称和路径前缀
     :param prefix:
     :param name:
     :return:
     """
     def prefix_wrapper(cls):
-        cls.prefix = prefix
+        cls.prefix = "" if prefix == "/" else prefix
         cls.name = name or cls.__name__.lower()
         return cls
 
@@ -33,8 +33,16 @@ def wrapper_method(method_name):
         def endpoint_wrapper(handler):
             # 重新声明的变量不能是url, 下同，否则声明提前会覆盖闭包的变量
             u = url or "/" + handler.__name__
+            if u[0] != "/":
+                u = "/" + u
             routes = getattr(handler, "routes", [])
-            n = name or handler.__name__# + (f"_{len(routes)}" if routes else "")
+            # 对于一个handler拥有多个方法装饰器的情况
+            # 由于apistar不支持一个名字映射多个路由
+            # 所以之后的装饰器生成的名字会使用_连接方法名
+            if not routes:
+                n = name or handler.__name__
+            else:
+                n = (name or handler.__name__) + "_" + method_name
             route = Route(
                 u, method_name.upper(), handler, n, documented, standalone)
             handler.__dict__.setdefault("routes", []).append(route)

@@ -54,6 +54,7 @@ setup(
         'console_scripts': [
             'apistar-create = star_builder:main',
             'apistar-console = star_builder:console'
+            'apistar-routes = star_builder:show_routes'
         ],
     },
     license="MIT",

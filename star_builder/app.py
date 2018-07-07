@@ -1,3 +1,4 @@
+import sys
 import logging
 import traceback
 
@@ -103,6 +104,7 @@ Application = application
 
 
 def show_routes():
+    sys.path.insert(0, ".")
     formatter = "{:<40} {:<7} {:<40} {:<}"
 
     def show_format(method, parttern, name, ca_name):

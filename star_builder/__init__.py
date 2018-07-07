@@ -12,7 +12,6 @@ from .bases.components import Component, Cookie
 
 from .solo import Solo
 from .solo.manager import SoloManager
-
 from .console import main as console
 
 from .types import Type, AsyncType, TypeEncoder, validators
@@ -20,4 +19,4 @@ from .types import Type, AsyncType, TypeEncoder, validators
 from .route import route, get, post, delete, put, options
 
 
-__version__ = "0.6.13"
+__version__ = "0.6.15"

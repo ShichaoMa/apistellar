@@ -338,10 +338,6 @@ class HookReturn(Exception):
     pass
 
 
-def Return(resp):
-    raise HookReturn(resp)
-
-
 def redirect(location, code=302, Response=None):
     """Returns a response object (a ASGI application) that, if called,
     redirects the client to the target location.  Supported codes are 301,

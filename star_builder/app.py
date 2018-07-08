@@ -8,7 +8,7 @@ from apistar.server.components import ReturnValue
 
 from .bases.controller import Controller
 from .bases.components import SettingsComponent
-from .bases.hooks import ErrorHook, AccessLogHook, SessionHook
+from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from .helper import load_packages, routing, print_routing, TypeEncoder, \
     find_children, enhance_response
 
@@ -66,7 +66,6 @@ def application(template_dir=None,
                 schema_url='/schema/',
                 docs_url='/docs/',
                 static_url='/static/',
-                event_hooks=None,
                 settings_path="settings",
                 debug=True,
                 async=True):
@@ -84,7 +83,8 @@ def application(template_dir=None,
     else:
         logger.info("Noting to route. ")
         routes = []
-    hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + (event_hooks or [])
+    custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
+    hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks
     app = (FixedAsyncApp if async else FixedApp)(
         routes,
         template_dir=template_dir,

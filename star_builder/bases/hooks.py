@@ -6,8 +6,9 @@ import traceback
 from apistar import App, http
 from flask.sessions import SecureCookieSessionInterface
 
-from .components import DummyFlaskApp
 from .session import Session
+from ..helper import HookReturn
+from .components import DummyFlaskApp
 
 
 class SessionHook(object):
@@ -113,3 +114,18 @@ class AccessLogHook(object):
                                     "status": status,
                                     "content_length": content_length,
                                     "agent": agent})
+
+
+class Hook(object):
+    """
+    Hook基类，继承自此基类的hook可以自动发现。
+    """
+    order = 1
+
+
+def Return(return_value):
+    if isinstance(return_value, str):
+        return_value = http.HTMLResponse(return_value)
+    elif not isinstance(return_value, http.Response):
+        return_value = http.JSONResponse(return_value)
+    raise HookReturn(return_value)

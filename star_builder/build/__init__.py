@@ -40,7 +40,9 @@ class Command(object):
 
     def parse_args(self):
         base_parser = ArgumentParser(
-            description=self.__class__.__doc__, add_help=False)
+            description=self.__class__.__doc__,
+            add_help=False,
+            conflict_handler="resolve")
         base_parser.add_argument("-t", "--templates", help="模板路径.")
 
         parser = ArgumentParser(description="Apistar项目构建工具", add_help=False)
@@ -50,7 +52,8 @@ class Command(object):
 
         for name, task in self.tasks.items():
             sub_parser = sub_parsers.add_parser(
-                name.lower(), parents=[base_parser], help=task.__doc__)
+                name.lower(), parents=[base_parser],
+                help=task.__doc__, conflict_handler="resolve")
             task.enrich_parser(sub_parser)
         # 当不提供参数时，len(sys.argv) == 1, 不会打印帮助，需要手动打印
         # add_subparsers无法指定required=True, 这是argparse的bug。

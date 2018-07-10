@@ -1,3 +1,4 @@
+import os
 import sys
 import logging
 import traceback
@@ -14,7 +15,6 @@ from .helper import load_packages, routing, print_routing, TypeEncoder, \
 
 __all__ = ["Application"]
 enhance_response(Response)
-logger = logging.getLogger("star_builder.app")
 JSONResponse.options["default"] = TypeEncoder().default
 
 
@@ -60,7 +60,7 @@ class FixedApp(App):
         return super().error_handler()
 
 
-def application(template_dir=None,
+def application(app_name, template_dir=None,
                 static_dir=None,
                 packages=None,
                 schema_url='/schema/',
@@ -68,11 +68,16 @@ def application(template_dir=None,
                 static_url='/static/',
                 settings_path="settings",
                 debug=True,
-                async=True):
+                async=True,
+                current_dir="."):
     """
        参数指定选择使用异步app还是同步app
        可以动态发现当前项目根目录下所有controller中的handler
     """
+    logger = logging.getLogger(app_name)
+    os.chdir(current_dir)
+    sys.path.insert(0, current_dir)
+    sys.modules.pop(app_name, None)
     load_packages(".")
     include = routing(Controller)
     SettingsComponent.register_path(settings_path)

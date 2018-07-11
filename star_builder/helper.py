@@ -3,18 +3,20 @@ import json
 import time
 import glob
 import email
+import types
+import inspect
 
 from asyncio import Future
-from functools import reduce
+from functools import reduce, wraps
 from collections.abc import Mapping
 from argparse import Action, _SubParsersAction
 
-from apistar import Include
+from apistar import Include, Route
 from werkzeug._compat import string_types
-from werkzeug.http import dump_cookie, dump_header, parse_set_header
 from werkzeug.utils import escape, text_type
+from werkzeug.http import dump_cookie, dump_header, parse_set_header
 
-
+from .bases.session import Session
 from .bases.components import Component
 
 
@@ -377,3 +379,38 @@ def redirect(location, code=302, Response=None):
         headers={"Location": location},
         status_code=code)
     return response
+
+
+def required(container_cls=Session, prop="user"):
+
+    def auth(func):
+        args = inspect.getfullargspec(func).args
+        args_def = ", ".join(args)
+        func_def = """
+    @wraps(func)
+    async def wrapper(__route, __container, {}):
+        from collections.abc import Awaitable
+        assert __container.{}, "Login required!"
+        awaitable = func({})
+        if isinstance(awaitable, Awaitable):
+            return await awaitable
+        return awaitable
+        """.format(args_def, prop, args_def)
+        namespace = dict(__name__='entries_%s' % func.__name__)
+        namespace["func"] = func
+        namespace["wraps"] = wraps
+        exec(func_def, namespace)
+
+        wrapper = namespace["wrapper"]
+
+        new_func = types.FunctionType(
+            wrapper.__code__,
+            wrapper.__globals__,
+            wrapper.__name__,
+            func.__defaults__)
+        new_func.__annotations__.update(func.__annotations__)
+        new_func.__annotations__["__route"] = Route
+        new_func.__annotations__["__container"] = container_cls
+        return new_func
+
+    return auth

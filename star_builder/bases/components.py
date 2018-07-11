@@ -7,8 +7,10 @@ from collections import namedtuple
 from toolkit.singleton import Singleton
 from toolkit.frozen import FrozenSettings
 from toolkit.settings import SettingsLoader
+from flask.sessions import SecureCookieSessionInterface
 from apistar import Route, exceptions, http, Component as _Component
 
+from .session import Session
 from .controller import Controller
 
 
@@ -122,3 +124,16 @@ class DummyFlaskAppComponent(Component):
                         days=settings.get("PERMANENT_SESSION_LIFETIME", 31)),
                     session_cookie_name=settings.get(
                         "SESSION_COOKIE_NAME", "session"))
+
+
+class SessionComponent(Component):
+
+    def __init__(self):
+        self.dummy_request = namedtuple("Request", "cookies")
+        self.session_interface = SecureCookieSessionInterface()
+
+    def resolve(self,
+                app: DummyFlaskApp,
+                cookies: typing.Dict[str, Cookie]) -> Session:
+            request = self.dummy_request(cookies=cookies)
+            return self.session_interface.open_session(app, request)

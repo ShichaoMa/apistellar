@@ -123,7 +123,26 @@ class Service(ModuleTask):
         sub_parser.add_argument("name", nargs="+", help="服务模块名称")
 
 
-class Model(ModuleTask):
+class Drivable(Task):
+
+    def enrich_kwargs(self, name):
+        super().enrich_kwargs(name)
+        driver = self.kwargs.get("driver")
+        if driver and driver.count(":") == 1:
+            module, cls = driver.split(":")
+        else:
+            module, cls = None, None
+        self.kwargs["module"] = module
+        self.kwargs["cls"] = cls
+
+    @classmethod
+    def enrich_parser(cls, sub_parser):
+        super().enrich_parser(sub_parser)
+        sub_parser.add_argument(
+            "-d", "--driver", help="驱动 eg：pymongo:MongoClient")
+
+
+class Model(Drivable, ModuleTask):
     """
     模型层
     """
@@ -151,10 +170,13 @@ class Model(ModuleTask):
 
     @classmethod
     def enrich_parser(cls, sub_parser):
+        super().enrich_parser(sub_parser)
         sub_parser.add_argument(
             "-n", "--name", required=True, type=cls.to_list, help="models名称")
         sub_parser.add_argument(
             "-p", "--path", help="所属服务路径 eg: article/comment")
+        sub_parser.add_argument(
+            "-a", "--async", action="store_true", help="是否拥有导步获取属性的能力")
         sub_parser.add_argument("fields", nargs="*", help="字段 eg: id:integer")
 
 

@@ -19,6 +19,6 @@ from .types import Type, AsyncType, TypeEncoder, validators
 
 from .route import route, get, post, delete, put, options
 
-from .helper import redirect, required
+from .helper import redirect, require
 
-__version__ = "0.7.1"
+__version__ = "0.7.2"

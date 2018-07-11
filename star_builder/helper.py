@@ -381,7 +381,7 @@ def redirect(location, code=302, Response=None):
     return response
 
 
-def required(container_cls=Session, prop="user"):
+def require(container_cls=Session, prop="user"):
 
     def auth(func):
         args = inspect.getfullargspec(func).args

@@ -382,27 +382,28 @@ def redirect(location, code=302, Response=None):
 
 
 def require(container_cls=Session, prop="user", error="Login required!"):
-
     def auth(func):
         args = inspect.getfullargspec(func).args
         args_def = ", ".join(args)
         func_def = """
-    @wraps(func)
-    async def wrapper(__route, __container, {}):
-        from collections.abc import Awaitable
-        assert __container.{}, "{}"
-        awaitable = func({})
-        if isinstance(awaitable, Awaitable):
-            return await awaitable
-        return awaitable
-        """.format(args_def, prop, error, args_def)
+@wraps(func)
+async def wrapper(__route, __container, {}):
+    from collections.abc import Awaitable
+    data = getattr(__container, "{}", None)
+    if not data:
+        data = __container.get("{}")
+    assert data, (401, "{}")
+    awaitable = func({})
+    if isinstance(awaitable, Awaitable):
+        return await awaitable
+    return awaitable
+        """.format(args_def, prop, prop, error, args_def)
+
         namespace = dict(__name__='entries_%s' % func.__name__)
         namespace["func"] = func
         namespace["wraps"] = wraps
         exec(func_def, namespace)
-
         wrapper = namespace["wrapper"]
-
         new_func = types.FunctionType(
             wrapper.__code__,
             wrapper.__globals__,

@@ -158,6 +158,14 @@ class Type(Mapping, metaclass=TypeMetaclass):
         value = self.validator.properties[key].validate(value)
         self._dict[key] = value
 
+    def __delattr__(self, item):
+        self.__delitem__(item)
+
+    def __delitem__(self, key):
+        del self._dict[key]
+        if self.formatted:
+            self._dict[key] = self.validator.properties[key].validate(None)
+
     def __getattr__(self, key):
         try:
             if key != "_dict":

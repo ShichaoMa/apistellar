@@ -28,6 +28,7 @@ pip install star_builder
 - [controller的使用方法](https://github.com/ShichaoMa/star_builder/wiki/controller的使用方法)
 - [service的使用方法](https://github.com/ShichaoMa/star_builder/wiki/service的使用方法)
 - [Session管理](https://github.com/ShichaoMa/star_builder/wiki/Session管理)
+- [使用require实现简单session认证](https://github.com/ShichaoMa/star_builder/wiki/使用require实现简单session认证)
 - [增强的EventHook](https://github.com/ShichaoMa/star_builder/wiki/增强的EventHook)
 - [错误码处理](https://github.com/ShichaoMa/star_builder/wiki/错误码处理)
 - [配置信息管理](https://github.com/ShichaoMa/star_builder/wiki/配置信息管理)

@@ -11,7 +11,7 @@ from functools import reduce, wraps
 from collections.abc import Mapping
 from argparse import Action, _SubParsersAction
 
-from apistar import Include, Route
+from apistar import Include
 from werkzeug._compat import string_types
 from werkzeug.utils import escape, text_type
 from werkzeug.http import dump_cookie, dump_header, parse_set_header
@@ -381,27 +381,37 @@ def redirect(location, code=302, Response=None):
     return response
 
 
-def require(container_cls=Session, prop="user", error="Login required!"):
+def require(
+        container_cls=Session,
+        judge=lambda x: x.user,
+        error="Login required!"):
+    """
+    装饰一个可被注入的函数，注入container_cls的实例，
+    并调用judge判断其是否符合条件，否则抛出异常，
+    异常信息为error。
+    :param container_cls:
+    :param judge:
+    :param error:
+    :return:
+    """
     def auth(func):
         args = inspect.getfullargspec(func).args
         args_def = ", ".join(args)
         func_def = """
 @wraps(func)
-async def wrapper(__route, __container, {}):
+async def wrapper(__container, {}):
     from collections.abc import Awaitable
-    data = getattr(__container, "{}", None)
-    if not data:
-        data = __container.get("{}")
-    assert data, (401, "{}")
+    assert judge(__container), (401, "{}")
     awaitable = func({})
     if isinstance(awaitable, Awaitable):
         return await awaitable
     return awaitable
-        """.format(args_def, prop, prop, error, args_def)
+        """.format(args_def, error, args_def)
 
         namespace = dict(__name__='entries_%s' % func.__name__)
         namespace["func"] = func
         namespace["wraps"] = wraps
+        namespace["judge"] = judge
         exec(func_def, namespace)
         wrapper = namespace["wrapper"]
         new_func = types.FunctionType(
@@ -410,7 +420,6 @@ async def wrapper(__route, __container, {}):
             wrapper.__name__,
             func.__defaults__)
         new_func.__annotations__.update(func.__annotations__)
-        new_func.__annotations__["__route"] = Route
         new_func.__annotations__["__container"] = container_cls
         return new_func
 

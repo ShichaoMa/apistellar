@@ -60,7 +60,10 @@ class SoloManager(object):
     """
     alive = True
 
-    def __init__(self):
+    def __init__(self, app_name, current_dir="."):
+        os.chdir(current_dir)
+        sys.path.insert(0, current_dir)
+        sys.modules.pop(app_name, None)
         load_packages(".")
         self.solos = {solo.__name__.lower(): solo
                       for solo in find_children(Solo, False)}

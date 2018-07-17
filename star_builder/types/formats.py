@@ -50,7 +50,8 @@ class DateFormat(BaseFormat):
         try:
             return value.isoformat()
         except AttributeError:
-            return str(value)
+            if value:
+                return str(value)
 
 
 class TimeFormat(BaseFormat):
@@ -73,7 +74,8 @@ class TimeFormat(BaseFormat):
         try:
             return value.isoformat()
         except AttributeError:
-            return str(value)
+            if value is not None:
+                return str(value)
 
 
 class DateTimeFormat(BaseFormat):
@@ -110,7 +112,8 @@ class DateTimeFormat(BaseFormat):
                 value = value[:-6] + 'Z'
             return value
         except AttributeError:
-            return str(value)
+            if value is not None:
+                return str(value)
 
 
 class UUIDFormat(BaseFormat):
@@ -123,4 +126,5 @@ class UUIDFormat(BaseFormat):
         return value
 
     def to_string(self, value):
-        return str(value)
+        if value is not None:
+            return str(value)

@@ -634,6 +634,9 @@ class Union(Validator):
                 pass
         self.error('union')
 
+    def __lshift__(self, obj):
+        self.allow_null = obj
+
 
 class Ref(Validator):
     def __init__(self, ref, **kwargs):

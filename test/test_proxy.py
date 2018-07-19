@@ -2,7 +2,7 @@ from star_builder import Type, validators
 
 
 class Subject(Type):
-    id = validators.String()
+    id = validators.String(allow_null=True)
 
 
 class Student(Type):

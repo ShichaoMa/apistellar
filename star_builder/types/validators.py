@@ -113,6 +113,26 @@ class Validator(object):
         return Union(items)
 
 
+class Proxy(Validator):
+    errors = {
+        'null': 'May not be null.',
+    }
+
+    def __init__(self, type, **kwargs):
+        super(Proxy, self).__init__(**kwargs)
+        self.type = type
+
+    def validate(self, value, definitions=None, allow_coerce=False):
+        if value is None and self.has_default():
+            return self.get_default()
+        elif value is None and self.allow_null:
+            return None
+        elif value is None:
+            self.error('null')
+
+        return self.type.validate(value, definitions, allow_coerce)
+
+
 class String(Validator):
     errors = {
         'type': 'Must be a string.',

@@ -183,12 +183,14 @@ def print_routing(routes, write=print, format=logging_format):
 
 
 def walk_route(routes, parents=None):
-    if parents is None:
-        parents = []
     for route in routes:
+        if parents is None:
+            current_parents = []
+        else:
+            current_parents = parents[:]
         if isinstance(route, Include):
-            parents.append(route)
-            yield from walk_route(route.routes, parents[:])
+            current_parents.append(route)
+            yield from walk_route(route.routes, current_parents)
         else:
             yield route, parents
 

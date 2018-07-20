@@ -115,8 +115,10 @@ class DummyFlaskAppComponent(Component):
             'SERVER_NAME': None,
         }
 
-    def resolve(self, settings: FrozenSettings, host: http.Host) -> DummyFlaskApp:
-                self.default_config["SERVER_NAME"] = host
+    def resolve(self, settings: FrozenSettings,
+                host: http.Header,
+                ip_host: http.Host) -> DummyFlaskApp:
+                self.default_config["SERVER_NAME"] = host or ip_host
                 return DummyFlaskApp(
                     config=settings.get("SESSION_CONFIG", self.default_config),
                     secret_key=settings.get("SECRET_KEY"),

@@ -459,7 +459,6 @@ class Object(Validator):
             key for key in value.keys()
             if key not in set(validated.keys()) | set(errors.keys())
         ]
-
         if self.additional_properties is True:
             for key in remaining:
                 validated[key] = value[key]
@@ -635,7 +634,9 @@ class Union(Validator):
         self.error('union')
 
     def __lshift__(self, obj):
-        self.allow_null = obj
+        assert isinstance(obj, Mapping), (777, "<< operator need Mapping object.")
+        super().__init__(**obj)
+        return self
 
 
 class Ref(Validator):

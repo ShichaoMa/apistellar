@@ -41,6 +41,7 @@ class TypeMetaclass(ABCMeta):
             properties,
             key=lambda item: item[1]._creation_counter
         )
+
         required = [
             key for key, value in properties
             if not value.has_default()

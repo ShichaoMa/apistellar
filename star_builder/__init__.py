@@ -9,7 +9,7 @@ from .bases.session import Session
 from .bases.hooks import Hook, Return
 from .bases.controller import Controller
 from .bases.response import FileResponse
-from .bases.components import Component, Cookie
+from .bases.components import Component, Cookie, FileStream
 
 from .solo import Solo
 from .solo.manager import SoloManager
@@ -21,4 +21,4 @@ from .route import route, get, post, delete, put, options
 
 from .helper import redirect, require
 
-__version__ = "0.7.19"
+__version__ = "0.7.20"

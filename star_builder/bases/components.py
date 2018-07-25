@@ -1,3 +1,4 @@
+import re
 import typing
 import inspect
 
@@ -10,8 +11,6 @@ from toolkit.singleton import Singleton
 from toolkit.frozen import FrozenSettings
 from toolkit.settings import SettingsLoader
 
-from werkzeug.datastructures import ImmutableMultiDict
-from werkzeug.formparser import FormDataParser
 from werkzeug.http import parse_options_header
 from flask.sessions import SecureCookieSessionInterface
 
@@ -152,7 +151,8 @@ class SessionComponent(Component):
 
 class File(object):
 
-    def __init__(self, stream, receive, boundary, name, filename):
+    def __init__(self, stream, receive, boundary, name, filename, mimetype):
+        self.mimetype = mimetype
         self.receive = receive
         self.filename = filename
         self.name = name
@@ -235,9 +235,9 @@ class File(object):
             else:
                 stream.closed = False
 
-        stream.body, name, filename = cls.parse_headers(
+        stream.body, name, filename, mimetype = cls.parse_headers(
             stream.body, tmp_boundary, end_boundary)
-        return cls(stream, receive, boundary, name, filename)
+        return cls(stream, receive, boundary, name, filename, mimetype)
 
     @staticmethod
     def parse_headers(body, tmp_boundary, end_boundary):
@@ -249,7 +249,9 @@ class File(object):
         header_str = body[:body.find(b"\r\n\r\n")]
         body = body[body.find(b"\r\n\r\n") + 4:]
         filename = ""
-        name = ''
+        name = ""
+        mimetype = ""
+        mime_type_regex = re.compile(b"Content-Type: (.*)")
         for header in header_str.split(b"\r\n"):
             if header.startswith(b"Content-Disposition"):
                 for d in header.split(b";"):
@@ -264,7 +266,11 @@ class File(object):
                             # 用来处理带编码的文件名，返回unicode
                             enc, lang, fn = v.split(b"'")
                             filename = unquote(fn).decode(enc)
-        return body, name, filename
+                break
+        mth = mime_type_regex.search(header_str)
+        if mth:
+            mimetype = mth.group(1)
+        return body, name, filename, mimetype
 
 
 class FileStream(object):

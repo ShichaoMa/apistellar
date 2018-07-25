@@ -41,7 +41,7 @@ class FixedAsyncApp(ASyncApp):
         return super().error_handler()
 
     async def read(self, response):
-        coroutine = response.content.read()
+        coroutine = response.content.read(1024000)
         if asyncio.iscoroutine(coroutine):
             return await coroutine
         else:

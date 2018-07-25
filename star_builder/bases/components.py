@@ -160,6 +160,9 @@ class File(object):
         self.tmpboundary = b"\r\n--" + boundary
         self.last = b"\r\n--" + boundary + b"--\r\n"
 
+    def __aiter__(self):
+        return self.iter_content()
+
     async def iter_content(self):
         body = self.stream.body
         while True:

@@ -1,9 +1,9 @@
 import os
 import sys
-import asyncio
 import logging
 import traceback
 
+from collections.abc import Awaitable
 from apistar import ASyncApp, App, exceptions
 from apistar.server.asgi import ASGIScope, ASGISend
 from apistar.http import Response, JSONResponse
@@ -42,7 +42,7 @@ class FixedAsyncApp(ASyncApp):
 
     async def read(self, response):
         coroutine = response.content.read(1024000)
-        if asyncio.iscoroutine(coroutine):
+        if isinstance(coroutine, Awaitable):
             return await coroutine
         else:
             return coroutine

@@ -282,7 +282,8 @@ class File(object):
                         elif k == b"filename*":
                             # 用来处理带编码的文件名，返回unicode
                             enc, lang, fn = v.split(b"'")
-                            filename = unquote(fn).decode(enc)
+                            filename = unquote(
+                                fn.decode()).encode().decode(enc.decode())
                 break
         mth = mime_type_regex.search(header_str)
         if mth:

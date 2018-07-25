@@ -159,6 +159,7 @@ class File(object):
         self.stream = stream
         self.tmpboundary = b"\r\n--" + boundary
         self.last = b"\r\n--" + boundary + b"--\r\n"
+        self.size = 0
 
     def __aiter__(self):
         return self.iter_content()
@@ -169,12 +170,14 @@ class File(object):
             index = body.find(self.tmpboundary)
             if index != -1:
                 read, self.stream.body = body[:index], body[index:]
+                self.size += len(read)
                 yield read
                 break
             else:
                 if self.stream.closed:
                     raise RuntimeError("Uncomplete content!")
                 read, body = body[:-len(self.tmpboundary)], body[-len(self.tmpboundary):]
+                self.size += len(read)
                 yield read
                 message = await self.get_message(self.receive)
                 body += message.get('body', b'')
@@ -201,6 +204,7 @@ class File(object):
             _size = index
 
         read, self.stream.body = body[:_size], body[_size:]
+        self.size += len(read)
         return read
 
     @staticmethod
@@ -211,6 +215,9 @@ class File(object):
             raise Exception(error % message['type'])
 
         return message
+
+    def tell(self):
+        return self.size
 
     @classmethod
     async def from_boundary(cls, stream, receive, boundary):

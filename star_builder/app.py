@@ -1,9 +1,11 @@
 import os
 import sys
+import asyncio
 import logging
 import traceback
 
 from apistar import ASyncApp, App, exceptions
+from apistar.server.asgi import ASGIScope, ASGISend
 from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 
@@ -37,6 +39,46 @@ class FixedAsyncApp(ASyncApp):
         if isinstance(return_value, Response):
             return return_value
         return super().error_handler()
+
+    async def read(self, response):
+        coroutine = response.content.read()
+        if asyncio.iscoroutine(coroutine):
+            return await coroutine
+        else:
+            return coroutine
+
+    async def finalize_asgi(self,
+                            response: Response,
+                            send: ASGISend,
+                            scope: ASGIScope):
+        if response.exc_info is not None:
+            if self.debug or scope.get('raise_exceptions', False):
+                exc_info = response.exc_info
+                raise exc_info[0].with_traceback(exc_info[1], exc_info[2])
+
+        await send({
+            'type': 'http.response.start',
+            'status': response.status_code,
+            'headers': [
+                [key.encode(), value.encode()]
+                for key, value in response.headers
+            ]
+        })
+        if hasattr(response.content, "read"):
+            body = await self.read(response)
+            while body:
+                await send({
+                    'type': 'http.response.body',
+                    'body': body,
+                    "more_body": True,
+                })
+                body = await self.read(response)
+        else:
+            body = response.content
+        await send({
+            'type': 'http.response.body',
+            'body': body
+        })
 
 
 class FixedApp(App):

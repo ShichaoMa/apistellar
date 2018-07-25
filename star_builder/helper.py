@@ -307,7 +307,7 @@ def parse_range_header(header, maxlen=0):
             pass
 
 
-def file_iter_range(fp, offset, bytes, maxread=1024*1024):
+async def file_iter_range(fp, offset, bytes, maxread=1024*1024):
     """
     Yield chunks from a range in a file. No chunk is bigger than maxread.
     :param fp:
@@ -316,9 +316,9 @@ def file_iter_range(fp, offset, bytes, maxread=1024*1024):
     :param maxread:
     :return:
     """
-    fp.seek(offset)
+    await fp.seek(offset)
     while bytes > 0:
-        part = fp.read(min(bytes, maxread))
+        part = await fp.read(min(bytes, maxread))
         if not part: break
         bytes -= len(part)
         yield part

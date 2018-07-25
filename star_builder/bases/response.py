@@ -32,9 +32,10 @@ class FileResponse(Response):
 
     def render(self, content: typing.Any) -> bytes:
         if hasattr(content, "read"):
-            content = content.read()
             if not self.filename:
                 self.filename = getattr(content, "filename", None)
+            return content
+
         if isinstance(content, bytes):
             return content
         elif isinstance(content, str) and self.charset is not None:
@@ -48,6 +49,9 @@ class FileResponse(Response):
 
     def set_default_headers(self):
         if 'Content-Length' not in self.headers:
+            if hasattr(self.content, "read"):
+                assert 'Content-Length' not in self.headers, (
+                    999, "Need specify Content-Length.")
             self.headers['Content-Length'] = str(len(self.content))
 
         assert self.filename, "Filename must specific."

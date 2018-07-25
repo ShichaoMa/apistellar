@@ -4,11 +4,20 @@ import inspect
 from inspect import Parameter
 from datetime import timedelta
 from collections import namedtuple
+from urllib.parse import unquote
+
 from toolkit.singleton import Singleton
 from toolkit.frozen import FrozenSettings
 from toolkit.settings import SettingsLoader
+
+from werkzeug.datastructures import ImmutableMultiDict
+from werkzeug.formparser import FormDataParser
+from werkzeug.http import parse_options_header
 from flask.sessions import SecureCookieSessionInterface
-from apistar import Route, exceptions, http, Component as _Component
+
+from apistar.server.asgi import ASGIReceive
+from apistar.conneg import negotiate_content_type
+from apistar import Route, exceptions, http, Component as _Component, codecs
 
 from .session import Session
 from .controller import Controller
@@ -139,3 +148,153 @@ class SessionComponent(Component):
                 cookies: typing.Dict[str, Cookie]) -> Session:
             request = self.dummy_request(cookies=cookies)
             return self.session_interface.open_session(app, request)
+
+
+class File(object):
+
+    def __init__(self, stream, receive, boundary, name, filename):
+        self.receive = receive
+        self.filename = filename
+        self.name = name
+        self.stream = stream
+        self.tmpboundary = b"\r\n--" + boundary
+        self.last = b"\r\n--" + boundary + b"--\r\n"
+
+    async def iter_content(self):
+        body = self.stream.body
+        while True:
+            index = body.find(self.tmpboundary)
+            if index != -1:
+                read, self.stream.body = body[:index], body[index:]
+                yield read
+                break
+            else:
+                if self.stream.closed:
+                    raise RuntimeError("Uncomplete content!")
+                read, body = body[:-len(self.tmpboundary)], body[-len(self.tmpboundary):]
+                yield read
+                message = await self.get_message(self.receive)
+                body += message.get('body', b'')
+                if not message.get('more_body', False):
+                    self.stream.closed = True
+
+    async def read(self, size=10240):
+        assert size > 0, (999, "Read size must > 0")
+        _size = size
+        body = self.stream.body
+        while True:
+            if len(body) < size + len(self.tmpboundary):
+                if not self.stream.closed:
+                    message = await self.get_message(self.receive)
+                    body += message.get('body', b'')
+                    if not message.get('more_body', False):
+                        self.stream.closed = True
+                    continue
+                else:
+                    _size = len(body) - len(self.last)
+            break
+        index = body.find(self.tmpboundary)
+        if index != -1:
+            _size = index
+
+        read, self.stream.body = body[:_size], body[_size:]
+        return read
+
+    @staticmethod
+    async def get_message(receive):
+        message = await receive()
+        if not message['type'] == 'http.request':
+            error = "'Unexpected ASGI message type '%s'."
+            raise Exception(error % message['type'])
+
+        return message
+
+    @classmethod
+    async def from_boundary(cls, stream, receive, boundary):
+        tmp_boundary = b"--" + boundary
+        end_boundary = b"--" + boundary + b"--"
+        while not stream.closed:
+            message = await cls.get_message(receive)
+            stream.body += message.get('body', b'')
+            if b"\r\n\r\n" in stream.body and tmp_boundary in stream.body or \
+                    not message.get('more_body', False):
+                break
+
+            if not message.get('more_body', False):
+                stream.closed = True
+            else:
+                stream.closed = False
+
+        stream.body, name, filename = cls.parse_headers(
+            stream.body, tmp_boundary, end_boundary)
+        return cls(stream, receive, boundary, name, filename)
+
+    @staticmethod
+    def parse_headers(body, tmp_boundary, end_boundary):
+        index = body.find(tmp_boundary)
+        if index == body.find(end_boundary):
+            raise StopAsyncIteration
+
+        body = body[index + len(tmp_boundary):]
+        header_str = body[:body.find(b"\r\n\r\n")]
+        body = body[body.find(b"\r\n\r\n") + 4:]
+        filename = ""
+        name = ''
+        for header in header_str.split(b"\r\n"):
+            if header.startswith(b"Content-Disposition"):
+                for d in header.split(b";"):
+                    d = d.strip()
+                    if b"=" in d:
+                        k, v = d.split(b'=')
+                        if k == b'name':
+                            name = v.strip(b"\"")
+                        elif k == b'filename':
+                            filename = v.strip(b"\"")
+                        elif k == b"filename*":
+                            # 用来处理带编码的文件名，返回unicode
+                            enc, lang, fn = v.split(b"'")
+                            filename = unquote(fn).decode(enc)
+        return body, name, filename
+
+
+class FileStream(object):
+
+    def __init__(self, receive, boundary):
+        self.receive = receive
+        self.boundary = boundary
+        self.body = b""
+        self.closed = False
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        return await File.from_boundary(self, self.receive, self.boundary)
+
+
+class FileStreamComponent(Component):
+    media_type = 'multipart/form-data'
+
+    async def decode(self, receive, headers):
+        try:
+            mime_type, mime_options = parse_options_header(
+                headers['content-type'])
+        except KeyError:
+            mime_type, mime_options = '', {}
+
+        boundary = mime_options.get('boundary', "").encode()
+        if boundary is None:
+            raise ValueError('Missing boundary')
+
+        return FileStream(receive, boundary)
+
+    async def resolve(self,
+                      receive: ASGIReceive,
+                      headers: http.Headers,
+                      content_type: http.Header) -> FileStream:
+        try:
+            negotiate_content_type([self], content_type)
+        except exceptions.NoCodecAvailable:
+            raise exceptions.UnsupportedMediaType()
+
+        return await self.decode(receive, headers)

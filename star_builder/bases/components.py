@@ -164,6 +164,23 @@ class File(object):
     def __aiter__(self):
         return self.iter_content()
 
+    def __iter__(self):
+        yield "name"
+        yield "filename"
+        yield "mimetype"
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    def __str__(self):
+        string = f"<{self.__class__.__name__} "
+        for k in self:
+            v = self[k]
+            string += f"{k}={v};"
+        return string[:-1] + ">"
+
+    __repr__ = __str__
+
     async def iter_content(self):
         body = self.stream.body
         while True:
@@ -259,9 +276,9 @@ class File(object):
                     if b"=" in d:
                         k, v = d.split(b'=')
                         if k == b'name':
-                            name = v.strip(b"\"")
+                            name = v.strip(b"\"").decode()
                         elif k == b'filename':
-                            filename = v.strip(b"\"")
+                            filename = v.strip(b"\"").decode()
                         elif k == b"filename*":
                             # 用来处理带编码的文件名，返回unicode
                             enc, lang, fn = v.split(b"'")
@@ -269,7 +286,7 @@ class File(object):
                 break
         mth = mime_type_regex.search(header_str)
         if mth:
-            mimetype = mth.group(1)
+            mimetype = mth.group(1).decode()
         return body, name, filename, mimetype
 
 

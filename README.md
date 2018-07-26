@@ -35,6 +35,7 @@ pip install star_builder
 - [自定义项目构建任务](https://github.com/ShichaoMa/star_builder/wiki/自定义项目构建任务)
 - [solo任务(离线任务)](https://github.com/ShichaoMa/star_builder/wiki/solo任务(离线任务))
 - [使用集成的IPython进行异步代码的调试](https://github.com/ShichaoMa/star_builder/wiki/使用集成的IPython进行异步代码的调试)
+- [大文件上传下载](https://github.com/ShichaoMa/star_builder/wiki/%E5%A4%A7%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD)
 
 参考资料
 

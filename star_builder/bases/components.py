@@ -233,8 +233,8 @@ class File(object):
     async def get_message(receive):
         message = await receive()
         if not message['type'] == 'http.request':
-            error = "'Unexpected ASGI message type '%s'."
-            raise Exception(error % message['type'])
+            raise RuntimeError(
+                f"Unexpected ASGI message type: {message['type']}.")
         return message
 
     def tell(self):
@@ -246,15 +246,13 @@ class File(object):
         end_boundary = b"--" + boundary + b"--"
         while not stream.closed:
             message = await cls.get_message(receive)
+            if not message.get('more_body', False):
+                stream.closed = True
+
             stream.body += message.get('body', b'')
             if b"\r\n\r\n" in stream.body and tmp_boundary in stream.body or \
                     not message.get('more_body', False):
                 break
-
-            if not message.get('more_body', False):
-                stream.closed = True
-            else:
-                stream.closed = False
 
         stream.body, name, filename, mimetype = cls.parse_headers(
             stream.body, tmp_boundary, end_boundary)

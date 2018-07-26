@@ -158,11 +158,13 @@ class File(object):
         self.name = name
         self.stream = stream
         self.tmpboundary = b"\r\n--" + boundary
-        self.last = b"\r\n--" + boundary + b"--\r\n"
-        self.size = 0
+        self.boundary_len = len(self.tmpboundary)
+        self._last = b""
+        self._size = 0
+        self.body_iter = self._iter_content()
 
     def __aiter__(self):
-        return self.iter_content()
+        return self.body_iter
 
     def __iter__(self):
         yield "name"
@@ -176,25 +178,39 @@ class File(object):
         string = f"<{self.__class__.__name__} "
         for k in self:
             v = self[k]
-            string += f"{k}={v};"
+            string += f"{k}={v} "
         return string[:-1] + ">"
 
     __repr__ = __str__
 
-    async def iter_content(self):
+    def iter_content(self):
+        return self.body_iter
+
+    async def _iter_content(self):
         body = self.stream.body
         while True:
+            # 如果存在read过程中剩下的，则直接返回
+            if self._last:
+                yield self._last
+                continue
+
             index = body.find(self.tmpboundary)
             if index != -1:
+                # 找到分隔线，返回分隔线前的数据
+                # 并将分隔及分隔线后的数据返回给stream
                 read, self.stream.body = body[:index], body[index:]
-                self.size += len(read)
+                self._size += len(read)
                 yield read
+                if self._last:
+                    yield self._last
                 break
             else:
                 if self.stream.closed:
                     raise RuntimeError("Uncomplete content!")
-                read, body = body[:-len(self.tmpboundary)], body[-len(self.tmpboundary):]
-                self.size += len(read)
+                # 若没有找到分隔线，为了防止分隔线被读取了一半
+                # 选择只返回少于分隔线长度的部分body
+                read, body = body[:-self.boundary_len], body[-self.boundary_len:]
+                self._size += len(read)
                 yield read
                 message = await self.get_message(self.receive)
                 body += message.get('body', b'')
@@ -202,26 +218,15 @@ class File(object):
                     self.stream.closed = True
 
     async def read(self, size=10240):
+        read = b""
         assert size > 0, (999, "Read size must > 0")
-        _size = size
-        body = self.stream.body
-        while True:
-            if len(body) < size + len(self.tmpboundary):
-                if not self.stream.closed:
-                    message = await self.get_message(self.receive)
-                    body += message.get('body', b'')
-                    if not message.get('more_body', False):
-                        self.stream.closed = True
-                    continue
-                else:
-                    _size = len(body) - len(self.last)
-            break
-        index = body.find(self.tmpboundary)
-        if index != -1:
-            _size = index
-
-        read, self.stream.body = body[:_size], body[_size:]
-        self.size += len(read)
+        while len(read) < size:
+            try:
+                buffer = await self.body_iter.asend(None)
+            except StopAsyncIteration:
+                return read
+            read = read + buffer
+            read, self._last = read[:size], read[size:]
         return read
 
     @staticmethod
@@ -230,11 +235,10 @@ class File(object):
         if not message['type'] == 'http.request':
             error = "'Unexpected ASGI message type '%s'."
             raise Exception(error % message['type'])
-
         return message
 
     def tell(self):
-        return self.size
+        return self._size
 
     @classmethod
     async def from_boundary(cls, stream, receive, boundary):

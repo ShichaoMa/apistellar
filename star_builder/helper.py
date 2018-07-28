@@ -6,18 +6,15 @@ import email
 import types
 import inspect
 
-from asyncio import Future
 from functools import reduce, wraps
 from collections.abc import Mapping
+from asyncio import Future, get_event_loop
 from argparse import Action, _SubParsersAction
 
 from apistar import Include
 from werkzeug._compat import string_types
 from werkzeug.utils import escape, text_type
 from werkzeug.http import dump_cookie, dump_header, parse_set_header
-
-from .bases.session import Session
-from .bases.components import Component
 
 
 def get_real_method(obj, name):
@@ -142,7 +139,7 @@ def enhance_response(resp):
          without revalidation.'''))
 
 
-def find_children(cls=Component, initialize=True):
+def find_children(cls, initialize=True):
     """
     获取所有(component)的子类或其实例。
     :param cls: 父类
@@ -384,8 +381,8 @@ def redirect(location, code=302, Response=None):
 
 
 def require(
-        container_cls=Session,
-        judge=lambda x: x.user,
+        container_cls,
+        judge=lambda container: container.user,
         error="Login required!"):
     """
     装饰一个可被注入的函数，注入container_cls的实例，
@@ -426,3 +423,38 @@ async def wrapper(__container, {}):
         return new_func
 
     return auth
+
+
+class MySelf(object):
+    def __getattr__(self, item):
+        return self
+
+    def __getitem__(self, item):
+        if item == 'type':
+            return "http.request"
+        if item == "server":
+            return "", 80
+        return self
+
+    def __call__(self, *args, **kwargs):
+        return self
+
+    def __bool__(self):
+        return False
+
+    def __str__(self):
+        return ""
+
+    def __radd__(self, obj):
+        return obj + type(obj)(self)
+
+    def __iter__(self):
+        return iter([])
+
+    def __await__(self):
+        loop = get_event_loop()
+        future = loop.create_future()
+        future.set_result(self)
+        return future.__await__()
+
+    __repr__ = __str__

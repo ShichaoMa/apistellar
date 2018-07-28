@@ -13,9 +13,8 @@ from apistar.server.validation import VALIDATION_COMPONENTS
 from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive,\
     ASGIScope, ASGISend
 
-from ..solo.manager import MySelf
-from ..bases.components import SettingsComponent
-from ..helper import find_children, load_packages, get_real_method
+from ..bases.components import SettingsComponent, Component
+from ..helper import find_children, load_packages, get_real_method, MySelf
 
 # bug fix
 formatters.get_real_method = get_real_method
@@ -46,8 +45,9 @@ class ConsoleManager(object):
             'path_params': MySelf(),
             'route': MySelf()
         }
+        self.components = find_children(Component)
         self.injector = ASyncInjector(
-            list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + find_children(),
+            list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + self.components,
             initial_components)
 
     async def resolve(self, type):
@@ -73,9 +73,8 @@ class ConsoleManager(object):
 
     @cache_property
     def beans(self):
-        components = find_children(initialize=False)
         beans = dict()
-        for component in components:
+        for component in self.components:
             type = component.resolve.__annotations__["return"]
             beans.setdefault(type.__name__, []).append((type, type.__module__))
         return beans

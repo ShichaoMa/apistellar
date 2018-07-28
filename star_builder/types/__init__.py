@@ -79,7 +79,7 @@ class Type(Mapping, metaclass=TypeMetaclass):
             assert len(args) == 1
             definitions = kwargs.pop('definitions', definitions)
             allow_coerce = kwargs.pop('allow_coerce', allow_coerce)
-            force_format = kwargs.pop('force_format', allow_coerce)
+            force_format = kwargs.pop('force_format', force_format)
             assert not kwargs
 
             if args[0] is None or isinstance(args[0], (bool, int, float, list)):
@@ -99,15 +99,17 @@ class Type(Mapping, metaclass=TypeMetaclass):
         else:
             # Instantiated with keyword arguments.
             value = kwargs
-
+        object.__setattr__(self, 'allow_coerce', allow_coerce)
         object.__setattr__(self, '_dict', value)
         object.__setattr__(self, 'formatted', False)
         if force_format:
-            self.format()
+            self.format(self.allow_coerce)
 
-    def format(self):
+    def format(self, allow_coerce=False):
+        object.__setattr__(self, 'allow_coerce', allow_coerce)
         if not self.formatted:
-            object.__setattr__(self, '_dict', self.validator.validate(self._dict))
+            object.__setattr__(self, '_dict', self.validator.validate(
+                self._dict, allow_coerce=self.allow_coerce))
             object.__setattr__(self, 'formatted', True)
 
     @classmethod

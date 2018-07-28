@@ -10,7 +10,7 @@ from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 
 from .bases.controller import Controller
-from .bases.components import SettingsComponent
+from .bases.components import SettingsComponent, Component
 from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from .helper import load_packages, routing, print_routing, TypeEncoder, \
     find_children, enhance_response
@@ -140,7 +140,7 @@ def application(app_name, template_dir=None,
         schema_url=schema_url,
         docs_url=docs_url,
         static_url=static_url,
-        components=find_children(),
+        components=find_children(Component),
         event_hooks=hooks)
 
     app.debug = debug

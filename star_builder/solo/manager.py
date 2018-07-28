@@ -17,41 +17,8 @@ from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive, \
     ASGIScope, ASGISend
 
 from . import Solo
-from ..bases.components import SettingsComponent
-from ..helper import find_children, ArgparseHelper, load_packages
-
-
-class MySelf(object):
-    def __getattr__(self, item):
-        return self
-
-    def __getitem__(self, item):
-        if item == 'type':
-            return "http.request"
-        return self
-
-    def __call__(self, *args, **kwargs):
-        return self
-
-    def __bool__(self):
-        return False
-
-    def __str__(self):
-        return ""
-
-    def __radd__(self, obj):
-        return obj + type(obj)(self)
-
-    def __iter__(self):
-        return iter([])
-
-    def __await__(self):
-        loop = asyncio.get_event_loop()
-        future = loop.create_future()
-        future.set_result(self)
-        return future.__await__()
-
-    __repr__ = __str__
+from ..bases.components import SettingsComponent, Component
+from ..helper import find_children, ArgparseHelper, load_packages, MySelf
 
 
 class SoloManager(object):
@@ -89,7 +56,7 @@ class SoloManager(object):
                 'route': MySelf()
             }
         self.injector = ASyncInjector(
-            list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + find_children(),
+            list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + find_children(Component),
             initial_components)
         self.solo = self.solos[self.args.solo](**vars(self.args))
         self.task = None

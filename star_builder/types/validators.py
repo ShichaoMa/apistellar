@@ -315,6 +315,8 @@ class Boolean(Validator):
         '1': True,
         '0': False,
         '': False,
+        0: False,
+        1: True,
     }
     null_values = {
         '': None,
@@ -331,14 +333,16 @@ class Boolean(Validator):
             self.error('null')
 
         elif not isinstance(value, bool):
-            if allow_coerce and isinstance(value, str):
+            if allow_coerce:
                 if self.allow_null:
                     values = dict(self.values)
                     values.update(self.null_values)
                 else:
                     values = self.values
                 try:
-                    return values[value.lower()]
+                    if isinstance(value, str):
+                        value = value.lower()
+                    return values[value]
                 except KeyError:
                     pass
             self.error('type')

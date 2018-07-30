@@ -198,6 +198,9 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
         return value
 
+    def __contains__(self, item):
+        return item in self._dict
+
     def __len__(self):
         return len(self._dict)
 

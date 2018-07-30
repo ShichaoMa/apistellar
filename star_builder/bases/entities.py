@@ -125,14 +125,14 @@ class File(object):
         if index == body.find(end_boundary):
             raise StopAsyncIteration
         body = body[index + len(tmp_boundary):]
-        header_str = body[:body.find(b"\r\n\r\n")]
-        body = body[body.find(b"\r\n\r\n") + 4:]
+        split_index = body.find(b"\r\n\r\n")
+        header_str, body = body[:split_index], body[split_index + 4:]
         groups = cls.disposition_regex.search(header_str).groupdict()
         filename = groups["filename"] and unquote(groups["filename"].decode())
+
         if groups["enc"]:
             filename = filename.encode().decode(groups["enc"].decode())
         name = groups["name"].decode()
-
         mth = cls.mime_type_regex.search(header_str)
         mimetype = mth and mth.group(1).decode()
         stream.body = body

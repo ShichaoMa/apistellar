@@ -10,6 +10,6 @@ url = "http://127.0.0.1:8000/test_upload"
 #                                                             "test1": ("bbbb.png", open("/Users/mashichao/Downloads/asyncio.png", "rb"), "image/png"),
 #                                                                              "test2": open("/Users/mashichao/Downloads/滋养细胞肿瘤.pdf", "rb")})
 
-resp = requests.post(url, files={"test": open("test.py", encoding="utf-8"), "test2": open("test_bool.py")})
+resp = requests.post(url, data={"project": "pangu"}, files={"test": open("/Users/mashichao/Downloads/滋养细胞肿瘤.pdf", "rb"), "test2": open("test_bool.py")})
 print(resp.text)
 

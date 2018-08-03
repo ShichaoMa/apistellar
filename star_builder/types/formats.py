@@ -145,20 +145,33 @@ class ChildrenFactory(object):
     def __init__(self, father, kwargs=None):
         self.father = father
         self.kwargs = kwargs or {}
+        self.found = dict()
 
     def install(self, **kwargs):
+        self.found.clear()
         self.kwargs.update(kwargs)
 
     def _get_mapping(self):
-        return {child.name: child for child in find_children(self.father, False)}
+        return {getattr(child, "name", child.__name__.lower()): child
+                for child in find_children(self.father, False)}
 
-    def __iter__(self):
-        return iter(self._get_mapping())
+    def __contains__(self, item):
+        result = item in self.found
+        if result is False:
+            result = item in self._get_mapping()
+        return result
 
     def __getitem__(self, item):
-        mapping = self._get_mapping()
-        assert item in mapping, "Format not found"
-        return mapping[item](**self.kwargs)
+        formatter = self.found.get(item)
+        if formatter is None:
+            mapping = self._get_mapping()
+            assert item in mapping, "Format not found"
+            formatter = mapping[item](**self.kwargs)
+            self.found[item] = formatter
+        return formatter
+
+    def __setitem__(self, item, value):
+        self.found[item] = value
 
 
 FORMATS = ChildrenFactory(BaseFormat)

@@ -139,11 +139,12 @@ def enhance_response(resp):
          without revalidation.'''))
 
 
-def find_children(cls, initialize=True):
+def find_children(cls, initialize=True, kwargs=None):
     """
     获取所有(component)的子类或其实例。
     :param cls: 父类
     :param initialize: 是否生成实例
+    :param kwargs: 若初始化，关键字参数
     :return:
     """
     def _load(cs):
@@ -153,14 +154,9 @@ def find_children(cls, initialize=True):
             children.extend(_load(c.__subclasses__()))
         return children
 
-    loaded, unloaded = [], []
-    for child in _load(cls.__subclasses__()):
-        if initialize and getattr(child, "_instance", None):
-            loaded.append(child._instance)
-        else:
-            unloaded.append(child)
-
-    return [c() for c in unloaded] + loaded if initialize else unloaded
+    if initialize:
+        kwargs = kwargs or dict()
+    return [c(**kwargs) if initialize else c for c in _load(cls.__subclasses__())]
 
 
 def logging_format(method, parttern, name, ca_name):

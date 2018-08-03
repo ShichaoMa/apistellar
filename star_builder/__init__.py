@@ -22,4 +22,4 @@ from .route import route, get, post, delete, put, options
 
 from .helper import redirect, require
 
-__version__ = "0.8.5"
+__version__ = "0.8.6"

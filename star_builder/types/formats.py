@@ -4,6 +4,9 @@ import datetime
 
 from apistar.exceptions import ValidationError
 
+from ..helper import find_children
+
+
 DATE_REGEX = re.compile(
     r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$'
 )
@@ -21,7 +24,10 @@ DATETIME_REGEX = re.compile(
 )
 
 
-class BaseFormat:
+class BaseFormat(object):
+    def __init__(self, **kwargs):
+        pass
+
     def is_native_type(self, value):
         raise NotImplementedError()
 
@@ -33,6 +39,7 @@ class BaseFormat:
 
 
 class DateFormat(BaseFormat):
+    name = "date"
     type = datetime.date
 
     def is_native_type(self, value):
@@ -55,6 +62,7 @@ class DateFormat(BaseFormat):
 
 
 class TimeFormat(BaseFormat):
+    name = "time"
     type = datetime.time
 
     def is_native_type(self, value):
@@ -79,6 +87,7 @@ class TimeFormat(BaseFormat):
 
 
 class DateTimeFormat(BaseFormat):
+    name = "datetime"
     type = datetime.datetime
 
     def is_native_type(self, value):
@@ -117,6 +126,7 @@ class DateTimeFormat(BaseFormat):
 
 
 class UUIDFormat(BaseFormat):
+    name = "UUID"
     type = uuid.UUID
 
     def is_native_type(self, value):
@@ -128,3 +138,31 @@ class UUIDFormat(BaseFormat):
     def to_string(self, value):
         if value is not None:
             return str(value)
+
+
+class ChildrenFactory(object):
+
+    def __init__(self, father, kwargs=None):
+        self.father = father
+        self.kwargs = kwargs or {}
+
+    def install(self, **kwargs):
+        self.kwargs.update(kwargs)
+
+    def _get_mapping(self):
+        return {child.name: child for child in find_children(self.father, False)}
+
+    def __iter__(self):
+        return iter(self._get_mapping())
+
+    def __getitem__(self, item):
+        mapping = self._get_mapping()
+        assert item in mapping, "Format not found"
+        return mapping[item](**self.kwargs)
+
+
+FORMATS = ChildrenFactory(BaseFormat)
+
+
+def install(**kwargs):
+    FORMATS.install(**kwargs)

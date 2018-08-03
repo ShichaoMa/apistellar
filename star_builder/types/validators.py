@@ -5,17 +5,9 @@ from math import isfinite
 from collections.abc import Mapping
 from apistar.exceptions import ValidationError
 
-from . import formats
+from .formats import FORMATS
 
 NO_DEFAULT = object()
-
-FORMATS = {
-    'date': formats.DateFormat(),
-    'time': formats.TimeFormat(),
-    'datetime': formats.DateTimeFormat(),
-    "UUID": formats.UUIDFormat(),
-
-}
 
 dict_type = dict
 
@@ -432,8 +424,8 @@ class Object(Validator):
                         default = child_schema.default()
                     else:
                         default = child_schema.default
-                    validated[key] = default
-                continue
+                    value[key] = default
+
             item = value[key]
             try:
                 validated[key] = child_schema.validate(

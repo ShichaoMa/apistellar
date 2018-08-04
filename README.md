@@ -10,6 +10,7 @@ star_builder部分灵感参考ruby on rails
 - 集成配置模块，集中管理所有配置信息。
 - 离线任务管理，同一web服务下的离线任务，轻松复用web模块定义的model, service等等可注入对象。模板一键创建。
 - 集成IPython交互式命令行工具，自动注入model, service等对象。提供异步代码执行能力，轻松调试各模块。
+- 提供上传文件流对象，对大文件上传完美支持。
 - Apistar作者在uvicorn中提供了websocket支持，但是未集成到apistar中，star_builder对二者进行了集成，完美支持websocket。
 
 # INSTALL

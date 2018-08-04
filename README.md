@@ -10,7 +10,7 @@ star_builder部分灵感参考ruby on rails
 - 集成配置模块，集中管理所有配置信息。
 - 离线任务管理，同一web服务下的离线任务，轻松复用web模块定义的model, service等等可注入对象。模板一键创建。
 - 集成IPython交互式命令行工具，自动注入model, service等对象。提供异步代码执行能力，轻松调试各模块。
-
+- Apistar作者在uvicorn中提供了websocket支持，但是未集成到apistar中，star_builder对二者进行了集成，完美支持websocket。
 
 # INSTALL
 ```
@@ -35,8 +35,10 @@ pip install star_builder
 - [自定义项目构建任务](https://github.com/ShichaoMa/star_builder/wiki/自定义项目构建任务)
 - [solo任务(离线任务)](https://github.com/ShichaoMa/star_builder/wiki/solo任务(离线任务))
 - [使用集成的IPython进行异步代码的调试](https://github.com/ShichaoMa/star_builder/wiki/使用集成的IPython进行异步代码的调试)
-- [大文件上传下载](https://github.com/ShichaoMa/star_builder/wiki/%E5%A4%A7%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD)
-
+- [大文件上传下载](https://github.com/ShichaoMa/star_builder/wiki/大文件上传下载)
+- [在框架中使用websocket进行通讯](https://github.com/ShichaoMa/star_builder/wiki/在框架中使用websocket进行通讯)
 参考资料
 
 [asgi web框架 APIStar----终于等到你...](https://zhuanlan.zhihu.com/p/36297606)
+
+[asgi协议](https://github.com/django/asgiref/blob/master/specs/www.rst)

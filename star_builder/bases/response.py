@@ -50,8 +50,7 @@ class FileResponse(Response):
     def set_default_headers(self):
         if 'Content-Length' not in self.headers:
             if hasattr(self.content, "read"):
-                assert 'Content-Length' not in self.headers, (
-                    999, "Need specify Content-Length.")
+                assert False, (999, "Need specify Content-Length.")
             self.headers['Content-Length'] = str(len(self.content))
 
         assert self.filename, "Filename must specific."

@@ -214,7 +214,10 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
     def update(self, **kwargs):
         for k, v in kwargs.items():
-            setattr(self, k, v)
+            if k in self.validator.properties:
+                setattr(self, k, v)
+            else:
+                self._dict[k] = v
 
     def to_dict(self):
         return json.loads(json.dumps(self, cls=TypeEncoder))

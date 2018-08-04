@@ -45,7 +45,11 @@ def wrapper_method(method_name):
                 n = (name or handler.__name__) + "_" + method_name
             route = Route(
                 u, method_name.upper(), handler, n, documented, standalone)
-            handler.__dict__.setdefault("routes", []).append(route)
+
+            if isinstance(handler, type):
+                handler.routes = [route]
+            else:
+                handler.__dict__.setdefault("routes", []).append(route)
 
             return handler
 
@@ -61,3 +65,4 @@ post = wrapper_method("post")
 delete = wrapper_method("delete")
 options = wrapper_method("options")
 put = wrapper_method("put")
+websocket = get

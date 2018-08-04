@@ -10,6 +10,7 @@ from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 
 from .bases.controller import Controller
+from .bases.websocket import WebSocketApp
 from .bases.components import SettingsComponent, Component
 from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from .helper import load_packages, routing, print_routing, TypeEncoder, \
@@ -79,6 +80,12 @@ class FixedAsyncApp(ASyncApp):
             'type': 'http.response.body',
             'body': body
         })
+
+    def __call__(self, scope):
+        if scope["type"] != "websocket":
+            return super(FixedAsyncApp, self).__call__(scope)
+        else:
+            return WebSocketApp(scope, self)
 
 
 class FixedApp(App):

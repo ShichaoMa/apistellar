@@ -153,4 +153,3 @@ class FileStream(object):
 
     async def __anext__(self):
         return await File.from_boundary(self, self.receive, self.boundary)
-

@@ -2,6 +2,7 @@ import re
 import numbers
 
 from math import isfinite
+from toolkit import cache_property
 from collections.abc import Mapping
 from apistar.exceptions import ValidationError
 
@@ -24,7 +25,7 @@ class Validator(object):
     _creation_counter = 0
 
     def __init__(self, title='', description='', default=NO_DEFAULT,
-                 allow_null=False, definitions=None, def_name=None, model=None):
+                 allow_null=False, definitions=None, def_name=None, model=None, **kwargs):
         definitions = {} if (definitions is None) else dict_type(definitions)
 
         assert isinstance(title, str)
@@ -153,6 +154,11 @@ class String(Validator):
         self.pattern = pattern
         self.enum = enum
         self.format = format
+        self.left = kwargs
+
+    @property
+    def formatter(self):
+        return FORMATS.get(self.format)
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
@@ -161,7 +167,7 @@ class String(Validator):
             return None
         elif value is None:
             self.error('null')
-        elif self.format in FORMATS and FORMATS[self.format].is_native_type(value):
+        elif self.formatter and self.formatter.is_native_type(value):
             return value
         elif not isinstance(value, str):
             self.error('type')
@@ -187,8 +193,8 @@ class String(Validator):
             if not re.search(self.pattern, value):
                 self.error('pattern')
 
-        if self.format in FORMATS:
-            return FORMATS[self.format].validate(value)
+        if self.formatter:
+            return self.formatter.validate(value)
 
         return value
 
@@ -593,6 +599,17 @@ class Time(String):
 class DateTime(String):
     def __init__(self, **kwargs):
         super().__init__(format='datetime', **kwargs)
+
+
+class FormatDateTime(String):
+    def __init__(self, format="%Y-%m-%d %H:%M:%S", **kwargs):
+        super(FormatDateTime, self).__init__(format='format_datetime', date_format=format, **kwargs)
+
+    @cache_property
+    def formatter(self):
+        formatter = super(FormatDateTime, self).formatter
+        formatter.register_format(self.left["date_format"])
+        return formatter
 
 
 class Any(Validator):

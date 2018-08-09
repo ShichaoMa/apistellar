@@ -14,6 +14,7 @@ logger = logging.getLogger("websocket")
 
 
 class WebSocketHandler(metaclass=ABCMeta):
+
     async def websocket_connect(self, message, path: http.Path):
         logger.debug(f"Websocket of {path} connect. ")
         return ""
@@ -33,11 +34,10 @@ class WebSocketHandler(metaclass=ABCMeta):
 
 
 class WebSocketApp:
-
     persist = True
     handler = None
     state = None
-    send = None
+    _send = None
 
     reverse_type = {
         "websocket.disconnect": "websocket.close",
@@ -61,17 +61,16 @@ class WebSocketApp:
         }
         method = self.scope['method']
         path = self.scope['path']
-        self.send = send
-
+        self._send = send
         try:
             route, path_params = self.app.router.lookup(path, method)
             state['route'] = route
             state['path_params'] = path_params
             self.state = state
-            self.send = send
             self.handler = route.handler
+
             if issubclass(self.handler, WebSocketHandler):
-                self.handler = self.handler()
+                self.handler = self.handler(self.send)
 
             while self.persist:
                 await self.handle(await receive())
@@ -80,8 +79,22 @@ class WebSocketApp:
             await self.exception_handler(exc)
 
     async def exception_handler(self, exc: Exception):
-        await self.send({"type": "websocket.close", "text": str(exc)})
+        await self.send(str(exc), "websocket.close")
         raise exc
+
+    async def send(self, buf, type="websocket.send"):
+        message = {"type": type}
+
+        if isinstance(buf, bytes):
+            message["bytes"] = buf
+        elif buf is None:
+            message["type"] = "websocket.close"
+        elif not isinstance(buf, str):
+            buf = json.dumps(buf, cls=TypeEncoder)
+
+        if isinstance(buf, str):
+            message["text"] = buf
+        await self._send(message)
 
     async def handle(self, message):
         message_type = message["type"].replace(".", "_")
@@ -96,15 +109,4 @@ class WebSocketApp:
         if message_type == "websocket_disconnect":
             self.persist = False
         buf = await self.app.injector.run_async([wrapped], self.state)
-        message = {"type": self.reverse_type[message["type"]]}
-
-        if isinstance(buf, bytes):
-            message["bytes"] = buf
-        elif buf is None:
-            message["type"] = "websocket.close"
-        elif not isinstance(buf, str):
-            buf = json.dumps(buf, cls=TypeEncoder)
-        if isinstance(buf, str):
-            message["text"] = buf
-
-        await self.send(message)
+        await self.send(buf, self.reverse_type[message["type"]])

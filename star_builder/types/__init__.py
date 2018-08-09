@@ -192,9 +192,8 @@ class Type(Mapping, metaclass=TypeMetaclass):
             except AssertionError:
                 raise e
 
-        if hasattr(validator, 'format') and validator.format in validators.FORMATS:
-            formatter = validators.FORMATS[validator.format]
-            return formatter.to_string(value)
+        if hasattr(validator, 'formatter') and validator.formatter:
+            return validator.formatter.to_string(value)
 
         return value
 

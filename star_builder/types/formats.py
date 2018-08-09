@@ -125,6 +125,29 @@ class DateTimeFormat(BaseFormat):
                 return str(value)
 
 
+class FormatDatetime(BaseFormat):
+    name = "format_datetime"
+    type = datetime.datetime
+
+    def __init__(self, date_format="%Y-%m-%d %H:%M:%S", **kwargs):
+        self.format = date_format
+
+    def register_format(self, date_format):
+        self.format = date_format
+
+    def is_native_type(self, value):
+        return isinstance(value, self.type)
+
+    def validate(self, value):
+        return datetime.datetime.strptime(value, self.format)
+
+    def to_string(self, value):
+        if isinstance(value, str):
+            return str
+        else:
+            return value.strftime(self.format)
+
+
 class UUIDFormat(BaseFormat):
     name = "UUID"
     type = uuid.UUID
@@ -161,11 +184,16 @@ class ChildrenFactory(object):
             result = item in self._get_mapping()
         return result
 
+    def get(self, item, default=None):
+        try:
+            return self[item]
+        except KeyError:
+            return default
+
     def __getitem__(self, item):
         formatter = self.found.get(item)
         if formatter is None:
             mapping = self._get_mapping()
-            assert item in mapping, "Format not found"
             formatter = mapping[item](**self.kwargs)
             self.found[item] = formatter
         return formatter

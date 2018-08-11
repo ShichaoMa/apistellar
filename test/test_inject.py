@@ -26,14 +26,14 @@ def test_inject_return_annotation():
 def test_assign_value():
     my_service = MyService()
     a = A()
-    my_service.resolve(a)
+    my_service = my_service.resolve(a)
     assert a is my_service.aaa
 
 
 def test_readonly():
     my_service = MyService()
     a = A()
-    my_service.resolve(a)
+    my_service = my_service.resolve(a)
     with pytest.raises(Readonly):
         my_service.aaa = 1
 
@@ -69,9 +69,9 @@ def test_default():
         a = inject(default=3) << A
 
     service = DefaultService()
-    service.resolve()
+    service = service.resolve()
     assert service.a == 3
-    service.resolve(2)
+    service = service.resolve(2)
     assert service.a == 2
 
 
@@ -86,7 +86,7 @@ def test_inherit1():
     assert service.resolve.__annotations__["return"] == Child
     assert service.resolve.__annotations__["a"] == A
     assert service.resolve.__annotations__["b"] == B
-    service.resolve(3, 6)
+    service = service.resolve(3, 6)
     assert service.a == 3
     assert service.b == 6
 
@@ -101,7 +101,7 @@ def test_inherit2():
     service = Child()
     assert service.resolve.__annotations__["return"] == Child
     assert service.resolve.__annotations__["a"] == A
-    service.resolve(3)
+    service = service.resolve(3)
 
 
 def test_inherit3():
@@ -115,7 +115,7 @@ def test_inherit3():
     assert service.resolve.__annotations__["return"] == Child
     assert service.resolve.__annotations__["a"] == B
     assert service.resolve.__annotations__["father_a"] == A
-    service.resolve(3, 5)
+    service = service.resolve(3, 5)
     assert service.a == 5
 
 
@@ -132,7 +132,7 @@ def test_inherit4():
     assert service.resolve.__annotations__["return"] == Child
     assert service.resolve.__annotations__["a"] == B
     assert service.resolve.__annotations__["father_a"] == A
-    service.resolve(3, 5)
+    service = service.resolve(3, 5)
     assert service.a == 5
 
 
@@ -149,5 +149,5 @@ def test_inherit5():
     service = Child()
     assert service.resolve.__annotations__["return"] == Child
     assert service.resolve.__annotations__["a"] == A
-    service.resolve(4, 3, 3)
+    service = service.resolve(4, 3, 3)
 

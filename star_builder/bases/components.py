@@ -20,7 +20,7 @@ from .controller import Controller
 from .entities import Session, Cookie, FileStream, DummyFlaskApp
 
 
-class Component(_Component, metaclass=Singleton):
+class Component(_Component):
 
     def identity(self, parameter: inspect.Parameter):
         """
@@ -56,7 +56,7 @@ class Component(_Component, metaclass=Singleton):
                parameter.annotation is return_annotation
 
 
-class ServiceComponent(Component):
+class ServiceComponent(Component, metaclass=Singleton):
     """
     注入Service
     """

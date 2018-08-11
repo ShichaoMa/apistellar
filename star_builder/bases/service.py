@@ -1,7 +1,6 @@
 import inspect
 
 from enum import Enum
-from toolkit.singleton import Singleton
 
 from .exceptions import Readonly
 from .components import Component
@@ -13,12 +12,12 @@ class InheritType(Enum):
     NORMAL = 2  # 正常的情况
 
 
-class ServiceMeta(Singleton):
+class ServiceMeta(type):
     func_def = """
 def resolve(self{}):
     {}
     {}
-    return self
+    return instance
             """
 
     def __new__(mcs, class_name, bases, props):
@@ -38,10 +37,10 @@ def resolve(self{}):
             namespace = dict(__name__='entries_%s_resolve' % class_name)
             args_def = list()
             args_assignment = list()
-            super_str = ""
 
             for name, prop, default in inject_props:
-                args_assignment.append(f"self.__dict__['{name}'] = {name}")
+                args_assignment.append(f"instance.__dict__['{name}'] = {name}")
+            name_str = ""
             # 处理继承情况
             if hasattr(bases[0], "resolve"):
                 names = list()
@@ -59,12 +58,9 @@ def resolve(self{}):
                             name = f"father_{name}"
                         mcs.add_prop(inject_props, prop, name)
                     names.append(name)
-                print(names)
-                if names:
-                    name_str = ", ".join("%s=%s" % (
-                        name.replace("father_", ""), name) for name in names)
-                    super_str = f"super({class_name}, self).resolve({name_str})"
-                print(super_str)
+                name_str = ", ".join("%s=%s" % (
+                    name.replace("father_", ""), name) for name in names)
+            super_str = f"instance = super({class_name}, self).resolve({name_str})"
 
             for name, prop, default in inject_props:
                 type_name = prop.type.__name__
@@ -128,9 +124,9 @@ class InjectManager(object):
 
 
 class Service(Component, metaclass=ServiceMeta):
-    # 需要定义一下，不然会找到的父类的resolove。
+    # 需要定义一下，不然会找到的父类的resolve。
     def resolve(self, *args, **kwargs):
-        raise NotImplementedError()
+        return self.__class__()
 
 
 inject = InjectManager()

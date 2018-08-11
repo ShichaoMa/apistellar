@@ -4,6 +4,9 @@ from star_builder import Type, validators
 class A(Type):
     a = validators.String()
 
-a = A()
 
-print("a" in a)
+def test_in():
+    a = A()
+    assert "a" not in a
+    a.a = "a"
+    assert "a" in a

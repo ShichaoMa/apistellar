@@ -30,7 +30,6 @@ class CustomDatetimeFormat(DateTimeFormat):
         return value
 
 
-
 class B(Type):
     a = String(allow_null=True)
     b = String(default="")

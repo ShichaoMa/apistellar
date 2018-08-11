@@ -27,30 +27,31 @@ class Book(Type):
     # 当allow_null=True时，若其值为None, 如果指定了default，会使用default
     description = validators.String(allow_null=True, default="这是一段描述")
 
-# 原始json对象
-book = {
-        "page_num": 628,
-        "price": 139.00,
-        "sale_per_count": 2,
-        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "on_sale": True,
-        "description": None
-        }
-# 创建Book对象， 当指定Book(book, force_format=True)时，会强制校验数据合法性
-b = Book(book)
-# 赋值时会校验数据合法性
-b.name = "13444" # 这条数据会报错
+def test_build_model1():
+    # 原始json对象
+    book = {
+            "page_num": 628,
+            "price": 139.00,
+            "sale_per_count": 2,
+            "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "on_sale": True,
+            "description": None
+            }
+    # 创建Book对象， 当指定Book(book, force_format=True)时，会强制校验数据合法性
+    b = Book(book)
+    # 赋值时会校验数据合法性
+    b.name = "13444" # 这条数据会报错
 
-# 下面的数据不会报错
-b.name = "<<流畅的python>>"
-b.publisher = "人民邮电出版社"
-b.author = "Luciano Ramalho"
-b.publish_date = "2017-5-15"
+    # 下面的数据不会报错
+    b.name = "<<流畅的python>>"
+    b.publisher = "人民邮电出版社"
+    b.author = "Luciano Ramalho"
+    b.publish_date = "2017-5-15"
 
-# 直接dumps,需要指定cls=TypeEncoder, 同时会校验数据合法性
-print(json.dumps(b, cls=TypeEncoder, indent=2))
-# to_json返回json字典，同时会校验数据合法性，当to_json(force_format=False)时，数据合法性不会校验
-print(b.to_json())
+    # 直接dumps,需要指定cls=TypeEncoder, 同时会校验数据合法性
+    print(json.dumps(b, cls=TypeEncoder, indent=2))
+    # to_json返回json字典，同时会校验数据合法性，当to_json(force_format=False)时，数据合法性不会校验
+    print(b.to_json())
 
 
 # model可以从对象中获取

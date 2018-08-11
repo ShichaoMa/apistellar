@@ -59,6 +59,7 @@ setup(
     },
     license="MIT",
     packages=find_packages(),
+
     install_requires=install_requires(),
     include_package_data=True,
     zip_safe=True,

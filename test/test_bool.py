@@ -11,7 +11,8 @@ class B(Type):
     b = validators.Boolean()
     c = A
 
-a = B(b=0, c={"a": 0})
 
-a.format(allow_coerce=True)
-print(a)
+def test_coerce():
+    a = B(b=1, c={"a": 0})
+    a.format(allow_coerce=True)
+    assert a.b is True and a.c.a is False

@@ -91,8 +91,7 @@ def resolve(self{}):
                 return InheritType.DUPLICATE
             elif param.name == name:
                 return InheritType.OVERWRITE
-            else:
-                return InheritType.NORMAL
+        return InheritType.NORMAL
 
     @staticmethod
     def add_prop(inject_props, prop, name):
@@ -118,15 +117,14 @@ class Inject(object):
 
 class InjectManager(object):
 
-    def __init__(self):
-        self.default = None
+    def __init__(self, default=None):
+        self.default = default
 
     def __lshift__(self, other):
         return Inject(other, self.default)
 
     def __call__(self, *, default=None):
-        self.default = default
-        return self
+        return InjectManager(default)
 
 
 class Service(Component, metaclass=ServiceMeta):

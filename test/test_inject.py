@@ -135,3 +135,19 @@ def test_inherit4():
     service.resolve(3, 5)
     assert service.a == 5
 
+
+def test_inherit5():
+    class Father(Service):
+        def resolve(self, b: B, a: A):
+            print(a)
+            return self
+
+    class Child(Father):
+        c = inject << B
+        a = inject << A
+
+    service = Child()
+    assert service.resolve.__annotations__["return"] == Child
+    assert service.resolve.__annotations__["a"] == A
+    service.resolve(4, 3, 3)
+

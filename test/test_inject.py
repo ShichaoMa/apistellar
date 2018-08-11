@@ -1,4 +1,5 @@
 import pytest
+
 from star_builder.bases.service import Service, inject
 from star_builder.bases.exceptions import Readonly
 
@@ -61,3 +62,76 @@ def test_empty_inject():
 
     service = EmptyService()
     assert service.resolve.__annotations__["return"] == EmptyService
+
+
+def test_default():
+    class DefaultService(Service):
+        a = inject(default=3) << A
+
+    service = DefaultService()
+    service.resolve()
+    assert service.a == 3
+    service.resolve(2)
+    assert service.a == 2
+
+
+def test_inherit1():
+    class Father(Service):
+        a = inject << A
+
+    class Child(Father):
+        b = inject << B
+
+    service = Child()
+    assert service.resolve.__annotations__["return"] == Child
+    assert service.resolve.__annotations__["a"] == A
+    assert service.resolve.__annotations__["b"] == B
+    service.resolve(3, 6)
+    assert service.a == 3
+    assert service.b == 6
+
+
+def test_inherit2():
+    class Father(Service):
+        a = inject << A
+
+    class Child(Father):
+        a = inject << A
+
+    service = Child()
+    assert service.resolve.__annotations__["return"] == Child
+    assert service.resolve.__annotations__["a"] == A
+    service.resolve(3)
+
+
+def test_inherit3():
+    class Father(Service):
+        a = inject << A
+
+    class Child(Father):
+        a = inject << B
+
+    service = Child()
+    assert service.resolve.__annotations__["return"] == Child
+    assert service.resolve.__annotations__["a"] == B
+    assert service.resolve.__annotations__["father_a"] == A
+    service.resolve(3, 5)
+    assert service.a == 5
+
+
+def test_inherit4():
+    class Father(Service):
+        def resolve(self, a: A):
+            print(a)
+            return self
+
+    class Child(Father):
+        a = inject << B
+
+    service = Child()
+    assert service.resolve.__annotations__["return"] == Child
+    assert service.resolve.__annotations__["a"] == B
+    assert service.resolve.__annotations__["father_a"] == A
+    service.resolve(3, 5)
+    assert service.a == 5
+

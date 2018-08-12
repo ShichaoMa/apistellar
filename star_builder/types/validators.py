@@ -135,8 +135,8 @@ class String(Validator):
         'min_length': 'Must have at least {min_length} characters.',
         'pattern': 'Must match the pattern /{pattern}/.',
         'format': 'Must be a valid {format}.',
-        'enum': 'Must be a valid choice.',
-        'exact': 'Must be exact.'
+        'enum': 'Must be one of {enum}.',
+        'exact': 'Must be {exact}.'
     }
 
     def __init__(self, max_length=None, min_length=None, pattern=None,
@@ -175,7 +175,7 @@ class String(Validator):
         if self.enum is not None:
             if value not in self.enum:
                 if len(self.enum) == 1:
-                    self.error('exact')
+                    self.error('exact', exact=self.enum[0])
                 self.error('enum')
 
         if self.min_length is not None:
@@ -214,7 +214,8 @@ class NumericType(Validator):
         'maximum': 'Must be less than or equal to {maximum}.',
         'exclusive_maximum': 'Must be less than {maximum}.',
         'multiple_of': 'Must be a multiple of {multiple_of}.',
-        'enum': 'Must be a valid choice.',
+        'enum': 'Must be one of {enum}.',
+        'exact': 'Must be {exact}.'
     }
 
     def __init__(self, minimum=None, maximum=None, exclusive_minimum=False,
@@ -262,7 +263,7 @@ class NumericType(Validator):
         if self.enum is not None:
             if value not in self.enum:
                 if len(self.enum) == 1:
-                    self.error('exact')
+                    self.error('exact', exact=self.enum[0])
                 self.error('enum')
 
         if self.minimum is not None:
@@ -431,7 +432,8 @@ class Object(Validator):
                     else:
                         default = child_schema.default
                     value[key] = default
-
+                else:
+                    continue
             item = value[key]
             try:
                 validated[key] = child_schema.validate(

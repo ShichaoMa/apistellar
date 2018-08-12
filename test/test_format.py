@@ -42,8 +42,7 @@ class A(Type):
     b = Proxy(B, default=B)
 
 
-a = A()
-
-a.format()
-
-print(a)
+def test_format():
+    a = A()
+    a.format()
+    assert a.created_at.hour == datetime.now().hour + 1

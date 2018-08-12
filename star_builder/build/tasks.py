@@ -176,7 +176,7 @@ class Model(Drivable, ModuleTask):
         sub_parser.add_argument(
             "-p", "--path", help="所属服务路径 eg: article/comment")
         sub_parser.add_argument(
-            "-a", "--async", action="store_true", help="是否拥有导步获取属性的能力")
+            "-a", "--async", action="store_true", help="是否拥有异步获取属性的能力")
         sub_parser.add_argument("fields", nargs="*", help="字段 eg: id:integer")
 
 

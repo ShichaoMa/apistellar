@@ -1,4 +1,4 @@
-apistar==0.5.39
+apistar==0.5.40
 uvicorn==0.2.2
 gunicorn
 toolkity

@@ -15,24 +15,19 @@ class Teacher(Type):
     subject = validators.Proxy(Subject, default=dict)
 
 
-a = Student({"name": "tom", "subject": {"id": "10"}})
+def test_proxy1():
+    a = Student({"name": "tom", "subject": {"id": "10"}})
+    assert a.name == "tom"
 
-print(a)
 
-a.format()
-print(a)
+def test_proxy2():
+    b = Student(name="tom")
+    b.format()
+    assert b.subject is None
 
-b = Student(name="tom")
-print(b)
-b.format()
-print(b)
 
-c = Teacher(name="john")
-print(c)
-c.format()
-print(c)
-
-d = Teacher(b.to_dict())
-print(d)
-d.format()
-print(d)
+def test_proxy3():
+    c = Teacher(name="john")
+    c.format()
+    assert isinstance(c.subject, Subject)
+    assert c.subject.id is None

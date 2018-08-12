@@ -1,10 +1,12 @@
 import re
 import typing
 
+from enum import Enum
 from urllib.parse import unquote
 from collections import namedtuple
 from flask.sessions import SecureCookieSession
 
+from .exceptions import Readonly
 
 Cookie = typing.NewType('Cookie', str)
 Session = typing.NewType("Session", SecureCookieSession)
@@ -153,3 +155,41 @@ class FileStream(object):
 
     async def __anext__(self):
         return await File.from_boundary(self, self.receive, self.boundary)
+
+
+class InheritType(Enum):
+    DUPLICATE = 0  # 重名且类型相符，在参数列表和赋值中不体现，在super中体现
+    OVERWRITE = 1  # 重名但是类型不同，全部位置要体现，但是需要父类的参数改名字
+    NORMAL = 2  # 正常的情况
+
+
+class Inject(object):
+
+    def __init__(self, type, default):
+        self.annotation = self.type = type
+        self.name = type.__name__.lower()
+        self.default = default
+
+    def __set__(self, instance, value):
+        raise Readonly(f"Readonly object of {self.type.__name__}.")
+
+    def __get__(self, instance, cls):
+        if instance:
+            return instance.__dict__[self.name]
+        else:
+            return self
+
+
+class InjectManager(object):
+
+    def __init__(self, default=None):
+        self.default = default
+
+    def __lshift__(self, other):
+        return Inject(other, self.default)
+
+    def __call__(self, *, default=None):
+        return InjectManager(default)
+
+
+inject = InjectManager()

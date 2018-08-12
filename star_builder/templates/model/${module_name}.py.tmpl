@@ -1,7 +1,7 @@
-from star_builder import {{"Async" if async else ""}}Type, validators, Component
+from star_builder import {{"Async" if async else ""}}Type, validators, ModelFactory, inject
 {% if module %}{{"from %s import %s\n" % (module, cls)}} {% endif %}
 
-class {{class_name}}({{"Async" if async else ""}}Type):
+class {{class_name}}({{"Async" if async else ""}}Type):{% if module %}{{"\n    " + cls.lower()}} = inject << {{cls}} {% endif %}
 {% if fields %}{% for name, type in fields %}    {{name}} = validators.{{type}}()
 {% endfor %}{% else %}    pass
 {% endif %}{% if async %}
@@ -18,8 +18,7 @@ class {{class_name}}({{"Async" if async else ""}}Type):
         pass
             {% endif %}
 
-class {{class_name}}Component(Component):
+class {{class_name}}Factory(ModelFactory):
 
-    async def resolve(self{{", %s: %s" % (cls.lower(), cls) if cls else ""}}) -> {{class_name}}:
-        {% if module %}{{class_name}}.init({{cls.lower()}}={{cls.lower()}})
-        {% endif %}return {{class_name}}()
+    async def product(self) -> {{class_name}}:
+        return {{class_name}}()

@@ -4,12 +4,13 @@ from .app import Application, show_routes
 from .build import main
 from .build.tasks import Task
 
+from .bases.service import Service
 from .bases.hooks import Hook, Return
 from .bases.components import Component
 from .bases.controller import Controller
 from .bases.response import FileResponse
-from .bases.service import Service, inject
-from .bases.entities import Session, Cookie, FileStream
+from .bases.model_factory import ModelFactory
+from .bases.entities import Session, Cookie, FileStream, inject
 
 from .console import main as console
 
@@ -22,4 +23,4 @@ from .route import route, get, post, delete, put, options
 
 from .helper import redirect, require
 
-__version__ = "0.9.5"
+__version__ = "0.9.6"

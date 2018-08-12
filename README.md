@@ -25,7 +25,7 @@ pip install star_builder
 - [Quick Start](https://github.com/ShichaoMa/star_builder/wiki/Quick-Start)
 - [star_builder项目组成](https://github.com/ShichaoMa/star_builder/wiki/star_builder项目组成)
 - [model的使用方法](https://github.com/ShichaoMa/star_builder/wiki/model的使用方法)
-- [model component的使用方法](https://github.com/ShichaoMa/star_builder/wiki/model-component的使用方法)
+- [model factory的使用方法](https://github.com/ShichaoMa/star_builder/wiki/model-factory的使用方法)
 - [controller的使用方法](https://github.com/ShichaoMa/star_builder/wiki/controller的使用方法)
 - [service的使用方法](https://github.com/ShichaoMa/star_builder/wiki/service的使用方法)
 - [Session管理](https://github.com/ShichaoMa/star_builder/wiki/Session管理)

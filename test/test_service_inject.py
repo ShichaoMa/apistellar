@@ -1,6 +1,6 @@
 import pytest
 
-from star_builder.bases.service import Service, inject
+from star_builder import Service, inject
 from star_builder.bases.exceptions import Readonly
 
 
@@ -114,7 +114,7 @@ def test_inherit3():
     service = Child()
     assert service.resolve.__annotations__["return"] == Child
     assert service.resolve.__annotations__["a"] == B
-    assert service.resolve.__annotations__["father_a"] == A
+    assert service.resolve.__annotations__["qwertrewq_a"] == A
     service = service.resolve(3, 5)
     assert service.a == 5
 
@@ -131,7 +131,7 @@ def test_inherit4():
     service = Child()
     assert service.resolve.__annotations__["return"] == Child
     assert service.resolve.__annotations__["a"] == B
-    assert service.resolve.__annotations__["father_a"] == A
+    assert service.resolve.__annotations__["qwertrewq_a"] == A
     service = service.resolve(3, 5)
     assert service.a == 5
 
@@ -150,4 +150,42 @@ def test_inherit5():
     assert service.resolve.__annotations__["return"] == Child
     assert service.resolve.__annotations__["a"] == A
     service = service.resolve(4, 3, 3)
+
+
+def test_inherit6():
+    class Father(Service):
+        def resolve(self, b: B, a: int=10):
+            print(a)
+            return self
+
+    class Child(Father):
+        c = inject << B
+        a = inject << A
+
+    service = Child()
+    assert service.resolve.__annotations__["return"] == Child
+    assert service.resolve.__annotations__["a"] == A
+    service = service.resolve(4, 3, 7)
+
+
+def test_inherit7():
+    """
+    a: A=10不会生效，在子类中的定义会无视父类的参数列表
+    :return:
+    """
+    class Father(Service):
+        def resolve(self, b: B, a: A=10):
+            print(a)
+            return self
+
+    class Child(Father):
+        c = inject << B
+        a = inject << A
+
+    service = Child()
+    assert service.resolve.__annotations__["return"] == Child
+    assert service.resolve.__annotations__["a"] == A
+    service = service.resolve(4, 3, 12)
+    assert service.a == 3
+
 

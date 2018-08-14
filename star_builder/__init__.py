@@ -23,4 +23,4 @@ from .route import route, get, post, delete, put, options
 
 from .helper import redirect, require
 
-__version__ = "0.9.7"
+__version__ = "0.9.8"

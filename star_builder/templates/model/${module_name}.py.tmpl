@@ -20,5 +20,7 @@ class {{class_name}}({{"Async" if async else ""}}Type):{% if module %}{{"\n    "
 
 class {{class_name}}Factory(ModelFactory):
 
+    model = {{class_name}}
+
     async def product(self) -> {{class_name}}:
         return {{class_name}}()

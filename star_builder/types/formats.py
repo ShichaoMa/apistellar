@@ -142,8 +142,8 @@ class FormatDatetime(BaseFormat):
         return datetime.datetime.strptime(value, self.format)
 
     def to_string(self, value):
-        if isinstance(value, str):
-            return str
+        if isinstance(value, str) or value is None:
+            return value
         else:
             return value.strftime(self.format)
 

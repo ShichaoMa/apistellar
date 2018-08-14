@@ -24,8 +24,7 @@ class Component(_Component):
 
     def identity(self, parameter: inspect.Parameter):
         """
-        Each component needs a unique identifier string that we use for lookups
-        from the `state` dictionary when we run the dependency injection.
+        修复annotation_name重名的Bug
         """
         parameter_name = parameter.name.lower()
         annotation_name = str(parameter.annotation)

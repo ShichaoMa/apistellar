@@ -28,24 +28,37 @@ class ErrorHook(object):
     处理异常
     """
     errors = {999: "Unknown error"}
+    fmt = '[{asctime}] {name} {levelname}: {message}'
+
+    def __init__(self):
+        self.logger = logging.getLogger("ErrorHook")
+        self.logger.propagate = False
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(10)
+        handler.setFormatter(logging.Formatter(self.fmt, style="{"))
+        self.logger.addHandler(handler)
 
     def on_error(self, error: Exception, app: App) -> http.Response:
         """
         Handle error
         """
-        code = 999
-        message = None
+        args = list()
         if error.args:
-            if not isinstance(error.args[0], (tuple, list)) \
-                    or len(error.args[0]) < 2:
+            if not isinstance(error.args[0], (tuple, list)):
                 if isinstance(error.args[0], int):
-                    code = error.args[0]
+                    args.append(error.args[0])
+                    args.append(None)
                 else:
-                    message = error.args[0]
+                    args.append(999)
+                    args.append(error.args[0])
             else:
-                code, message = error.args[0][:2]
+                args.extend(error.args[0])
 
-        code = int(code)
+        if not isinstance(args[0], int):
+            args.insert(0, 999)
+
+        args.extend([None, None, None])
+        code, message, extra, *_ = args
         # apistar不支持在on_request时打断后续执行直接返回response
         # 所以在只能通过raise异常来通过异常参数传递响应。
         if isinstance(message, http.Response):
@@ -59,10 +72,13 @@ class ErrorHook(object):
             "code": code,
             "errcode": code,
             "message": message,
+            "extra": extra,
         }
+        detail = "".join(traceback.format_exc())
         if app.debug:
-            payload["detail"] = "".join(traceback.format_exc())
-        traceback.print_exc()
+            payload["detail"] = detail
+        self.logger.error(
+            "Error happened: %s extra: %s trace:\n%s. ", message, extra, detail)
         return http.JSONResponse(payload)
 
     @classmethod

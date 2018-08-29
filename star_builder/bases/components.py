@@ -113,16 +113,16 @@ class DummyFlaskAppComponent(Component):
         }
 
     def resolve(self, settings: FrozenSettings,
-                host: http.Header,
-                ip_host: http.Host) -> DummyFlaskApp:
-                self.default_config["SERVER_NAME"] = host or ip_host
-                return DummyFlaskApp(
-                    config=settings.get("SESSION_CONFIG", self.default_config),
-                    secret_key=settings.get("SECRET_KEY"),
-                    permanent_session_lifetime=timedelta(
-                        days=settings.get("PERMANENT_SESSION_LIFETIME", 31)),
-                    session_cookie_name=settings.get(
-                        "SESSION_COOKIE_NAME", "session"))
+        host: http.Header,
+        ip_host: http.Host) -> DummyFlaskApp:
+        self.default_config["SERVER_NAME"] = host or ip_host
+        return DummyFlaskApp(
+            config=settings.get("SESSION_CONFIG", self.default_config),
+            secret_key=settings.get("SECRET_KEY"),
+            permanent_session_lifetime=timedelta(
+                days=settings.get("PERMANENT_SESSION_LIFETIME", 31)),
+            session_cookie_name=settings.get(
+                "SESSION_COOKIE_NAME", "session"))
 
 
 class SessionComponent(Component):

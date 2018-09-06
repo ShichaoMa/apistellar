@@ -1,0 +1,9 @@
+*.pyc
+*egg-info
+dist/
+.pytest_cache
+.eggs/
+.idea/
+htmlcov/
+*log
+*logs

@@ -1,13 +1,13 @@
 import os
 import sys
+import asyncio
 import logging
 import traceback
 
-from collections.abc import Awaitable
 from apistar import ASyncApp, App, exceptions
-from apistar.server.asgi import ASGIScope, ASGISend
 from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
+from apistar.server.asgi import ASGIScope, ASGISend
 
 from .bases.controller import Controller
 from .bases.websocket import WebSocketApp
@@ -43,7 +43,7 @@ class FixedAsyncApp(ASyncApp):
 
     async def read(self, response):
         coroutine = response.content.read(1024000)
-        if isinstance(coroutine, Awaitable):
+        if asyncio.iscoroutine(coroutine):
             return await coroutine
         else:
             return coroutine
@@ -118,7 +118,8 @@ def application(app_name, template_dir=None,
                 settings_path="settings",
                 debug=True,
                 async=True,
-                current_dir="."):
+                current_dir=".",
+                routes=None):
     """
        参数指定选择使用异步app还是同步app
        可以动态发现当前项目根目录下所有controller中的handler
@@ -130,8 +131,10 @@ def application(app_name, template_dir=None,
     load_packages(".")
     include = routing(Controller)
     SettingsComponent.register_path(settings_path)
-
-    if include:
+    # 提供自定义routes传递主要是为了单元测试
+    if routes:
+        routes = routes
+    elif include:
         routes = [include]
         print_routing(routes, write=logger.debug)
     else:

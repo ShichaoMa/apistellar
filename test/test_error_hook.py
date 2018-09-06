@@ -70,3 +70,12 @@ def test_error_hook6():
     app = namedtuple("App", "debug")
     content = hook.on_error(Exception(Response(content="abc")), app).content
     assert content == b"abc"
+
+
+def test_error_hook7():
+    hook = ErrorHook()
+    app = namedtuple("App", "debug")
+    content = hook.on_error(AssertionError(), app).content
+    data = json.loads(content)
+    assert data["code"] == 999
+    assert data["message"] == "Unknown error"

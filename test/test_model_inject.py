@@ -148,3 +148,35 @@ def test_product6():
     factory = AFactory()
     loop = asyncio.get_event_loop()
     a = loop.run_until_complete(factory.resolve())
+
+
+def test_product7():
+    """
+    model发生了继承时
+    :return:
+    """
+    class B:
+        pass
+
+    class A:
+        b = inject << B
+
+    class C(A):
+        pass
+
+    class CFactory(ModelFactory):
+        model = C
+
+        async def product(self) -> C:
+            c = C()
+            assert c.b == 3
+            return c
+
+    factory = CFactory()
+    loop = asyncio.get_event_loop()
+    a = loop.run_until_complete(factory.resolve(3))
+
+
+if __name__ == "__main__":
+    import pytest
+    pytest.main(["test_model_inject.py"])

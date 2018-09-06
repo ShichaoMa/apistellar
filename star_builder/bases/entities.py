@@ -9,6 +9,7 @@ from flask.sessions import SecureCookieSession
 from .exceptions import Readonly
 
 Cookie = typing.NewType('Cookie', str)
+FormParam = typing.NewType("FormParam", str)
 Session = typing.NewType("Session", SecureCookieSession)
 DummyFlaskApp = namedtuple(
     "DummyFlaskApp",
@@ -21,7 +22,7 @@ class File(object):
         rb"Content-Disposition: form-data;"
         rb"(?: name=\"(?P<name>[^;]*?)\")?"
         rb"(?:; filename\*?=\"?"
-        rb"(?:(?P<enc>.+?)'"
+        rb"(?:(?P<enc>[\w\-]+?)'"
         rb"(?P<lang>\w*)')?"
         rb"(?P<filename>[^\"]*)\"?)?")
 

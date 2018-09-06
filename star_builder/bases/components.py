@@ -17,7 +17,7 @@ from apistar.conneg import negotiate_content_type
 from apistar import Route, exceptions, http, Component as _Component
 
 from .controller import Controller
-from .entities import Session, Cookie, FileStream, DummyFlaskApp
+from .entities import Session, Cookie, FormParam, FileStream, DummyFlaskApp
 
 
 class Component(_Component):
@@ -164,3 +164,11 @@ class FileStreamComponent(Component):
             raise exceptions.UnsupportedMediaType()
 
         return await self.decode(receive, headers)
+
+
+class FormParamComponent(Component):
+
+    def resolve(self, parameter: inspect.Parameter,
+                form: http.RequestData) -> FormParam:
+        if parameter.name in form:
+            return FormParam(form[parameter.name])

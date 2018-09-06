@@ -53,6 +53,8 @@ class ErrorHook(object):
                     args.append(error.args[0])
             else:
                 args.extend(error.args[0])
+        else:
+            args.append(None)
 
         if not isinstance(args[0], int):
             args.insert(0, 999)

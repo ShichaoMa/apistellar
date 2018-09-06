@@ -1,14 +1,15 @@
 import os
 import sys
 import asyncio
+import inspect
 
 from IPython import embed
 from IPython.core import formatters
 from toolkit import cache_property
 
 from apistar import Route
-from apistar.http import PathParams, Response
 from apistar.server.injector import ASyncInjector
+from apistar.http import PathParams, Response, Header
 from apistar.server.validation import VALIDATION_COMPONENTS
 from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive,\
     ASGIScope, ASGISend
@@ -16,7 +17,7 @@ from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive,\
 from ..bases.components import SettingsComponent, Component
 from ..helper import find_children, load_packages, get_real_method, MySelf
 
-# bug fix
+# bugfix
 formatters.get_real_method = get_real_method
 
 
@@ -56,6 +57,29 @@ class ConsoleManager(object):
 
         return await self.injector.run_async([wrapper], dict(self.state))
 
+    def mock(self, datas):
+        """
+        构建测试数据
+        :param datas: {(http.QueryParam, "_id"): 2222}/ {http.QueryParams: {"_id": 1111}}
+        :return:
+        """
+        for k, v in datas.items():
+            if isinstance(k, tuple):
+                k, name = k
+            else:
+                name = k.__class__.__name__.lower()
+            parameter = inspect.Parameter(
+                name, inspect._POSITIONAL_OR_KEYWORD, annotation=k)
+            for component in self.injector.components:
+                if component.can_handle_parameter(parameter):
+                    identity = component.identity(parameter)
+                    break
+            else:
+                raise RuntimeError(f"Type: {k} cannot be mocked! ")
+
+            self.state[identity] = v
+            self.injector.initial[identity] = k
+
     def __getattr__(self, item):
         assert item in self.beans, f"{item} cannot inject!"
         beans = self.beans[item]
@@ -81,6 +105,11 @@ class ConsoleManager(object):
 
     @staticmethod
     def await(awaitable):
+        """
+        模拟await关键字
+        :param awaitable:
+        :return:
+        """
         loop = asyncio.get_event_loop()
         task = loop.create_task(awaitable.__await__())
         loop.run_until_complete(task)
@@ -88,6 +117,9 @@ class ConsoleManager(object):
 
     def start(self):
         await = self.await
+        def inject(class_name):
+            return getattr(self, class_name)
+
         embed()
 
 

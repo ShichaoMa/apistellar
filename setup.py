@@ -1,10 +1,9 @@
 # -*- coding:utf-8 -*-
 import os
 import re
-try:
-    from setuptools import setup, find_packages
-except:
-    from distutils.core import setup
+
+
+from setuptools import setup, find_packages
 
 
 def get_version(package):
@@ -41,26 +40,29 @@ setup(
     description="enhance apistar web framework. ",
     long_description=LONG_DESCRIPTION,
     classifiers=[
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python',
-        'Intended Audience :: Developers',
-        'Operating System :: OS Independent',
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python",
+        "Intended Audience :: Developers",
+        "Operating System :: OS Independent",
     ],
     keywords="apistar",
     author="cn",
     author_email="cnaafhvk@foxmail.com",
     url="https://www.github.com/ShichaoMa/star_builder",
     entry_points={
-        'console_scripts': [
-            'apistar-create = star_builder:main',
-            'apistar-console = star_builder:console',
-            'apistar-routes = star_builder:show_routes'
+        "console_scripts": [
+            "apistar-create = star_builder:main",
+            "apistar-console = star_builder:console",
+            "apistar-routes = star_builder:show_routes"
         ],
+        "pytest11": ["star_builder = star_builder.pytest"]
+
     },
     license="MIT",
     packages=find_packages(),
-
     install_requires=install_requires(),
     include_package_data=True,
     zip_safe=True,
+    setup_requires=["pytest-runner"],
+    tests_require=["pytest"]
 )

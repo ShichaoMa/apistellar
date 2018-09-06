@@ -73,4 +73,4 @@ async def test_download(normal_server_port, filename):
 
 
 if __name__ == "__main__":
-    pytest.main(["test_big_file_upload_and_download.py"])
+    pytest.main(["test_file_stream.py"])

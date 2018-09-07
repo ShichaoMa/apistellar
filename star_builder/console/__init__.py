@@ -14,6 +14,7 @@ from apistar.server.validation import VALIDATION_COMPONENTS
 from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive,\
     ASGIScope, ASGISend
 
+from .mocker import Mocker
 from ..bases.components import SettingsComponent, Component
 from ..helper import find_children, load_packages, get_real_method, MySelf
 
@@ -46,6 +47,7 @@ class ConsoleManager(object):
             'path_params': MySelf(),
             'route': MySelf()
         }
+        self.mock_keys = list()
         self.components = find_children(Component)
         self.injector = ASyncInjector(
             list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + self.components,
@@ -57,30 +59,29 @@ class ConsoleManager(object):
 
         return await self.injector.run_async([wrapper], dict(self.state))
 
-    def mock(self, datas):
+    def mock(self, mocker):
         """
         构建测试数据
-        :param datas: {(http.QueryParam, "_id"): 2222}/ {http.QueryParams: {"_id": 1111}}
+        :param mocker: Mocker对象
         :return:
         """
-        for k, v in datas.items():
-            if isinstance(k, tuple):
-                k, name = k
-            else:
-                name = k.__class__.__name__.lower()
+        for type, val, param_name in mocker:
+            param_name = param_name or type.__class__.__name__.lower()
             parameter = inspect.Parameter(
-                name, inspect._POSITIONAL_OR_KEYWORD, annotation=k)
+                param_name, inspect._POSITIONAL_OR_KEYWORD, annotation=type)
             for component in self.injector.components:
                 if component.can_handle_parameter(parameter):
                     identity = component.identity(parameter)
                     break
             else:
-                raise RuntimeError(f"Type: {k} cannot be mocked! ")
+                raise RuntimeError(f"Type: {type} cannot be mocked! ")
 
-            self.state[identity] = v
-            self.injector.initial[identity] = k
+            self.mock_keys.append(identity)
+            self.state[identity] = val
+            self.injector.initial[identity] = type
 
     def __getattr__(self, item):
+        item = item.capitalize()
         assert item in self.beans, f"{item} cannot inject!"
         beans = self.beans[item]
         if len(beans) == 1:
@@ -115,8 +116,18 @@ class ConsoleManager(object):
         loop.run_until_complete(task)
         return task.result()
 
+    def clear(self):
+        """
+        清除mock数据
+        :return:
+        """
+        for key in self.mock_keys:
+            del self.state[key]
+            del self.injector.initial[key]
+
     def start(self):
         await = self.await
+        mock = self.mock
         def inject(class_name):
             return getattr(self, class_name)
 

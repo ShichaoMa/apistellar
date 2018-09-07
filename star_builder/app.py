@@ -43,7 +43,7 @@ class FixedAsyncApp(ASyncApp):
 
     async def read(self, response):
         coroutine = response.content.read(1024000)
-        if asyncio.iscoroutine(coroutine):
+        if asyncio.iscoroutine(coroutine) or asyncio.isfuture(coroutine):
             return await coroutine
         else:
             return coroutine

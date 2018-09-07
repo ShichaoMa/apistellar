@@ -27,4 +27,4 @@ from .route import route, get, post, delete, put, options, websocket
 
 from .helper import redirect, require
 
-__version__ = "0.9.11"
+__version__ = "0.9.12"

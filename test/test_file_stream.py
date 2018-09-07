@@ -2,23 +2,9 @@ import os
 import pytest
 import aiofiles
 
+from toolkit import readexactly
 from aiohttp import ClientSession, FormData
 from star_builder import Controller, FileStream, post, get
-
-
-async def readexactly(steam, n):
-    if steam._exception is not None:
-        raise steam._exception
-
-    blocks = []
-    while n > 0:
-        block = await steam.read(n)
-        if not block:
-            break
-        blocks.append(block)
-        n -= len(block)
-
-    return b''.join(blocks)
 
 
 class UploadController(Controller):

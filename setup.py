@@ -41,9 +41,9 @@ setup(
     long_description=LONG_DESCRIPTION,
     classifiers=[
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.6",
         "Intended Audience :: Developers",
-        "Operating System :: OS Independent",
+        "Operating System :: Unix",
     ],
     keywords="apistar",
     author="cn",

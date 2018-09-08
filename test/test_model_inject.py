@@ -177,6 +177,32 @@ def test_product7():
     a = loop.run_until_complete(factory.resolve(3))
 
 
+def test_product8():
+    """
+    测试上一次注入不会影响当前注入结果
+    :return:
+    """
+    class B:
+        pass
+
+    class A:
+        a = inject << B
+
+    class AFactory(ModelFactory):
+        model = A
+
+        async def product(self, b: B) -> A:
+            print(b)
+            a = A()
+            return a
+
+    factory = AFactory()
+    loop = asyncio.get_event_loop()
+    a = loop.run_until_complete(factory.resolve(3, 5))
+    a = loop.run_until_complete(factory.resolve(4, 6))
+    assert a.a == 4
+
+
 if __name__ == "__main__":
     import pytest
     pytest.main(["test_model_inject.py"])

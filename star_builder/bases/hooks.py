@@ -6,8 +6,8 @@ import traceback
 from apistar import App, http
 from flask.sessions import SecureCookieSessionInterface
 
-from .entities import Session, DummyFlaskApp
 from ..helper import HookReturn
+from .entities import Session, DummyFlaskApp
 
 
 class SessionHook(object):

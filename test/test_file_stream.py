@@ -18,8 +18,7 @@ class UploadController(Controller):
                         f.write(chuck)
             else:
                 # 没有filename的是其它类型的form参数
-                arg = await file.read()
-                print(f"Form参数：{file.name}={arg.decode()}")
+                await file.read()
         return {"value": "success"}
 
     @get("/test/download")

@@ -454,3 +454,14 @@ class MySelf(object):
         return future.__await__()
 
     __repr__ = __str__
+
+
+# mock state
+STATE = {
+        'scope': MySelf(),
+        'receive': MySelf(),
+        'send': MySelf(),
+        'exc': None,
+        'path_params': MySelf(),
+        'route': MySelf()
+        }

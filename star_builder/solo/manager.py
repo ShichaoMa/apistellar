@@ -18,7 +18,7 @@ from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive, \
 
 from . import Solo
 from ..bases.components import SettingsComponent, Component
-from ..helper import find_children, ArgparseHelper, load_packages, MySelf
+from ..helper import find_children, ArgparseHelper, load_packages, STATE
 
 
 class SoloManager(object):
@@ -46,15 +46,8 @@ class SoloManager(object):
             'route': Route,
             'response': Response,
         }
-        self.state = {
-                'scope': MySelf(),
-                'receive': MySelf(),
-                'send': MySelf(),
-                'exc': None,
-                'app': self,
-                'path_params': MySelf(),
-                'route': MySelf()
-            }
+        self.state = STATE
+        self.state["app"] = self
         self.injector = ASyncInjector(
             list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + find_children(Component),
             initial_components)

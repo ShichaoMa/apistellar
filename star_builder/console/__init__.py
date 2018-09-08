@@ -16,7 +16,7 @@ from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive,\
 
 from .mocker import Mocker
 from ..bases.components import SettingsComponent, Component
-from ..helper import find_children, load_packages, get_real_method, MySelf
+from ..helper import find_children, load_packages, get_real_method, STATE
 
 # bugfix
 formatters.get_real_method = get_real_method
@@ -38,15 +38,8 @@ class ConsoleManager(object):
             'route': Route,
             'response': Response,
         }
-        self.state = {
-            'scope': MySelf(),
-            'receive': MySelf(),
-            'send': MySelf(),
-            'exc': None,
-            'app': self,
-            'path_params': MySelf(),
-            'route': MySelf()
-        }
+        self.state = STATE
+        self.state["app"] = self
         self.mock_keys = list()
         self.components = find_children(Component)
         self.injector = ASyncInjector(

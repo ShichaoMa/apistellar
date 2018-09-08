@@ -4,17 +4,18 @@ import asyncio
 import logging
 import traceback
 
-from apistar import ASyncApp, App, exceptions
+from apistar import ASyncApp, exceptions
 from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 from apistar.server.asgi import ASGIScope, ASGISend
 
 from .bases.controller import Controller
 from .bases.websocket import WebSocketApp
+from .bases.model_factory import ModelFactory
 from .bases.components import SettingsComponent, Component
 from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from .helper import load_packages, routing, print_routing, TypeEncoder, \
-    find_children, enhance_response
+    find_children, enhance_response, STATE
 
 __all__ = ["Application"]
 enhance_response(Response)
@@ -88,27 +89,6 @@ class FixedAsyncApp(ASyncApp):
             return WebSocketApp(scope, self)
 
 
-class FixedApp(App):
-
-    def exception_handler(self, exc: Exception) -> Response:
-        if isinstance(exc, exceptions.HTTPException):
-            payload = {
-                "type": "http",
-                "code": exc.status_code,
-                "errcode": exc.status_code,
-                "message": exc.detail,
-            }
-            if self.debug:
-                payload["detail"] = "".join(traceback.format_exc())
-            return JSONResponse(payload, exc.status_code, exc.get_headers())
-        raise exc
-
-    def error_handler(self, return_value: ReturnValue) -> Response:
-        if isinstance(return_value, Response):
-            return return_value
-        return super().error_handler()
-
-
 def application(app_name, template_dir=None,
                 static_dir=None,
                 packages=None,
@@ -117,11 +97,9 @@ def application(app_name, template_dir=None,
                 static_url='/static/',
                 settings_path="settings",
                 debug=True,
-                async=True,
                 current_dir=".",
                 routes=None):
     """
-       参数指定选择使用异步app还是同步app
        可以动态发现当前项目根目录下所有controller中的handler
     """
     logger = logging.getLogger(app_name)
@@ -142,7 +120,7 @@ def application(app_name, template_dir=None,
         routes = []
     custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
     hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks
-    app = (FixedAsyncApp if async else FixedApp)(
+    app = FixedAsyncApp(
         routes,
         template_dir=template_dir,
         static_dir=static_dir,
@@ -154,6 +132,15 @@ def application(app_name, template_dir=None,
         event_hooks=hooks)
 
     app.debug = debug
+    # 完成factory中model的初始注入
+    loop = asyncio.get_event_loop()
+    resolves = [factory.resolve for factory in find_children(ModelFactory)]
+    for resolve in resolves:
+        try:
+            STATE["app"] = app
+            loop.run_until_complete(app.injector.run_async([resolve], STATE))
+        except Exception:
+            pass
     return app
 
 

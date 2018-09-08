@@ -11,7 +11,9 @@ from collections.abc import Mapping
 from asyncio import Future, get_event_loop
 from argparse import Action, _SubParsersAction
 
-from apistar import Include
+from apistar import Include, Route
+from apistar.http import PathParams, Response
+from apistar.server.asgi import ASGIReceive, ASGIScope, ASGISend
 from werkzeug._compat import string_types
 from werkzeug.utils import escape, text_type
 from werkzeug.http import dump_cookie, dump_header, parse_set_header
@@ -464,4 +466,15 @@ STATE = {
         'exc': None,
         'path_params': MySelf(),
         'route': MySelf()
+        }
+
+
+INITIAL = {
+            'scope': ASGIScope,
+            'receive': ASGIReceive,
+            'send': ASGISend,
+            'exc': Exception,
+            'path_params': PathParams,
+            'route': Route,
+            'response': Response,
         }

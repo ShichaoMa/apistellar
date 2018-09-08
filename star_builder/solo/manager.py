@@ -9,19 +9,12 @@ import traceback
 from toolkit import cache_property
 from argparse import ArgumentParser
 
-from apistar import Route
-from apistar.http import PathParams, Response
-from apistar.server.injector import ASyncInjector
-from apistar.server.validation import VALIDATION_COMPONENTS
-from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive, \
-    ASGIScope, ASGISend
-
 from . import Solo
-from ..bases.components import SettingsComponent, Component
-from ..helper import find_children, ArgparseHelper, load_packages, STATE
+from ..bases.manager import Manager
+from ..helper import find_children, ArgparseHelper
 
 
-class SoloManager(object):
+class SoloManager(Manager):
     """
     独立任务程序管理器
     """
@@ -29,30 +22,13 @@ class SoloManager(object):
 
     def __init__(self, app_name, current_dir="."):
         os.chdir(current_dir)
-        sys.path.insert(0, current_dir)
-        sys.modules.pop(app_name, None)
-        load_packages(".")
+        self.initialize(current_dir, app_name)
         self.solos = {solo.__name__.lower(): solo
                       for solo in find_children(Solo, False)}
         self.args = self.parse_args()
-        SettingsComponent.register_path(self.args.settings)
-        initial_components = {
-            'scope': ASGIScope,
-            'receive': ASGIReceive,
-            'send': ASGISend,
-            'exc': Exception,
-            'app': SoloManager,
-            'path_params': PathParams,
-            'route': Route,
-            'response': Response,
-        }
-        self.state = STATE
-        self.state["app"] = self
-        self.injector = ASyncInjector(
-            list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + find_children(Component),
-            initial_components)
         self.solo = self.solos[self.args.solo](**vars(self.args))
         self.task = None
+        self.finalize(self.args.settings)
 
     @cache_property
     def logger(self):

@@ -1,5 +1,4 @@
 import os
-import sys
 import asyncio
 import inspect
 
@@ -7,44 +6,20 @@ from IPython import embed
 from IPython.core import formatters
 from toolkit import cache_property
 
-from apistar import Route
-from apistar.server.injector import ASyncInjector
-from apistar.http import PathParams, Response, Header
-from apistar.server.validation import VALIDATION_COMPONENTS
-from apistar.server.asgi import ASGI_COMPONENTS, ASGIReceive,\
-    ASGIScope, ASGISend
-
 from .mocker import Mocker
-from ..bases.components import SettingsComponent, Component
-from ..helper import find_children, load_packages, get_real_method, STATE
+from ..bases.manager import Manager
+from ..helper import get_real_method
 
 # bugfix
 formatters.get_real_method = get_real_method
 
 
-class ConsoleManager(object):
+class ConsoleManager(Manager):
 
     def __init__(self):
-        sys.path.insert(0, os.getcwd())
-        load_packages(".")
-        SettingsComponent.register_path("settings")
-        initial_components = {
-            'scope': ASGIScope,
-            'receive': ASGIReceive,
-            'send': ASGISend,
-            'exc': Exception,
-            'app': ConsoleManager,
-            'path_params': PathParams,
-            'route': Route,
-            'response': Response,
-        }
-        self.state = STATE
-        self.state["app"] = self
+        self.initialize(os.getcwd())
+        self.finalize()
         self.mock_keys = list()
-        self.components = find_children(Component)
-        self.injector = ASyncInjector(
-            list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + self.components,
-            initial_components)
 
     async def resolve(self, type):
         def wrapper(arg: type):
@@ -74,7 +49,6 @@ class ConsoleManager(object):
             self.injector.initial[identity] = type
 
     def __getattr__(self, item):
-        item = item.capitalize()
         assert item in self.beans, f"{item} cannot inject!"
         beans = self.beans[item]
         if len(beans) == 1:

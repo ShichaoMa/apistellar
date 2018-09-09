@@ -4,5 +4,4 @@ gunicorn
 toolkity
 ipython==6.4.0
 flask==1.0.2
-pytest
 whitenoise<=3.3.1

@@ -1,7 +1,0 @@
-from apistar import http
-from star_builder import Controller, route, get, post
-{{'' if father == 'Controller' else 'from .. import ' + father + '\n'}}
-
-@route("/{{module_name}}")
-class {{class_name}}Controller({{father}}):
-    pass

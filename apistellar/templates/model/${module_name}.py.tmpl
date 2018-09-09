@@ -1,0 +1,26 @@
+from apistellar import {{"Async" if async else ""}}Type, validators, ModelFactory, inject
+{% if module %}{{"from %s import %s\n" % (module, cls)}} {% endif %}
+
+class {{class_name}}({{"Async" if async else ""}}Type):{% if module %}{{"\n    " + cls.lower()}} = inject << {{cls}} {% endif %}
+{% if fields %}{% for name, type in fields %}    {{name}} = validators.{{type}}()
+{% endfor %}{% else %}    pass
+{% endif %}{% if async %}
+    async def load(self):
+        """
+        load方法使用self中的现在字段值(如：id)从特定数据源中获取数据。
+        load方法中禁止使用 await 获取self中的字段值，如果这个字段值不存在，
+        会引发无限递归，推荐直接使用self["id"]获取。
+        eg:
+        id = self.get("id")
+        assert id is not None, (777, "id is None, cannot load!")
+        return User(await self.col.find_one({"id": id}))
+        """
+        pass
+            {% endif %}
+
+class {{class_name}}Factory(ModelFactory):
+
+    model = {{class_name}}
+
+    async def product(self) -> {{class_name}}:
+        return {{class_name}}()

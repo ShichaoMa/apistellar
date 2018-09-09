@@ -35,8 +35,8 @@ except UnicodeDecodeError:
     LONG_DESCRIPTION = open("README.rst", encoding="utf-8").read()
 
 setup(
-    name="star-builder",
-    version=get_version("star_builder"),
+    name="apistellar",
+    version=get_version("apistellar"),
     description="enhance apistar web framework. ",
     long_description=LONG_DESCRIPTION,
     classifiers=[
@@ -48,15 +48,13 @@ setup(
     keywords="apistar",
     author="cn",
     author_email="cnaafhvk@foxmail.com",
-    url="https://www.github.com/ShichaoMa/star_builder",
+    url="https://www.github.com/ShichaoMa/apistellar",
     entry_points={
         "console_scripts": [
-            "apistar-create = star_builder:main",
-            "apistar-console = star_builder:console",
-            "apistar-routes = star_builder:show_routes"
-        ],
-        "pytest11": ["star_builder = star_builder.pytest"]
-
+            "apistar-create = apistellar:main",
+            "apistar-console = apistellar:console",
+            "apistar-routes = apistellar:show_routes"
+        ]
     },
     license="MIT",
     packages=find_packages(),
@@ -64,5 +62,5 @@ setup(
     include_package_data=True,
     zip_safe=True,
     setup_requires=["pytest-runner"],
-    tests_require=["pytest"]
+    tests_require=["pytest-apistellar"]
 )

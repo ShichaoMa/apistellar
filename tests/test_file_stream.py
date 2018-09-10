@@ -4,6 +4,7 @@ import aiofiles
 
 from toolkit import readexactly
 from aiohttp import ClientSession, FormData
+from apistellar.bases.response import FileResponse
 from apistellar import Controller, FileStream, post, get
 
 
@@ -24,7 +25,6 @@ class UploadController(Controller):
     @get("/test/download")
     async def down(filename: str):
         f = await aiofiles.open(filename, "rb")
-        from apistellar.bases.response import FileResponse
         return FileResponse(
             f, filename, headers={"Content-Length": os.path.getsize(filename)})
 

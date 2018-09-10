@@ -41,7 +41,7 @@ pip install apistellar
 - [使用集成的IPython进行异步代码的调试](https://github.com/ShichaoMa/apistellar/wiki/使用集成的IPython进行异步代码的调试)
 - [大文件上传下载](https://github.com/ShichaoMa/apistellar/wiki/大文件上传下载)
 - [使用websocket进行通讯](https://github.com/ShichaoMa/apistellar/wiki/使用websocket进行通讯)
-- [使用apistellar测试插件pytest apistellar进行单元测试](https://github.com/ShichaoMa/apistellar/wiki/使用apistellar测试插件pytest apistellar进行单元测试)
+- [使用apistellar测试插件pytest-apistellar进行单元测试](https://github.com/ShichaoMa/apistellar/wiki/使用apistellar测试插件pytest-apistellar进行单元测试)
 
 参考资料
 

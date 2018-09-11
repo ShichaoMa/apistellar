@@ -170,5 +170,5 @@ class FormParamComponent(Component):
 
     def resolve(self, parameter: inspect.Parameter,
                 form: http.RequestData) -> FormParam:
-        if parameter.name in form:
+        if parameter.name in (form or {}):
             return FormParam(form[parameter.name])

@@ -62,5 +62,5 @@ setup(
     include_package_data=True,
     zip_safe=True,
     setup_requires=["pytest-runner"],
-    tests_require=["pytest-apistellar"]
+    tests_require=["pytest-apistellar", "pytest-asyncio", "pytest-cov"]
 )

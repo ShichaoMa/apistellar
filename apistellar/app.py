@@ -140,7 +140,8 @@ def application(app_name, template_dir=None,
             STATE["app"] = app
             loop.run_until_complete(app.injector.run_async([resolve], STATE))
         except Exception:
-            pass
+            if debug:
+                logger.exception("Error in initial factory resolve")
     return app
 
 

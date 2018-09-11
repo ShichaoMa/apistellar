@@ -37,4 +37,6 @@ setup(
     author_email="",
     description="""package description here""",
     keywords="",
+    setup_requires=["pytest-runner"],
+    tests_require=["pytest-apistellar", "pytest-asyncio", "pytest-cov"]
 )

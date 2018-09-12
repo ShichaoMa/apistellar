@@ -17,7 +17,7 @@ DummyFlaskApp = namedtuple(
 
 
 class File(object):
-    mime_type_regex = re.compile(b"Content-Type: (.*)")
+    mime_type_regex = re.compile(b"Content-Type: (\S*)")
     disposition_regex = re.compile(
         rb"Content-Disposition: form-data;"
         rb"(?: name=\"(?P<name>[^;]*?)\")?"

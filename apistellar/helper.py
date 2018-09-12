@@ -23,8 +23,6 @@ def get_real_method(obj, name):
     """
     IPython bug fix.
     """
-    import types
-    import inspect
     try:
         canary = getattr(obj, '_ipython_canary_method_should_not_exist_', None)
         if isinstance(canary, Future):

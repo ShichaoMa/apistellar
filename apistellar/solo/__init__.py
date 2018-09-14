@@ -1,3 +1,6 @@
+import logging
+
+from toolkit import cache_property
 from abc import ABC, abstractmethod
 
 
@@ -5,6 +8,13 @@ class Solo(ABC):
     """
     独立任务程序子任务接口定义
     """
+    name = None
+
+    @cache_property
+    def logger(self):
+        logging.basicConfig(level=logging.DEBUG)
+        return logging.getLogger(self.name or self.__class__.__name__)
+
     def __init__(self, **kwargs):
         self.tasks = []
 

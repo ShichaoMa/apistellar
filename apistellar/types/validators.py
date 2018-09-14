@@ -117,7 +117,7 @@ class Proxy(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
-            return self.get_default()
+            value = self.get_default()
         elif value is None and self.allow_null:
             return None
         elif value is None:
@@ -162,7 +162,7 @@ class String(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
-            return self.get_default()
+            value = self.get_default()
         elif value is None and self.allow_null:
             return None
         elif value is None:
@@ -241,7 +241,7 @@ class NumericType(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
-            return self.get_default()
+            value = self.get_default()
         elif value is None and self.allow_null:
             return None
         elif value is None:
@@ -325,7 +325,7 @@ class Boolean(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
-            return self.get_default()
+            value = self.get_default()
         elif value is None and self.allow_null:
             return None
         elif value is None:
@@ -390,7 +390,7 @@ class Object(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
-            return self.get_default()
+            value = self.get_default()
         elif value is None and self.allow_null:
             return None
         elif value is None:
@@ -523,7 +523,7 @@ class Array(Validator):
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
-            return self.get_default()
+            value = self.get_default()
         elif value is None and self.allow_null:
             return None
         elif value is None:

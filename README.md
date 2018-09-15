@@ -16,6 +16,9 @@ apistellar部分灵感参考ruby on rails
 - 提供上传文件流对象，对大文件上传完美支持。
 - Apistar作者在uvicorn中提供了websocket支持，但是未集成到apistar中，apistellar对二者进行了集成，完美支持websocket。
 
+#### APIStar请求时序图
+![](https://github.com/ShichaoMa/apistellar/blob/master/resources/apistellar%E8%AF%B7%E6%B1%82%E6%97%B6%E5%BA%8F%E5%9B%BE.jpg)
+
 # INSTALL
 ```
 # python 3.6+ required

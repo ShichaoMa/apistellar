@@ -3,7 +3,9 @@
 ### 从1.0开始，star_builder正式更名为apistellar
 
 apistellar是基于apistar的web构建工具，同时增强了apistar的功能，使用apistellar可以轻松构建适合生产环境的web项目。
-apistellar部分灵感参考ruby on rails
+
+apistellar部分设计灵感参考ruby on rails
+
 除了apistar本身的特性以外，apistellar增加如下几点高级用法：
 
 - CSM架构，将控制层，业务层，模型层完全分离，耦合性降至最低。

@@ -3,7 +3,9 @@
 ### 从1.0开始，star_builder正式更名为apistellar
 
 apistellar是基于apistar的web构建工具，同时增强了apistar的功能，使用apistellar可以轻松构建适合生产环境的web项目。
-apistellar部分灵感参考ruby on rails
+
+apistellar部分设计灵感参考ruby on rails
+
 除了apistar本身的特性以外，apistellar增加如下几点高级用法：
 
 - CSM架构，将控制层，业务层，模型层完全分离，耦合性降至最低。
@@ -15,6 +17,9 @@ apistellar部分灵感参考ruby on rails
 - 集成IPython交互式命令行工具，自动注入model, service等对象。提供异步代码执行能力，轻松调试各模块。
 - 提供上传文件流对象，对大文件上传完美支持。
 - Apistar作者在uvicorn中提供了websocket支持，但是未集成到apistar中，apistellar对二者进行了集成，完美支持websocket。
+
+#### APIStar请求时序图
+![](https://github.com/ShichaoMa/apistellar/blob/master/resources/apistellar%E8%AF%B7%E6%B1%82%E6%97%B6%E5%BA%8F%E5%9B%BE.jpg)
 
 # INSTALL
 ```

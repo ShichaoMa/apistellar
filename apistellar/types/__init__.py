@@ -100,7 +100,7 @@ class Type(Mapping, metaclass=TypeMetaclass):
             # Instantiated with keyword arguments.
             value = kwargs
         object.__setattr__(self, 'allow_coerce', allow_coerce)
-        object.__setattr__(self, '_dict', value)
+        object.__setattr__(self, '_dict', dict(value))
         object.__setattr__(self, 'formatted', False)
         if force_format:
             self.format(self.allow_coerce)

@@ -141,7 +141,8 @@ def application(app_name, template_dir=None,
             loop.run_until_complete(app.injector.run_async([resolve], STATE))
         except Exception:
             if debug:
-                logger.exception("Error in initial factory resolve")
+                logger.exception(
+                    f"Error in initialize {resolve.__self__.__class__.__name__}!")
     return app
 
 

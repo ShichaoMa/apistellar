@@ -118,7 +118,7 @@ class Proxy(Validator):
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
             value = self.get_default()
-        elif value is None and self.allow_null:
+        if value is None and self.allow_null:
             return None
         elif value is None:
             self.error('null')
@@ -163,7 +163,7 @@ class String(Validator):
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
             value = self.get_default()
-        elif value is None and self.allow_null:
+        if value is None and self.allow_null:
             return None
         elif value is None:
             self.error('null')
@@ -242,7 +242,7 @@ class NumericType(Validator):
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
             value = self.get_default()
-        elif value is None and self.allow_null:
+        if value is None and self.allow_null:
             return None
         elif value is None:
             self.error('null')
@@ -326,7 +326,7 @@ class Boolean(Validator):
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
             value = self.get_default()
-        elif value is None and self.allow_null:
+        if value is None and self.allow_null:
             return None
         elif value is None:
             self.error('null')
@@ -391,7 +391,7 @@ class Object(Validator):
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
             value = self.get_default()
-        elif value is None and self.allow_null:
+        if value is None and self.allow_null:
             return None
         elif value is None:
             self.error('null')
@@ -524,7 +524,7 @@ class Array(Validator):
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
             value = self.get_default()
-        elif value is None and self.allow_null:
+        if value is None and self.allow_null:
             return None
         elif value is None:
             self.error('null')

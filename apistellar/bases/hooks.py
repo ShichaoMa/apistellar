@@ -108,20 +108,15 @@ class AccessLogHook(object):
                     protocol: http.Scheme,
                     method: http.Method,
                     resp: http.Response,
-                    user_agent: http.Header):
-        self.log(host, path, protocol, method, resp.status_code,
-                 resp.headers["Content-Length"], user_agent)
-
-    def on_error(self,
-                 host: http.Host,
-                 path: http.Path,
-                 protocol: http.Scheme,
-                 method: http.Method,
-                 resp: http.Response,
-                 user_agent: http.Header) -> http.Response:
+                    user_agent: http.Header,
+                    string: http.QueryString):
+        if string:
+            path = path + "?" + string
         self.log(host, path, protocol, method, resp.status_code,
                  resp.headers["Content-Length"], user_agent)
         return resp
+
+    on_error = on_response
 
     def log(self, host, path, protocol, method, status, content_length, agent):
         self.logger.info("", extra={"host": host,

@@ -1,3 +1,4 @@
+.coverage
 *.pyc
 *egg-info
 dist/
@@ -7,3 +8,5 @@ dist/
 htmlcov/
 *log
 *logs
+*lock.json
+node_modules/

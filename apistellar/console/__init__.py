@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 import inspect
 
@@ -72,7 +73,7 @@ class ConsoleManager(Manager):
         return beans
 
     @staticmethod
-    def await(awaitable):
+    def _await(awaitable):
         """
         模拟await关键字
         :param awaitable:
@@ -93,8 +94,12 @@ class ConsoleManager(Manager):
             del self.injector.initial[key]
 
     def start(self):
-        await = self.await
+        if sys.version_info < (3, 7, 0):
+            await = self._await
+        else:
+            _await = self._await
         mock = self.mock
+
         def inject(class_name):
             return getattr(self, class_name)
 

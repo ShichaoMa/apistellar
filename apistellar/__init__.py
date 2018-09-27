@@ -25,4 +25,4 @@ from .route import route, get, post, delete, put, options, websocket
 
 from .helper import redirect, require
 
-__version__ = "1.0.6"    
+__version__ = "1.0.7"    

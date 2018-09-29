@@ -53,7 +53,9 @@ class Validator(object):
         Validator._creation_counter += 1
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        raise NotImplementedError()
+        if value is None and self.has_default():
+            value = self.get_default()
+        self.value = value
 
     def is_valid(self, value):
         try:
@@ -108,7 +110,7 @@ class Validator(object):
 
 class Proxy(Validator):
     errors = {
-        'null': 'May not be null.',
+        'null': '{value}: May not be null.',
     }
 
     def __init__(self, type, **kwargs):
@@ -116,8 +118,7 @@ class Proxy(Validator):
         self.type = type
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.has_default():
-            value = self.get_default()
+        super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -128,15 +129,15 @@ class Proxy(Validator):
 
 class String(Validator):
     errors = {
-        'type': 'Must be a string.',
-        'null': 'May not be null.',
-        'blank': 'Must not be blank.',
-        'max_length': 'Must have no more than {max_length} characters.',
-        'min_length': 'Must have at least {min_length} characters.',
-        'pattern': 'Must match the pattern /{pattern}/.',
-        'format': 'Must be a valid {format}.',
-        'enum': 'Must be one of {enum}.',
-        'exact': 'Must be {exact}.'
+        'type': '{value}: Must be a string.',
+        'null': '{value}: May not be null.',
+        'blank': '{value}: Must not be blank.',
+        'max_length': '{value}: Must have no more than {max_length} characters',
+        'min_length': '{value}: Must have at least {min_length} characters',
+        'pattern': '{value}: Must match the pattern /{pattern}/.',
+        'format': '{value}: Must be a valid {format}.',
+        'enum': '{value}: Must be one of {enum}.',
+        'exact': '{value}: Must be {exact}.'
     }
 
     def __init__(self, max_length=None, min_length=None, pattern=None,
@@ -161,8 +162,7 @@ class String(Validator):
         return FORMATS.get(self.format)
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.has_default():
-            value = self.get_default()
+        super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -205,17 +205,17 @@ class NumericType(Validator):
     """
     numeric_type = None  # type: type
     errors = {
-        'type': 'Must be a number.',
-        'null': 'May not be null.',
-        'integer': 'Must be an integer.',
-        'finite': 'Must be finite.',
-        'minimum': 'Must be greater than or equal to {minimum}.',
-        'exclusive_minimum': 'Must be greater than {minimum}.',
-        'maximum': 'Must be less than or equal to {maximum}.',
-        'exclusive_maximum': 'Must be less than {maximum}.',
-        'multiple_of': 'Must be a multiple of {multiple_of}.',
-        'enum': 'Must be one of {enum}.',
-        'exact': 'Must be {exact}.'
+        'type': '{value}: Must be a number.',
+        'null': '{value}: May not be null.',
+        'integer': '{value}: Must be an integer.',
+        'finite': '{value}: Must be finite.',
+        'minimum': '{value}: Must be greater than or equal to {minimum}.',
+        'exclusive_minimum': '{value}: Must be greater than {minimum}.',
+        'maximum': '{value}: Must be less than or equal to {maximum}.',
+        'exclusive_maximum': '{value}: Must be less than {maximum}.',
+        'multiple_of': '{value}: Must be a multiple of {multiple_of}.',
+        'enum': '{value}: Must be one of {enum}.',
+        'exact': '{value}: Must be {exact}.'
     }
 
     def __init__(self, minimum=None, maximum=None, exclusive_minimum=False,
@@ -240,8 +240,7 @@ class NumericType(Validator):
         self.format = format
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.has_default():
-            value = self.get_default()
+        super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -303,8 +302,8 @@ class Integer(NumericType):
 
 class Boolean(Validator):
     errors = {
-        'type': 'Must be a valid boolean.',
-        'null': 'May not be null.',
+        'type': '{value}: Must be a valid boolean.',
+        'null': '{value}: May not be null.',
     }
     values = {
         'true': True,
@@ -324,8 +323,7 @@ class Boolean(Validator):
     }
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.has_default():
-            value = self.get_default()
+        super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -351,14 +349,14 @@ class Boolean(Validator):
 
 class Object(Validator):
     errors = {
-        'type': 'Must be an object.',
-        'null': 'May not be null.',
-        'invalid_key': 'Object keys must be strings.',
-        'required': 'The "{field_name}" field is required.',
-        'invalid_property': 'Invalid property name.',
-        'empty': 'Must not be empty.',
-        'max_properties': 'Must have no more than {max_properties} properties.',
-        'min_properties': 'Must have at least {min_properties} properties.',
+        'type': '{value}: Must be an object.',
+        'null': '{value}: May not be null.',
+        'invalid_key': '{value}: Object keys must be strings.',
+        'required': '{value}: The "{field_name}" field is required.',
+        'invalid_property': '{value}: Invalid property name.',
+        'empty': '{value}: Must not be empty.',
+        'max_properties': '{value}: Must have no more than {max_properties} properties.',
+        'min_properties': '{value}: Must have at least {min_properties} properties.',
     }
 
     def __init__(self, properties=None, pattern_properties=None,
@@ -389,8 +387,7 @@ class Object(Validator):
         self.required = required
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.has_default():
-            value = self.get_default()
+        super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -490,14 +487,14 @@ class Object(Validator):
 
 class Array(Validator):
     errors = {
-        'type': 'Must be an array.',
-        'null': 'May not be null.',
-        'empty': 'Must not be empty.',
-        'exact_items': 'Must have {min_items} items.',
-        'min_items': 'Must have at least {min_items} items.',
-        'max_items': 'Must have no more than {max_items} items.',
-        'additional_items': 'May not contain additional items.',
-        'unique_items': 'This item is not unique.',
+        'type': '{value}: Must be an array.',
+        'null': '{value}: May not be null.',
+        'empty': '{value}: Must not be empty.',
+        'exact_items': '{value}: Must have {min_items} items.',
+        'min_items': '{value}: Must have at least {min_items} items.',
+        'max_items': '{value}: Must have no more than {max_items} items.',
+        'additional_items': '{value}: May not contain additional items.',
+        'unique_items': '{value}: This item is not unique.',
     }
 
     def __init__(self, items=None, additional_items=None, min_items=None,
@@ -522,8 +519,7 @@ class Array(Validator):
         self.unique_items = unique_items
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        if value is None and self.has_default():
-            value = self.get_default()
+        super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -622,8 +618,8 @@ class Any(Validator):
 
 class Union(Validator):
     errors = {
-        'null': 'Must not be null.',
-        'union': 'Must match one of the union types.'
+        'null': '{value}: Must not be null.',
+        'union': '{value}: Must match one of the union types.'
     }
 
     def __init__(self, items, **kwargs):
@@ -632,6 +628,7 @@ class Union(Validator):
         self.items = list(items)
 
     def validate(self, value, definitions=None, allow_coerce=False):
+        super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:

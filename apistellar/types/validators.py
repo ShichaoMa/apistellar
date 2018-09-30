@@ -56,6 +56,7 @@ class Validator(object):
         if value is None and self.has_default():
             value = self.get_default()
         self.value = value
+        return value
 
     def is_valid(self, value):
         try:
@@ -118,7 +119,7 @@ class Proxy(Validator):
         self.type = type
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        super().validate(value)
+        value = value = super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -162,7 +163,7 @@ class String(Validator):
         return FORMATS.get(self.format)
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        super().validate(value)
+        value = super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -240,7 +241,7 @@ class NumericType(Validator):
         self.format = format
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        super().validate(value)
+        value = super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -323,7 +324,7 @@ class Boolean(Validator):
     }
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        super().validate(value)
+        value = super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -387,7 +388,7 @@ class Object(Validator):
         self.required = required
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        super().validate(value)
+        value = super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -519,7 +520,7 @@ class Array(Validator):
         self.unique_items = unique_items
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        super().validate(value)
+        value = super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -628,7 +629,7 @@ class Union(Validator):
         self.items = list(items)
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        super().validate(value)
+        value = super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:

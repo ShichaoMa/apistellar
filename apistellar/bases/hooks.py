@@ -44,15 +44,16 @@ class ErrorHook(object):
         """
         args = list()
         if error.args:
-            if not isinstance(error.args[0], (tuple, list)):
-                if isinstance(error.args[0], int):
-                    args.append(error.args[0])
+            data = error.args[0]
+            if not isinstance(data, (tuple, list)):
+                if isinstance(data, int):
+                    args.append(data)
                     args.append(None)
                 else:
                     args.append(999)
-                    args.append(error.args[0])
+                    args.append(data)
             else:
-                args.extend(error.args[0])
+                args.extend(data)
         else:
             args.append(None)
 
@@ -72,7 +73,7 @@ class ErrorHook(object):
         payload = {
             "type": "normal",
             "code": code,
-            "errcode": code,
+            "errcode": getattr(message, "code", code),
             "message": message,
             "extra": extra,
         }

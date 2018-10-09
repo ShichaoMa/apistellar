@@ -119,7 +119,7 @@ class Proxy(Validator):
         self.type = type
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        value = value = super().validate(value)
+        value = super().validate(value)
         if value is None and self.allow_null:
             return None
         elif value is None:
@@ -246,8 +246,6 @@ class NumericType(Validator):
             return None
         elif value is None:
             self.error('null')
-        elif isinstance(value, bool):
-            self.error('type')
         elif self.numeric_type is int and isinstance(value, float) and not value.is_integer():
             self.error('integer')
         elif not isinstance(value, (int, float)) and not allow_coerce:
@@ -306,6 +304,7 @@ class Boolean(Validator):
         'type': '{value}: Must be a valid boolean.',
         'null': '{value}: May not be null.',
     }
+
     values = {
         'true': True,
         'false': False,
@@ -659,10 +658,13 @@ class Ref(Validator):
         self.ref = ref
 
     def validate(self, value, definitions=None, allow_coerce=False):
-        assert definitions is not None, 'Ref.validate() requires definitions'
-        assert self.ref in definitions, 'Ref "%s" not in definitions' % self.ref
+        #assert definitions is not None, 'Ref.validate() requires definitions'
+        #assert self.ref in definitions, 'Ref "%s" not in definitions' % self.ref
 
         child_schema = definitions[self.ref]
+        if not isinstance(child_schema, Proxy):
+            child_schema = definitions[self.ref] = Proxy(child_schema, **self.__dict__)
+
         return child_schema.validate(
             value,
             definitions=definitions,

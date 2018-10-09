@@ -50,19 +50,12 @@ class TypeMetaclass(ABCMeta):
         validators.Validator._creation_counter += 1
         cls = super(TypeMetaclass, mcs).__new__(mcs, name, bases, attrs)
 
-        if cls.has_default():
-            default = cls.validate({})
-            cls.default = default
-        else:
-            default = validators.NO_DEFAULT
-
         cls.validator = validators.Object(
             def_name=name,
             properties=properties,
             required=required,
             additional_properties=None,
-            model=cls,
-            default=default
+            model=cls
         )
 
         return cls
@@ -114,31 +107,10 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
     @classmethod
     def validate(cls, value, definitions=None, allow_coerce=False, force_format=True):
-        if cls.allow_null() and value is None:
-            return value
         return cls(value,
                    definitions=definitions,
                    allow_coerce=allow_coerce,
                    force_format=force_format)
-
-    @classmethod
-    def allow_null(cls):
-        return False
-
-    @classmethod
-    def has_default(cls):
-        """
-        返回True会default=cls空对象
-        :return:
-        """
-        return False
-
-    @classmethod
-    def get_default(cls):
-        assert cls.has_default(), (778, f"{cls} haven't got a value/default value!")
-        if callable(cls.validator.default):
-            return cls.validator.default()
-        return cls.validator.default
 
     def __repr__(self):
         if self.formatted:

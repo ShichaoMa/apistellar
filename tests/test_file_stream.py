@@ -29,7 +29,7 @@ class UploadController(Controller):
             f, filename, headers={"Content-Length": os.path.getsize(filename)})
 
 
-@pytest.fixture(scope="module", params=["test_in.py", "滋养细胞肿瘤.pdf"])
+@pytest.fixture(scope="module", params=["test_websocket.py", "滋养细胞肿瘤.pdf"])
 def filename(request):
     return request.param
 

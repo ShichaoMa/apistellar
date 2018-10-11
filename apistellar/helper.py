@@ -377,6 +377,45 @@ def redirect(location, code=302, Response=None):
     return response
 
 
+class ChildrenFactory(object):
+
+    def __init__(self, father, kwargs=None):
+        self.father = father
+        self.kwargs = kwargs or {}
+        self.found = dict()
+
+    def install(self, **kwargs):
+        self.found.clear()
+        self.kwargs.update(kwargs)
+
+    def _get_mapping(self):
+        return {getattr(child, "name", child.__name__.lower()): child
+                for child in find_children(self.father, False)}
+
+    def __contains__(self, item):
+        result = item in self.found
+        if result is False:
+            result = item in self._get_mapping()
+        return result
+
+    def get(self, item, default=None):
+        try:
+            return self[item]
+        except KeyError:
+            return default
+
+    def __getitem__(self, item):
+        child = self.found.get(item)
+        if child is None:
+            mapping = self._get_mapping()
+            child = mapping[item](**self.kwargs)
+            self.found[item] = child
+        return child
+
+    def __setitem__(self, item, value):
+        self.found[item] = value
+
+
 def require(
         container_cls,
         judge=lambda container: container.user,
@@ -470,6 +509,53 @@ async def add_success_callback(fut, callback):
         result = e
     callback(result)
     return result
+
+
+def conn_manager(func):
+    @wraps(func)
+    def inner(self_or_cls, *args, **kwargs):
+        with self_or_cls.get_store(**kwargs) as store:
+
+            if not isinstance(self_or_cls, type):
+                cls = self_or_cls.__class__
+            else:
+                cls = self_or_cls
+            # 直接为类属性赋值，考虑可能Type类的子类会重写__setattr__
+            cls.store = store
+
+            return func(self_or_cls, *args, **kwargs)
+    return inner
+
+
+class NotImplementedProp(object):
+    """
+    用来对子类需要实现的类属性进行占位
+    """
+    def __get__(self, instance, owner):
+        return NotImplemented
+
+
+class classproperty(object):
+    """
+    property只能用于实例方法到实例属性的转换，使用classproperty来支持类方法到类属性的转换
+    """
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, instance, owner):
+        return self.func(owner)
+
+
+class DriverMixin(object):
+    """
+    配合conn_manager用来控制数据库访问。
+    """
+    store = None
+
+    @classmethod
+    def get_store(cls, **kwargs):
+        return NotImplemented
+
 
 # mock state
 STATE = {

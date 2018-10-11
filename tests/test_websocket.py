@@ -2,12 +2,13 @@ import pytest
 import websockets
 
 from apistar import http
-from apistellar import websocket, Controller, route
+from apistellar import websocket, Controller
+from websockets.exceptions import ConnectionClosed
 
 
 class WebsocketController(Controller):
 
-    @websocket("/test/websocket1")
+    @websocket("/test/websocket/complex")
     class Handler(object):
         def __init__(self, send):
             self.send = send
@@ -27,24 +28,24 @@ class WebsocketController(Controller):
             await self.send(f"got piece: {text}")
             return {"success": "ok"}
 
-    @websocket("/test/websocket")
+    @websocket("/test/websocket/simple")
     async def receive(message, path: http.Path):
         _text = message.get("text")
         return {"success": "ok"}
 
 
 @pytest.mark.asyncio
-async def test_websocket(server_port):
+async def test_websocket_simple(server_port):
     async with websockets.connect(
-            f"ws://127.0.0.1:{server_port}/test/websocket") as ws:
+            f"ws://127.0.0.1:{server_port}/test/websocket/simple") as ws:
             await ws.send("hello,")
             assert await ws.recv() == '{"success": "ok"}'
 
 
 @pytest.mark.asyncio
-async def test_websocket1(server_port):
+async def test_websocket_complex(server_port):
     async with websockets.connect(
-            f"ws://127.0.0.1:{server_port}/test/websocket1") as ws:
+            f"ws://127.0.0.1:{server_port}/test/websocket/complex") as ws:
         assert await ws.recv() == '{"success": "ok"}'
         await ws.send("hello,")
         assert await ws.recv() == 'got piece: hello,'
@@ -52,6 +53,14 @@ async def test_websocket1(server_port):
         await ws.send("world")
         assert await ws.recv() == 'got piece: world'
         assert await ws.recv() == '{"success": "ok"}'
+
+
+@pytest.mark.asyncio
+async def test_websocket_not_found(server_port):
+    async with websockets.connect(
+            f"ws://127.0.0.1:{server_port}/test/websocket/not/found") as ws:
+        with pytest.raises(ConnectionClosed):
+            assert await ws.recv()
 
 
 if __name__ == "__main__":

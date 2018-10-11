@@ -75,7 +75,7 @@ class Type(Mapping, metaclass=TypeMetaclass):
             force_format = kwargs.pop('force_format', force_format)
             assert not kwargs
 
-            if args[0] is None or isinstance(args[0], (bool, int, float, list)):
+            if args[0] is None or isinstance(args[0], (str, bytes, bool, int, float, list)):
                 raise ValidationError('Must be an object.')
             elif isinstance(args[0], Mapping):
                 # Instantiated with a dict.
@@ -85,8 +85,6 @@ class Type(Mapping, metaclass=TypeMetaclass):
                 value = {}
                 for key, val in self.validator.properties.items():
                     v = getattr(args[0], key, None)
-                    if not v and val.has_default():
-                        v = val.get_default()
                     if v:
                         value[key] = v
         else:
@@ -95,6 +93,7 @@ class Type(Mapping, metaclass=TypeMetaclass):
         object.__setattr__(self, 'allow_coerce', allow_coerce)
         object.__setattr__(self, '_dict', dict(value))
         object.__setattr__(self, 'formatted', False)
+
         if force_format:
             self.format(self.allow_coerce)
 
@@ -143,9 +142,7 @@ class Type(Mapping, metaclass=TypeMetaclass):
 
     def __getattr__(self, key):
         try:
-            if key != "_dict":
-                return self._dict[key]
-            return object.__getattribute__(self, key)
+            return self._dict[key]
         except (KeyError,):
             raise AttributeError('Invalid attribute "%s"' % key)
 

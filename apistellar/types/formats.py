@@ -4,7 +4,7 @@ import datetime
 
 from apistar.exceptions import ValidationError
 
-from ..helper import find_children
+from ..helper import ChildrenFactory
 
 
 DATE_REGEX = re.compile(
@@ -57,7 +57,7 @@ class DateFormat(BaseFormat):
         try:
             return value.isoformat()
         except AttributeError:
-            if value:
+            if value is not None:
                 return str(value)
 
 
@@ -161,45 +161,6 @@ class UUIDFormat(BaseFormat):
     def to_string(self, value):
         if value is not None:
             return str(value)
-
-
-class ChildrenFactory(object):
-
-    def __init__(self, father, kwargs=None):
-        self.father = father
-        self.kwargs = kwargs or {}
-        self.found = dict()
-
-    def install(self, **kwargs):
-        self.found.clear()
-        self.kwargs.update(kwargs)
-
-    def _get_mapping(self):
-        return {getattr(child, "name", child.__name__.lower()): child
-                for child in find_children(self.father, False)}
-
-    def __contains__(self, item):
-        result = item in self.found
-        if result is False:
-            result = item in self._get_mapping()
-        return result
-
-    def get(self, item, default=None):
-        try:
-            return self[item]
-        except KeyError:
-            return default
-
-    def __getitem__(self, item):
-        formatter = self.found.get(item)
-        if formatter is None:
-            mapping = self._get_mapping()
-            formatter = mapping[item](**self.kwargs)
-            self.found[item] = formatter
-        return formatter
-
-    def __setitem__(self, item, value):
-        self.found[item] = value
 
 
 FORMATS = ChildrenFactory(BaseFormat)

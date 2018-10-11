@@ -34,6 +34,9 @@ class WebSocketHandler(metaclass=ABCMeta):
 
 
 class WebSocketApp:
+    """
+    每个websocket链接都是独立实例
+    """
     persist = True
     handler = None
     state = None
@@ -75,7 +78,7 @@ class WebSocketApp:
             while self.persist:
                 await self.handle(await receive())
         except Exception as exc:
-            self.state["exc"] = exc
+            state["exc"] = exc
             await self.exception_handler(exc)
 
     async def exception_handler(self, exc: Exception):

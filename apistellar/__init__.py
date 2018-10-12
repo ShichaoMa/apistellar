@@ -19,10 +19,10 @@ from .console import main as console
 from .solo import Solo
 from .solo.manager import SoloManager
 
-from .types import Type, AsyncType, TypeEncoder, validators
+from .types import Type, AsyncType, PersistentType, TypeEncoder, validators
 
 from .route import route, get, post, delete, put, options, websocket
 
 from .helper import redirect, require
 
-__version__ = "1.0.14"    
+__version__ = "1.0.15"    

@@ -118,7 +118,7 @@ async def resolve(self{}):
         :return:
         """
         model_cls = props.get("model")
-        assert model_cls is not None, "ModelFactory need specify a model!"
+        #assert model_cls is not None, "ModelFactory need specify a model!"
         assert "resolve" not in props, "Cannot overwrite resolve method!"
         assert "product" in props, "Need to implement product method!"
 

@@ -11,11 +11,10 @@ from apistar.server.asgi import ASGIScope, ASGISend
 
 from .bases.controller import Controller
 from .bases.websocket import WebSocketApp
-from .bases.model_factory import ModelFactory
 from .bases.components import SettingsComponent, Component
 from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from .helper import load_packages, routing, print_routing, TypeEncoder, \
-    find_children, enhance_response, STATE
+    find_children, enhance_response
 
 __all__ = ["Application"]
 enhance_response(Response)
@@ -89,7 +88,8 @@ class FixedAsyncApp(ASyncApp):
             return WebSocketApp(scope, self)
 
 
-def application(app_name, template_dir=None,
+def application(app_name,
+                template_dir=None,
                 static_dir=None,
                 packages=None,
                 schema_url='/schema/',
@@ -133,16 +133,16 @@ def application(app_name, template_dir=None,
 
     app.debug = debug
     # 完成factory中model的初始注入
-    loop = asyncio.get_event_loop()
-    resolves = [factory.resolve for factory in find_children(ModelFactory)]
-    for resolve in resolves:
-        try:
-            STATE["app"] = app
-            loop.run_until_complete(app.injector.run_async([resolve], STATE))
-        except Exception:
-            if debug:
-                logger.exception(
-                    f"Error in initialize {resolve.__self__.__class__.__name__}!")
+    # loop = asyncio.get_event_loop()
+    # resolves = [factory.resolve for factory in find_children(ModelFactory)]
+    # for resolve in resolves:
+    #     try:
+    #         STATE["app"] = app
+    #         loop.run_until_complete(app.injector.run_async([resolve], STATE))
+    #     except Exception:
+    #         if debug:
+    #             logger.exception(
+    #                 f"Error in initialize {resolve.__self__.__class__.__name__}!")
     return app
 
 

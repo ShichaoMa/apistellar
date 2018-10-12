@@ -511,22 +511,6 @@ async def add_success_callback(fut, callback):
     return result
 
 
-def conn_manager(func):
-    @wraps(func)
-    def inner(self_or_cls, *args, **kwargs):
-        with self_or_cls.get_store(**kwargs) as store:
-
-            if not isinstance(self_or_cls, type):
-                cls = self_or_cls.__class__
-            else:
-                cls = self_or_cls
-            # 直接为类属性赋值，考虑可能Type类的子类会重写__setattr__
-            cls.store = store
-
-            return func(self_or_cls, *args, **kwargs)
-    return inner
-
-
 class NotImplementedProp(object):
     """
     用来对子类需要实现的类属性进行占位
@@ -546,15 +530,20 @@ class classproperty(object):
         return self.func(owner)
 
 
-class DriverMixin(object):
+def cache_classproperty(func):
     """
-    配合conn_manager用来控制数据库访问。
+    缓存类属性，只计算一次
+    :param func:
+    :return:
     """
-    store = None
-
-    @classmethod
-    def get_store(cls, **kwargs):
-        return NotImplemented
+    @classproperty
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        prop_name = "_" + func.__name__
+        if prop_name not in args[0].__dict__:
+            setattr(args[0], prop_name, func(*args, **kwargs))
+        return args[0].__dict__[prop_name]
+    return wrapper
 
 
 # mock state

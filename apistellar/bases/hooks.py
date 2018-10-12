@@ -1,4 +1,5 @@
 import sys
+import json
 import typing
 import logging
 import traceback
@@ -25,7 +26,7 @@ class SessionHook(object):
 
 class ErrorHook(object):
     """
-    处理异常
+    处理异常增加响应码
     """
     errors = {999: "Unknown error"}
     fmt = '[{asctime}] {name} {levelname}: {message}'

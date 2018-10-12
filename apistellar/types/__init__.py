@@ -2,7 +2,7 @@ import json
 import asyncio
 
 from abc import ABCMeta
-from collections.abc import Mapping
+from collections.abc import Mapping, MutableMapping
 
 from apistar.exceptions import ConfigurationError, ValidationError
 
@@ -61,7 +61,7 @@ class TypeMetaclass(ABCMeta):
         return cls
 
 
-class Type(Mapping, metaclass=TypeMetaclass):
+class Type(MutableMapping, metaclass=TypeMetaclass):
 
     def __init__(self, *args, **kwargs):
         definitions = None

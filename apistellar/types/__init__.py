@@ -2,13 +2,12 @@ import json
 import asyncio
 
 from abc import ABCMeta
-from types import FunctionType
 from collections.abc import Mapping, MutableMapping
 
 from apistar.exceptions import ConfigurationError, ValidationError
 
 from . import validators
-from ..persistence import conn_manager
+from ..persistence import PersistentMeta
 from ..helper import TypeEncoder, add_success_callback
 
 
@@ -193,21 +192,6 @@ class Type(MutableMapping, metaclass=TypeMetaclass):
         return json.loads(json.dumps(self, cls=TypeEncoder))
 
     to_json = to_dict
-
-
-class PersistentMeta(type):
-    """
-    为实例方法和类方法增加conn_manager装饰器
-    """
-    def __new__(mcs, name, bases, attrs):
-        for name in attrs.keys():
-            func = attrs[name]
-            if isinstance(func, classmethod):
-                attrs[name] = classmethod(conn_manager(func.__func__))
-            elif isinstance(func, FunctionType):
-                attrs[name] = conn_manager(func)
-
-        return super(PersistentMeta, mcs).__new__(mcs, name, bases, attrs)
 
 
 class PersistentTypeMeta(PersistentMeta, TypeMetaclass):

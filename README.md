@@ -47,6 +47,7 @@ pip install apistellar
 - [大文件上传下载](https://github.com/ShichaoMa/apistellar/wiki/大文件上传下载)
 - [使用websocket进行通讯](https://github.com/ShichaoMa/apistellar/wiki/使用websocket进行通讯)
 - [使用apistellar测试插件pytest-apistellar进行单元测试](https://github.com/ShichaoMa/apistellar/wiki/使用apistellar测试插件pytest-apistellar进行单元测试)
+- [model持久化方案](https://github.com/ShichaoMa/apistellar/wiki/model%E6%8C%81%E4%B9%85%E5%8C%96%E6%96%B9%E6%A1%88)
 
 参考资料
 

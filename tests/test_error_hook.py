@@ -1,7 +1,11 @@
 import json
+import pytest
 
+from aiohttp import ClientSession
 from apistar.http import Response
 from apistellar.bases.hooks import ErrorHook
+from apistellar import route, get, Controller, Hook
+
 from collections import namedtuple
 
 
@@ -79,3 +83,14 @@ def test_error_hook7():
     data = json.loads(content)
     assert data["code"] == 999
     assert data["message"] == "Unknown error"
+
+
+def test_error_hook8():
+    errors = {123: "测试错误"}
+    ErrorHook.register(errors)
+    hook = ErrorHook()
+    app = namedtuple("App", "debug")
+    content = hook.on_error(AssertionError(123), app).content
+    data = json.loads(content)
+    assert data["code"] == 123
+    assert data["message"] == errors[123]

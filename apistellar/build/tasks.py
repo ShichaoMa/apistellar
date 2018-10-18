@@ -81,6 +81,10 @@ class Project(Task):
         assert mod is None, f'模块 {name} 已存在！'
         return name
 
+    def enrich_kwargs(self, name):
+        super(Project, self).enrich_kwargs(name)
+        self.kwargs["project_dir"] = join(getcwd(), name)
+
     @classmethod
     def enrich_parser(cls, sub_parser):
         sub_parser.add_argument("name", nargs=1, help="项目名称")

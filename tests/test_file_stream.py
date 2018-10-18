@@ -29,14 +29,14 @@ class UploadController(Controller):
             f, filename, headers={"Content-Length": os.path.getsize(filename)})
 
 
-@pytest.fixture(scope="module", params=["test_websocket.py", "滋养细胞肿瘤.pdf"])
+@pytest.fixture(scope="module", params=["conftest.py", "滋养细胞肿瘤.pdf"])
 def filename(request):
     return request.param
 
 
 @pytest.mark.asyncio
-async def test_upload(server_port, filename):
-    url = f"http://127.0.0.1:{server_port}/test/upload"
+async def test_upload(server, filename):
+    url = f"http://127.0.0.1:{server.port}/test/upload"
     async with ClientSession(conn_timeout=10, read_timeout=10) as session:
         data = FormData()
         data.add_field(f'test_file', open(filename, "rb"), filename=filename)
@@ -45,8 +45,8 @@ async def test_upload(server_port, filename):
 
 
 @pytest.mark.asyncio
-async def test_download(server_port, filename):
-    url = f"http://127.0.0.1:{server_port}/test/download"
+async def test_download(server, filename):
+    url = f"http://127.0.0.1:{server.port}/test/download"
     async with ClientSession(conn_timeout=10, read_timeout=10) as session:
         resp = await session.get(url, params={"filename": f"upload_{filename}"})
         chunk = await readexactly(resp.content, 1024000)

@@ -97,8 +97,7 @@ def application(app_name,
                 static_url='/static/',
                 settings_path="settings",
                 debug=True,
-                current_dir=".",
-                routes=None):
+                current_dir="."):
     """
        可以动态发现当前项目根目录下所有controller中的handler
     """
@@ -109,10 +108,8 @@ def application(app_name,
     load_packages(".")
     include = routing(Controller)
     SettingsComponent.register_path(settings_path)
-    # 提供自定义routes传递主要是为了单元测试
-    if routes:
-        routes = routes
-    elif include:
+
+    if include:
         routes = [include]
         print_routing(routes, write=logger.debug)
     else:
@@ -132,17 +129,6 @@ def application(app_name,
         event_hooks=hooks)
 
     app.debug = debug
-    # 完成factory中model的初始注入
-    # loop = asyncio.get_event_loop()
-    # resolves = [factory.resolve for factory in find_children(ModelFactory)]
-    # for resolve in resolves:
-    #     try:
-    #         STATE["app"] = app
-    #         loop.run_until_complete(app.injector.run_async([resolve], STATE))
-    #     except Exception:
-    #         if debug:
-    #             logger.exception(
-    #                 f"Error in initialize {resolve.__self__.__class__.__name__}!")
     return app
 
 

@@ -74,7 +74,7 @@ class WebSocketApp:
 
             if issubclass(self.handler, WebSocketHandler):
                 self.handler = self.handler(self.send)
-
+            # websocket建立之后持续处理收到的消息
             while self.persist:
                 await self.handle(await receive())
         except Exception as exc:
@@ -100,9 +100,19 @@ class WebSocketApp:
         await self._send(message)
 
     async def handle(self, message):
+        """
+        消息处理方法
+        :param message:
+        :return:
+        """
         message_type = message["type"].replace(".", "_")
+        # 如果handler是WebSocketHandler的子类实例或者duck type实例，
+        # 则从中获取信息类型的处理方法。
         if isinstance(self.handler, WebSocketHandler):
             handler = getattr(self.handler, message_type)
+        # 否则从WebSocketHandler获取处理方法，
+        # WebSocketHandler未定义websocket.receive的处理器，
+        # 因此直接使用handler来处理。
         else:
             handler = getattr(WebSocketHandler(), message_type, self.handler)
 

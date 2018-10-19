@@ -160,3 +160,5 @@ def test_is_valid():
 
     assert Example.validator.properties["field"].is_valid(1) is False
     assert Example.validator.properties["field"].is_valid("a") is True
+
+

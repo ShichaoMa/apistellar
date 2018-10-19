@@ -1,6 +1,8 @@
 import os
 import re
+import string
 
+from contextlib import contextmanager
 from setuptools import find_packages, setup
 
 
@@ -27,16 +29,41 @@ def install_requires():
     except OSError:
         return []
 
-setup(
-    name="{{name}}",
-    version=get_version("{{name}}"),
-    packages=find_packages(exclude=("tests*",)),
-    include_package_data=True,
-    install_requires=install_requires(),
-    author="",
-    author_email="",
-    description="""package description here""",
-    keywords="",
-    setup_requires=["pytest-runner"],
-    tests_require=["pytest-apistellar", "pytest-asyncio", "pytest-cov"]
-)
+
+@contextmanager
+def cfg_manage(cfg_filename):
+    if os.path.exists(cfg_filename):
+        cfg_file = open(cfg_filename, "r+")
+        buffer = cfg_file.read()
+        try:
+            overwrite(cfg_file, string.Template(buffer).substitute(
+                pwd=os.path.abspath(os.path.dirname(__file__))))
+            yield
+        finally:
+            overwrite(cfg_file, buffer)
+            cfg_file.close()
+    else:
+        yield
+
+
+def overwrite(fp, buf):
+    fp.seek(0)
+    fp.truncate()
+    fp.write(buf)
+    fp.flush()
+
+
+with cfg_manage(__file__.replace(".py", ".cfg")):
+    setup(
+        name="{{name}}",
+        version=get_version("{{name}}"),
+        packages=find_packages(exclude=("tests*",)),
+        include_package_data=True,
+        install_requires=install_requires(),
+        author="",
+        author_email="",
+        description="""package description here""",
+        keywords="",
+        setup_requires=["pytest-runner"],
+        tests_require=["pytest-apistellar", "pytest-asyncio", "pytest-cov"]
+    )

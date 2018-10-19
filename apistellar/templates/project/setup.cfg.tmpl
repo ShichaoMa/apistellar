@@ -2,5 +2,7 @@
 test=pytest
 
 [tool:pytest]
-;在这里添加--roodir会生效，但是执行pytest时打印出的只能通过命令行参数指定，所以会误认为没有生效
+;add --roodir here will become effective, but when run pytest command
+;the printed message of rootdir is only can be changed by command
+;line, so never mind!
 addopts = --rootdir={{project_dir}}/tests --cov-report=html:{{project_dir}}/htmlcov --cov-branch --cov={{project_dir}}/{{name}}/  -vv --disable-warnings

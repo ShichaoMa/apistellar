@@ -2,7 +2,7 @@ import pytest
 
 from aiohttp import ClientSession
 from apistar.http import Response
-from apistellar import Controller, get, route
+from apistellar import Controller, get, route, Application
 
 
 @route("/")
@@ -86,3 +86,8 @@ class TestException(object):
             resp = await session.get(url)
             data = await resp.read()
             assert data == b"error"
+
+
+@pytest.mark.prop("apistellar.app.routing", ret_val=[])
+def test_app_no_route():
+    Application("test")

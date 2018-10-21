@@ -5,9 +5,10 @@ import aiofiles
 from toolkit import readexactly
 from aiohttp import ClientSession, FormData
 from apistellar.bases.response import FileResponse
-from apistellar import Controller, FileStream, post, get
+from apistellar import Controller, FileStream, post, get, route
 
 
+@route("/upload")
 class UploadController(Controller):
 
     @post("/test/upload")
@@ -36,7 +37,7 @@ def filename(request):
 
 @pytest.mark.asyncio
 async def test_upload(server, filename):
-    url = f"http://127.0.0.1:{server.port}/test/upload"
+    url = f"http://127.0.0.1:{server.port}/upload/test/upload"
     async with ClientSession(conn_timeout=10, read_timeout=10) as session:
         data = FormData()
         data.add_field(f'test_file', open(filename, "rb"), filename=filename)
@@ -46,7 +47,7 @@ async def test_upload(server, filename):
 
 @pytest.mark.asyncio
 async def test_download(server, filename):
-    url = f"http://127.0.0.1:{server.port}/test/download"
+    url = f"http://127.0.0.1:{server.port}/upload/test/download"
     async with ClientSession(conn_timeout=10, read_timeout=10) as session:
         resp = await session.get(url, params={"filename": f"upload_{filename}"})
         chunk = await readexactly(resp.content, 1024000)

@@ -1,10 +1,7 @@
 import json
-import pytest
 
-from aiohttp import ClientSession
 from apistar.http import Response
 from apistellar.bases.hooks import ErrorHook
-from apistellar import route, get, Controller, Hook
 
 from collections import namedtuple
 

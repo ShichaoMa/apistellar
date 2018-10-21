@@ -5,14 +5,14 @@ from apistar.http import Response
 from apistellar import Controller, get, route, Application
 
 
-@route("/")
+@route("/exception")
 class ExceptionController(Controller):
 
-    @get("/exception")
+    @get("/")
     def exception():
         1/0
 
-    @get("/exception/response")
+    @get("/response")
     def exception_response():
         try:
             1/0

@@ -31,29 +31,22 @@ def install_requires():
 
 
 @contextmanager
-def cfg_manage(cfg_filename):
-    if os.path.exists(cfg_filename):
-        cfg_file = open(cfg_filename, "r+")
-        buffer = cfg_file.read()
+def cfg_manage(cfg_tpl_filename):
+    if os.path.exists(cfg_tpl_filename):
+        cfg_file_tpl = open(cfg_tpl_filename)
+        buffer = cfg_file_tpl.read()
         try:
-            overwrite(cfg_file, string.Template(buffer).substitute(
-                pwd=os.path.abspath(os.path.dirname(__file__))))
+            with open(cfg_tpl_filename.rstrip(".tpl"), "w") as cfg_file:
+                cfg_file.write(string.Template(buffer).substitute(
+                    pwd=os.path.abspath(os.path.dirname(__file__))))
             yield
         finally:
-            overwrite(cfg_file, buffer)
-            cfg_file.close()
+            cfg_file_tpl.close()
     else:
         yield
 
 
-def overwrite(fp, buf):
-    fp.seek(0)
-    fp.truncate()
-    fp.write(buf)
-    fp.flush()
-
-
-with cfg_manage(__file__.replace(".py", ".cfg")):
+with cfg_manage(__file__.replace(".py", ".cfg.tpl")):
     setup(
         name="{{name}}",
         version=get_version("{{name}}"),

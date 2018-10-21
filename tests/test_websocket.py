@@ -2,10 +2,11 @@ import pytest
 import websockets
 
 from apistar import http
-from apistellar import websocket, Controller
+from apistellar import websocket, Controller, route
 from websockets.exceptions import ConnectionClosed
 
 
+@route("/websocket")
 class WebsocketController(Controller):
 
     @websocket("/test/websocket/complex")
@@ -37,7 +38,7 @@ class WebsocketController(Controller):
 @pytest.mark.asyncio
 async def test_websocket_simple(server):
     async with websockets.connect(
-            f"ws://127.0.0.1:{server.port}/test/websocket/simple") as ws:
+            f"ws://127.0.0.1:{server.port}/websocket/test/websocket/simple") as ws:
             await ws.send("hello,")
             assert await ws.recv() == '{"success": "ok"}'
 
@@ -45,7 +46,7 @@ async def test_websocket_simple(server):
 @pytest.mark.asyncio
 async def test_websocket_complex(server):
     async with websockets.connect(
-            f"ws://127.0.0.1:{server.port}/test/websocket/complex") as ws:
+            f"ws://127.0.0.1:{server.port}/websocket/test/websocket/complex") as ws:
         assert await ws.recv() == '{"success": "ok"}'
         await ws.send("hello,")
         assert await ws.recv() == 'got piece: hello,'
@@ -58,7 +59,7 @@ async def test_websocket_complex(server):
 @pytest.mark.asyncio
 async def test_websocket_not_found(server):
     async with websockets.connect(
-            f"ws://127.0.0.1:{server.port}/test/websocket/not/found") as ws:
+            f"ws://127.0.0.1:{server.port}/websocket/test/websocket/not/found") as ws:
         with pytest.raises(ConnectionClosed):
             assert await ws.recv()
 

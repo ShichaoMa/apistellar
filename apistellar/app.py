@@ -20,6 +20,8 @@ __all__ = ["Application"]
 enhance_response(Response)
 JSONResponse.options["default"] = TypeEncoder().default
 
+del JSONResponse.charset
+
 
 class FixedAsyncApp(ASyncApp):
 

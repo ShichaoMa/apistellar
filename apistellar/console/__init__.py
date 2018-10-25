@@ -59,7 +59,7 @@ class ConsoleManager(Manager):
                 ", ".join(f"({index+1}) of {module}" for index, (_, module)
                                                 in enumerate(beans))))
             bean = beans[int(i) - 1][0]
-        return self.await(self.resolve(bean))
+        return self._await(self.resolve(bean))
 
     def __getitem__(self, item):
         return self.__getattr__(item)

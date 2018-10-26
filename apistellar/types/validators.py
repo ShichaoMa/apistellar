@@ -6,7 +6,7 @@ from toolkit import cache_property
 from collections.abc import Mapping
 from apistar.exceptions import ValidationError
 
-from .formats import FORMATS
+from .formats import FORMATS, ExchangeFormat
 
 NO_DEFAULT = object()
 
@@ -289,6 +289,21 @@ class NumericType(Validator):
                     self.error('multiple_of')
 
         return value
+
+
+class Exchange(String):
+
+    def __init__(self, cast, **kwargs):
+        kwargs["format"] = "exchange_format"
+        super(Exchange, self).__init__(**kwargs)
+        self.cast = cast
+        self._formatter = None
+
+    @property
+    def formatter(self):
+        if not self._formatter:
+            self._formatter = ExchangeFormat(self.cast)
+        return self._formatter
 
 
 class Number(NumericType):

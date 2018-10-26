@@ -1,5 +1,7 @@
 import re
 import uuid
+import random
+import string
 import datetime
 
 from apistar.exceptions import ValidationError
@@ -160,6 +162,29 @@ class UUIDFormat(BaseFormat):
 
     def to_string(self, value):
         if value is not None:
+            return str(value)
+
+
+class ExchangeFormat(BaseFormat):
+    name = "exchange_format"
+
+    def __init__(self, type):
+        super(ExchangeFormat, self).__init__()
+        self.type = type
+
+    def is_native_type(self, value):
+        return isinstance(value, self.type)
+
+    def validate(self, value):
+        try:
+            return self.type(value)
+        except Exception as ex:
+            raise ValidationError(str(ex))
+
+    def to_string(self, value):
+        if hasattr(value, "__serialize__"):
+            return value.__serialize__()
+        elif value is not None:
             return str(value)
 
 

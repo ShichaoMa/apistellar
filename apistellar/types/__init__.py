@@ -16,7 +16,8 @@ class TypeMetaclass(ABCMeta):
     def __new__(mcs, name, bases, attrs):
         properties = []
         for key, value in list(attrs.items()):
-            if key in ['keys', 'items', 'values', 'get', 'validator']:
+            if key in ['keys', 'items', 'values', 'get', "clear",
+                       'validator', "setdefault", "pop", "popitem"]:
                 msg = (
                     'Cannot use reserved name "%s" on Type "%s", as it '
                     'clashes with the class interface.'

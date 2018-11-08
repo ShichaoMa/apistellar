@@ -5,4 +5,4 @@ test=pytest
 ;when run pytest command, add --rootdir here will be effective, but
 ;the printed message of rootdir is only can be changed by command
 ;line, so never mind!
-addopts = --rootdir=${pwd}/tests --cov-report=html:${pwd}/htmlcov --cov-branch --cov=${pwd}/{{name}}/  -vv --disable-warnings
+addopts = --rootdir={{project_dir}}/tests --cov-report=html:{{project_dir}}/htmlcov --cov-branch --cov={{project_dir}}/{{name}}/  -vv --disable-warnings

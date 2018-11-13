@@ -1,7 +1,5 @@
 import re
 import uuid
-import random
-import string
 import datetime
 
 from apistar.exceptions import ValidationError
@@ -141,7 +139,10 @@ class FormatDatetime(BaseFormat):
         return isinstance(value, self.type)
 
     def validate(self, value):
-        return datetime.datetime.strptime(value, self.format)
+        try:
+            return datetime.datetime.strptime(value, self.format)
+        except Exception as e:
+            raise ValidationError(str(e))
 
     def to_string(self, value):
         if isinstance(value, str) or value is None:

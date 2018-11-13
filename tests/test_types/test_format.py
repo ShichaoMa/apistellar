@@ -83,7 +83,7 @@ def test_date_validate():
 
 def test_format_datetime_validate():
     e = Example()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         e.field4 = "19771010"
 
     e.field4 = "1970-10-10 10:10:10"

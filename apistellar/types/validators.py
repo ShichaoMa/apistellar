@@ -200,6 +200,21 @@ class String(Validator):
         return value
 
 
+class Exchange(String):
+
+    def __init__(self, cast, **kwargs):
+        kwargs["format"] = "exchange_format"
+        super(Exchange, self).__init__(**kwargs)
+        self.cast = cast
+        self._formatter = None
+
+    @property
+    def formatter(self):
+        if not self._formatter:
+            self._formatter = ExchangeFormat(self.cast)
+        return self._formatter
+
+
 class NumericType(Validator):
     """
     Base class for both `Number` and `Integer`.
@@ -291,21 +306,6 @@ class NumericType(Validator):
         return value
 
 
-class Exchange(String):
-
-    def __init__(self, cast, **kwargs):
-        kwargs["format"] = "exchange_format"
-        super(Exchange, self).__init__(**kwargs)
-        self.cast = cast
-        self._formatter = None
-
-    @property
-    def formatter(self):
-        if not self._formatter:
-            self._formatter = ExchangeFormat(self.cast)
-        return self._formatter
-
-
 class Number(NumericType):
     numeric_type = float
 
@@ -319,7 +319,6 @@ class Boolean(Validator):
         'type': '{value}: Must be a valid boolean.',
         'null': '{value}: May not be null.',
     }
-
     values = {
         'true': True,
         'false': False,
@@ -475,6 +474,7 @@ class Object(Validator):
             key for key in value.keys()
             if key not in set(validated.keys()) | set(errors.keys())
         ]
+
         if self.additional_properties is True:
             for key in remaining:
                 validated[key] = value[key]

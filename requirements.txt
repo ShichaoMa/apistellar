@@ -5,3 +5,4 @@ toolkity
 ipython==6.4.0
 flask==1.0.2
 whitenoise<=3.3.1
+pyaop

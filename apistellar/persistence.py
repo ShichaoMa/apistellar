@@ -4,50 +4,17 @@ import asyncio
 from functools import wraps
 from types import FunctionType
 
+from pyaop import Proxy, Return, AOP
 
-class SelfClassProxy(object):
-    """
-    为cls或self设置一个代理层，用于存储store
-    """
-    def __init__(self, self_or_class, store):
-        object.__setattr__(self, "self_or_class", self_or_class)
-        object.__setattr__(self, "store", store)
 
-    def __getattribute__(self, item):
-        if item == "store":
-            return super(SelfClassProxy, self).__getattribute__(item)
-        else:
-            return getattr(super(SelfClassProxy, self).__getattribute__(
-                "self_or_class"), item)
+def wrapper(obj, prop, prop_name):
+    def common(proxy, name, value=None):
+        if name == prop_name:
+            Return(prop)
 
-    def __setattr__(self, key, value):
-        self_or_class = super(SelfClassProxy, self).__getattribute__(
-            "self_or_class")
-        setattr(self_or_class, key, value)
-
-    def __delattr__(self, item):
-        self_or_class = super(SelfClassProxy, self).__getattribute__(
-            "self_or_class")
-        delattr(self_or_class, item)
-
-    def __call__(self, *args, **kwargs):
-        return super(SelfClassProxy, self).__getattribute__(
-            "self_or_class")(*args, **kwargs)
-
-    def __iter__(self):
-        return iter(super(SelfClassProxy, self).__getattribute__("self_or_class"))
-
-    def __getitem__(self, item):
-        return super(SelfClassProxy, self).__getattribute__(
-            "self_or_class").__getitem__(item)
-
-    def __setitem__(self, key, value):
-        return super(SelfClassProxy, self).__getattribute__(
-            "self_or_class").__setitem__(key, value)
-
-    def __delitem__(self, key):
-        return super(SelfClassProxy, self).__getattribute__(
-            "self_or_class").__delitem__(key)
+    return Proxy(obj, before=[
+        AOP.Hook(common, ["__getattribute__", "__setattr__", "__delattr__"]),
+        ])
 
 
 def conn_manager(func):
@@ -66,14 +33,16 @@ def conn_manager(func):
             callargs = get_callargs(func, self_or_cls, *args, **kwargs)
             callargs.pop("cls", None)
             with self_or_cls.get_store(**callargs) as store:
-                return await func(SelfClassProxy(self_or_cls, store), *args, **kwargs)
+                return await func(wrapper(
+                    self_or_cls, store, self_or_cls.conn_name), *args, **kwargs)
     else:
         @wraps(func)
         def inner(self_or_cls, *args, **kwargs):
             callargs = get_callargs(func, self_or_cls, *args, **kwargs)
             callargs.pop("cls", None)
             with self_or_cls.get_store(**callargs) as store:
-                return func(SelfClassProxy(self_or_cls, store), *args, **kwargs)
+                return func(wrapper(
+                    self_or_cls, store, self_or_cls.conn_name), *args, **kwargs)
     return inner
 
 
@@ -91,6 +60,7 @@ class DriverMixin(object):
     """
     配合conn_manager用来控制数据库访问。
     """
+    conn_name = "store"
     store = None
 
     @classmethod

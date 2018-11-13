@@ -26,6 +26,7 @@ class MyDriver(object):
 
 class MyDriverMixin(DriverMixin):
 
+
     @classmethod
     @contextmanager
     def get_store(cls, **callargs):
@@ -90,6 +91,7 @@ class DynamicTableNameDriver(object):
 class DynamicTableNameMixin(DriverMixin):
     TABLE = "test_table_{partition}"
     DB = "test_db_{partition}"
+    conn_name = "cur"
 
     @classmethod
     @contextmanager
@@ -101,7 +103,10 @@ class DynamicTableNameMixin(DriverMixin):
 class DynamicTableNameModel(PersistentType, DynamicTableNameMixin):
 
     def find_one(self, partition):
-        return self.store.find_one()
+        return self.cur.find_one()
+
+    def get_table(self, partition):
+        return self.TABLE
 
 
 class TestPersistence(object):
@@ -151,3 +156,6 @@ class TestPersistence(object):
 
     def test_with_dynamic_table_name(self):
         assert DynamicTableNameModel().find_one(2) == ("test_table_2", "test_db_2")
+
+    def test_get_prop(self):
+        assert DynamicTableNameModel().get_table(2) == "test_table_{partition}"

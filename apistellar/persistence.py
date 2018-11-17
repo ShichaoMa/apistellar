@@ -39,7 +39,7 @@ def chain(self_or_cls, mixin, **callargs):
     """
     if mixin:
         mix = mixin.pop()
-        with mix.get_store(**callargs) as conn_info:
+        with mix.get_store(self_or_cls, **callargs) as conn_info:
             proxy = wrapper(self_or_cls, **conn_info)
             with chain(proxy, mixin, **callargs) as proxy:
                 yield proxy
@@ -88,16 +88,15 @@ class DriverMixin(object):
     """
     配合conn_manager用来控制数据库访问。
     """
-    conn_name = "store"
-    store = None
 
     @classmethod
-    def get_store(cls, **callargs):
+    def get_store(cls, instance, **callargs):
         """
-        :param callargs:
+        :param instance: 子类或者子类实例
+        :param callargs: 方法调用时参数表
         :return: {"prop_name": "store", "prop": `instance`}
         """
-        pass
+        return NotImplemented
 
 
 class PersistentMeta(type):

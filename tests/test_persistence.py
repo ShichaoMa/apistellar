@@ -30,7 +30,7 @@ class MyDriverMixin(DriverMixin):
 
     @classmethod
     @contextmanager
-    def get_store(cls, **callargs):
+    def get_store(cls, instance, **callargs):
         driver = MyDriver()
         try:
             yield {"prop_name": "store", "prop": driver}
@@ -93,19 +93,21 @@ class DynamicTableNameDriver(object):
 
 
 class DynamicTableNameMixin(DriverMixin):
-    DYNAMIC_TABLE = "test_table_{partition}"
-    DYNAMIC_DB = "test_db_{partition}"
     cur = None # type: DynamicTableNameDriver
-
+    DYNAMIC_TABLE = NotImplemented
+    DYNAMIC_DB = NotImplemented
     @classmethod
     @contextmanager
-    def get_store(cls, **callargs):
+    def get_store(cls, instance, **callargs):
         driver = DynamicTableNameDriver(
-            cls.DYNAMIC_TABLE.format(**callargs), cls.DYNAMIC_DB.format(**callargs))
+            instance.DYNAMIC_TABLE.format(**callargs),
+            instance.DYNAMIC_DB.format(**callargs))
         yield {"prop_name": "cur", "prop": driver}
 
 
 class DynamicTableNameModel(PersistentType, DynamicTableNameMixin):
+    DYNAMIC_TABLE = "test_table_{partition}"
+    DYNAMIC_DB = "test_db_{partition}"
 
     def find_one(self, partition):
         return self.cur.find_one()
@@ -115,6 +117,9 @@ class DynamicTableNameModel(PersistentType, DynamicTableNameMixin):
 
 
 class MultiDriverModel(PersistentType, DynamicTableNameMixin, MyDriverMixin):
+    DYNAMIC_TABLE = "test_table_{partition}"
+    DYNAMIC_DB = "test_db_{partition}"
+
     def find_one(self, partition):
         table1, db1 = self.cur.find_one()
         driver = self.store.find_one()

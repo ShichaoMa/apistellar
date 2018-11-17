@@ -2,9 +2,9 @@ import inspect
 import asyncio
 
 from functools import wraps
-from types import FunctionType
-
 from pyaop import Proxy, Return, AOP
+from contextlib import contextmanager
+from types import FunctionType, MethodType
 
 
 def wrapper(obj, prop, prop_name):
@@ -15,6 +15,36 @@ def wrapper(obj, prop, prop_name):
     return Proxy(obj, before=[
         AOP.Hook(common, ["__getattribute__", "__setattr__", "__delattr__"]),
         ])
+
+
+def mixin(cls):
+    if not isinstance(cls, type):
+        cls = cls.__class__
+
+    classes = list()
+    for base in cls.__bases__:
+        if issubclass(base, DriverMixin) and base is not DriverMixin:
+            classes.append(base)
+    return classes
+
+
+@contextmanager
+def chain(self_or_cls, mixin, **callargs):
+    """
+    连接所有mixins, 获取嵌套的代理对象，来支持多个driver访问
+    :param self_or_cls:
+    :param mixin:
+    :param callargs:
+    :return:
+    """
+    if mixin:
+        mix = mixin.pop()
+        with mix.get_store(**callargs) as conn_info:
+            proxy = wrapper(self_or_cls, **conn_info)
+            with chain(proxy, mixin, **callargs) as proxy:
+                yield proxy
+    else:
+        yield self_or_cls
 
 
 def conn_manager(func):
@@ -32,17 +62,15 @@ def conn_manager(func):
         async def inner(self_or_cls, *args, **kwargs):
             callargs = get_callargs(func, self_or_cls, *args, **kwargs)
             callargs.pop("cls", None)
-            with self_or_cls.get_store(**callargs) as store:
-                return await func(wrapper(
-                    self_or_cls, store, self_or_cls.conn_name), *args, **kwargs)
+            with chain(self_or_cls, mixin(self_or_cls), **callargs) as proxy:
+                return await func(proxy, *args, **kwargs)
     else:
         @wraps(func)
         def inner(self_or_cls, *args, **kwargs):
             callargs = get_callargs(func, self_or_cls, *args, **kwargs)
             callargs.pop("cls", None)
-            with self_or_cls.get_store(**callargs) as store:
-                return func(wrapper(
-                    self_or_cls, store, self_or_cls.conn_name), *args, **kwargs)
+            with chain(self_or_cls, mixin(self_or_cls), **callargs) as proxy:
+                return func(proxy, *args, **kwargs)
     return inner
 
 
@@ -65,7 +93,11 @@ class DriverMixin(object):
 
     @classmethod
     def get_store(cls, **callargs):
-        return NotImplemented
+        """
+        :param callargs:
+        :return: {"prop_name": "store", "prop": `instance`}
+        """
+        pass
 
 
 class PersistentMeta(type):
@@ -96,9 +128,13 @@ def get_callargs(func, *args, **kwargs):
     :return:
     """
     for closure in func.__closure__ or []:
-        if isinstance(closure.cell_contents, FunctionType):
+        if isinstance(closure.cell_contents, (FunctionType, MethodType)):
             func = closure.cell_contents
             return get_callargs(func, *args, **kwargs)
 
-    else:
-        return inspect.getcallargs(func, *args, **kwargs)
+    args = inspect.getcallargs(func, *args, **kwargs)
+    spec = inspect.getfullargspec(func)
+    if spec.varkw:
+        args.update(args.pop(spec.varkw, {}))
+
+    return args

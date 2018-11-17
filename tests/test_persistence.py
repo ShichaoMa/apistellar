@@ -3,7 +3,7 @@ import pytest
 
 from contextlib import contextmanager
 from apistellar.types import PersistentType
-from apistellar.persistence import DriverMixin, conn_ignore
+from apistellar.persistence import DriverMixin, conn_ignore, get_callargs
 
 
 class MyDriver(object):
@@ -26,13 +26,14 @@ class MyDriver(object):
 
 class MyDriverMixin(DriverMixin):
 
+    store = None  # type: MyDriver
 
     @classmethod
     @contextmanager
     def get_store(cls, **callargs):
         driver = MyDriver()
         try:
-            yield driver
+            yield {"prop_name": "store", "prop": driver}
         except Exception as e:
             driver.rollback()
             raise e
@@ -60,6 +61,9 @@ class Model(PersistentType, MyDriverMixin):
 
     def find_one_with_args(self, a, b, *args, c=3):
         return a, b, args, c
+
+    def find_one_with_kwonly_args(self, a, b, *, c=3):
+        return a, b, c
 
     async def find_one_async(self):
         return self.store.find_one()
@@ -89,15 +93,16 @@ class DynamicTableNameDriver(object):
 
 
 class DynamicTableNameMixin(DriverMixin):
-    TABLE = "test_table_{partition}"
-    DB = "test_db_{partition}"
-    conn_name = "cur"
+    DYNAMIC_TABLE = "test_table_{partition}"
+    DYNAMIC_DB = "test_db_{partition}"
+    cur = None # type: DynamicTableNameDriver
 
     @classmethod
     @contextmanager
     def get_store(cls, **callargs):
-        yield DynamicTableNameDriver(
-            cls.TABLE.format(**callargs), cls.DB.format(**callargs))
+        driver = DynamicTableNameDriver(
+            cls.DYNAMIC_TABLE.format(**callargs), cls.DYNAMIC_DB.format(**callargs))
+        yield {"prop_name": "cur", "prop": driver}
 
 
 class DynamicTableNameModel(PersistentType, DynamicTableNameMixin):
@@ -106,7 +111,14 @@ class DynamicTableNameModel(PersistentType, DynamicTableNameMixin):
         return self.cur.find_one()
 
     def get_table(self, partition):
-        return self.TABLE
+        return self.DYNAMIC_TABLE
+
+
+class MultiDriverModel(PersistentType, DynamicTableNameMixin, MyDriverMixin):
+    def find_one(self, partition):
+        table1, db1 = self.cur.find_one()
+        driver = self.store.find_one()
+        return table1, db1, driver
 
 
 class TestPersistence(object):
@@ -154,8 +166,28 @@ class TestPersistence(object):
         store = model.find_one_with_args(1, 5, 8, 7)
         assert store == (1, 5, (8, 7), 3)
 
+    def test_with_kwonly_args(self):
+        model = Model()
+        store = model.find_one_with_kwonly_args(1, 5)
+        assert store == (1, 5, 3)
+
     def test_with_dynamic_table_name(self):
         assert DynamicTableNameModel().find_one(2) == ("test_table_2", "test_db_2")
 
     def test_get_prop(self):
         assert DynamicTableNameModel().get_table(2) == "test_table_{partition}"
+
+    def test_get_callargs(self):
+        def fun(cls, query, **kwargs):
+            pass
+        callargs = get_callargs(fun, "111",
+                                *({'primary_key': '7', 'second_level_kid': '6',
+                                  'node_id': '2', 'first_level_kid': '5',
+                                  'patient_sn': '3'},),
+                                **{'desease_id': 'test'})
+        assert callargs["desease_id"] == "test"
+
+    def test_multi_driver(self):
+        table, db, driver = MultiDriverModel().find_one(2)
+        assert (table, db) == ("test_table_2", "test_db_2")
+        assert isinstance(driver, MyDriver)

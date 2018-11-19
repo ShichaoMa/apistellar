@@ -2,12 +2,20 @@ import inspect
 import asyncio
 
 from functools import wraps
-from pyaop import Proxy, Return, AOP
 from contextlib import contextmanager
 from types import FunctionType, MethodType
 
+from pyaop import Proxy, Return, AOP
 
-def wrapper(obj, prop, prop_name):
+
+def proxy(obj, prop, prop_name):
+    """
+    为object对象代理一个属性
+    :param obj:
+    :param prop: 属性
+    :param prop_name: 属性名
+    :return:
+    """
     def common(proxy, name, value=None):
         if name == prop_name:
             Return(prop)
@@ -15,36 +23,6 @@ def wrapper(obj, prop, prop_name):
     return Proxy(obj, before=[
         AOP.Hook(common, ["__getattribute__", "__setattr__", "__delattr__"]),
         ])
-
-
-def mixin(cls):
-    if not isinstance(cls, type):
-        cls = cls.__class__
-
-    classes = list()
-    for base in cls.__bases__:
-        if issubclass(base, DriverMixin) and base is not DriverMixin:
-            classes.append(base)
-    return classes
-
-
-@contextmanager
-def chain(self_or_cls, mixin, **callargs):
-    """
-    连接所有mixins, 获取嵌套的代理对象，来支持多个driver访问
-    :param self_or_cls:
-    :param mixin:
-    :param callargs:
-    :return:
-    """
-    if mixin:
-        mix = mixin.pop()
-        with mix.get_store(self_or_cls, **callargs) as conn_info:
-            proxy = wrapper(self_or_cls, **conn_info)
-            with chain(proxy, mixin, **callargs) as proxy:
-                yield proxy
-    else:
-        yield self_or_cls
 
 
 def conn_manager(func):
@@ -62,15 +40,15 @@ def conn_manager(func):
         async def inner(self_or_cls, *args, **kwargs):
             callargs = get_callargs(func, self_or_cls, *args, **kwargs)
             callargs.pop("cls", None)
-            with chain(self_or_cls, mixin(self_or_cls), **callargs) as proxy:
-                return await func(proxy, *args, **kwargs)
+            with self_or_cls.get_store(self_or_cls, **callargs) as self_or_cls:
+                return await func(self_or_cls, *args, **kwargs)
     else:
         @wraps(func)
         def inner(self_or_cls, *args, **kwargs):
             callargs = get_callargs(func, self_or_cls, *args, **kwargs)
             callargs.pop("cls", None)
-            with chain(self_or_cls, mixin(self_or_cls), **callargs) as proxy:
-                return func(proxy, *args, **kwargs)
+            with self_or_cls.get_store(self_or_cls, **callargs) as self_or_cls:
+                return func(self_or_cls, *args, **kwargs)
     return inner
 
 
@@ -90,13 +68,14 @@ class DriverMixin(object):
     """
 
     @classmethod
-    def get_store(cls, instance, **callargs):
+    @contextmanager
+    def get_store(cls, self_or_cls, **callargs):
         """
-        :param instance: 子类，子类实例或代理
+        子类需要通过super调用父类的get_store方法
         :param callargs: 方法调用时参数表
-        :return: {"prop_name": "store", "prop": `instance`}
+        :return: 返回proxy对象
         """
-        return NotImplemented
+        yield self_or_cls
 
 
 class PersistentMeta(type):

@@ -3,7 +3,7 @@ import pytest
 
 from contextlib import contextmanager
 from apistellar.types import PersistentType
-from apistellar.persistence import DriverMixin, conn_ignore, get_callargs
+from apistellar.persistence import DriverMixin, conn_ignore, get_callargs, proxy
 
 
 class MyDriver(object):
@@ -30,18 +30,20 @@ class MyDriverMixin(DriverMixin):
 
     @classmethod
     @contextmanager
-    def get_store(cls, instance, **callargs):
-        driver = MyDriver()
-        try:
-            yield {"prop_name": "store", "prop": driver}
-        except Exception as e:
-            driver.rollback()
-            raise e
-        else:
-            driver.close()
+    def get_store(cls, self_or_cls, **callargs):
+        with super(MyDriverMixin, cls).get_store(
+                self_or_cls, **callargs) as self_or_cls:
+            driver = MyDriver()
+            try:
+                yield proxy(self_or_cls, prop_name="store", prop=driver)
+            except Exception as e:
+                driver.rollback()
+                raise e
+            else:
+                driver.close()
 
 
-def wrapper(func):
+def custom_wrapper(func):
     d = 1
 
     def inner(*args, **kwargs):
@@ -58,6 +60,9 @@ class Model(PersistentType, MyDriverMixin):
 
     def find_one(self):
         return self.store.find_one()
+
+    def find(self):
+        return self.find_one()
 
     def find_one_with_args(self, a, b, *args, c=3):
         return a, b, args, c
@@ -76,7 +81,7 @@ class Model(PersistentType, MyDriverMixin):
     def find_one_ignore_store(self):
         assert self.store is None
 
-    @wrapper
+    @custom_wrapper
     def find_one_with_wrapper(self, a, b, c=3, d=4):
         self.store.find_one()
         return a, b, c, d
@@ -96,13 +101,16 @@ class DynamicTableNameMixin(DriverMixin):
     cur = None # type: DynamicTableNameDriver
     DYNAMIC_TABLE = NotImplemented
     DYNAMIC_DB = NotImplemented
+
     @classmethod
     @contextmanager
-    def get_store(cls, instance, **callargs):
-        driver = DynamicTableNameDriver(
-            instance.DYNAMIC_TABLE.format(**callargs),
-            instance.DYNAMIC_DB.format(**callargs))
-        yield {"prop_name": "cur", "prop": driver}
+    def get_store(cls, self_or_cls, **callargs):
+        with super(DynamicTableNameMixin, cls).get_store(
+                self_or_cls, **callargs) as self_or_cls:
+            driver = DynamicTableNameDriver(
+                self_or_cls.DYNAMIC_TABLE.format(**callargs),
+                self_or_cls.DYNAMIC_DB.format(**callargs))
+        yield proxy(self_or_cls, prop_name="cur", prop=driver)
 
 
 class DynamicTableNameModel(PersistentType, DynamicTableNameMixin):
@@ -134,6 +142,13 @@ class TestPersistence(object):
          assert isinstance(store, MyDriver)
          assert store.state == "close"
          assert model.store is None
+
+    def test_call_method(self):
+        model = Model()
+        store = model.find()
+        assert isinstance(store, MyDriver)
+        assert store.state == "close"
+        assert model.store is None
 
     @pytest.mark.asyncio
     async def test_async(self):

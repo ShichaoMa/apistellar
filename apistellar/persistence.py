@@ -72,6 +72,7 @@ class DriverMixin(object):
     def get_store(cls, self_or_cls, **callargs):
         """
         子类需要通过super调用父类的get_store方法
+        :param self_or_cls: 调用类方法和实例方法时的cls或self
         :param callargs: 方法调用时参数表
         :return: 返回proxy对象
         """

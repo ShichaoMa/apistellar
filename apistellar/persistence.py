@@ -92,7 +92,7 @@ class DriverMixin(object):
     @classmethod
     def get_store(cls, instance, **callargs):
         """
-        :param instance: 子类或者子类实例
+        :param instance: 子类，子类实例或代理
         :param callargs: 方法调用时参数表
         :return: {"prop_name": "store", "prop": `instance`}
         """

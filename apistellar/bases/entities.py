@@ -17,16 +17,13 @@ DummyFlaskApp = namedtuple(
 
 
 class File(object):
-    mime_type_regex = re.compile(b"Content-Type: (\S*)")
-    disposition_regex = re.compile(
-        rb"Content-Disposition: form-data;"
-        rb"(?: name=\"(?P<name>[^;]*?)\")?"
-        rb"(?:; filename\*?=\"?"
-        rb"(?:(?P<enc>[\w\-]+?)'"
-        rb"(?P<lang>\w*)')?"
-        rb"(?P<filename>[^\"]*)\"?)?")
+    mime_type_regex = re.compile(rb"Content-Type: (\S*)")
+    content_length_regex = re.compile(rb"Content-Length: (\d*)")
+    disposition_regex = re.compile(rb'Content-Disposition: form-data(?:; name\*?=\"?(?:(?P<name_enc>[\w\-]+?)\'(?P<name_lang>\w*)\')?(?P<name>[^\";]*)\"?)?.*?(?:; filename\*?=\"?(?:(?P<enc>[\w\-]+?)\'(?P<lang>\w*)\')?(?P<filename>[^\"]*?)\"?)?(?:$|\r\n)')
 
-    def __init__(self, stream, receive, boundary, name, filename, mimetype):
+    def __init__(self, stream, receive, boundary, name,
+                 filename, mimetype, content_length):
+        self.content_length = content_length
         self.mimetype = mimetype
         self.receive = receive
         self.filename = filename
@@ -117,11 +114,11 @@ class File(object):
                     stream.closed:
                 break
 
-        return cls(stream, receive, boundary,
-                   *cls.parse_headers(stream, tmp_boundary))
+        return cls(
+            stream, receive, boundary, *cls.get_headers(stream, tmp_boundary))
 
     @classmethod
-    def parse_headers(cls, stream, tmp_boundary):
+    def get_headers(cls, stream, tmp_boundary):
         end_boundary = tmp_boundary + b"--"
         body = stream.body
         index = body.find(tmp_boundary)
@@ -130,17 +127,28 @@ class File(object):
         body = body[index + len(tmp_boundary):]
         split_index = body.find(b"\r\n\r\n")
         header_str, body = body[:split_index], body[split_index + 4:]
-        groups = cls.disposition_regex.search(header_str).groupdict()
-        filename = groups["filename"] and unquote(groups["filename"].decode())
+        headers = cls.parse(header_str)
+        stream.body = body
+        return headers
 
+    @classmethod
+    def parse(cls, header_str):
+        groups = cls.disposition_regex.search(header_str).groupdict()
+
+        filename = groups["filename"] and unquote(groups["filename"].decode())
         if groups["enc"]:
             filename = filename.encode().decode(groups["enc"].decode())
-        name = groups["name"].decode()
+
+        name = groups["name"] and unquote(groups["name"].decode())
+        if groups["name_enc"]:
+            name = name.encode().decode(groups["name_enc"].decode())
+
         mth = cls.mime_type_regex.search(header_str)
         mimetype = mth and mth.group(1).decode()
-        stream.body = body
+        mth = cls.content_length_regex.search(header_str) or 0
+        content_length = int(mth and mth.group(1))
         assert name, "FileStream iterated without File consumed. "
-        return name, filename, mimetype
+        return name, filename, mimetype, content_length
 
 
 class FileStream(object):

@@ -6,7 +6,7 @@ from urllib.parse import unquote
 from collections import namedtuple
 from flask.sessions import SecureCookieSession
 
-from toolkit import property_cache
+from toolkit import cache_classproperty
 from toolkit.settings import SettingsLoader, Settings
 
 from .exceptions import Readonly
@@ -169,20 +169,6 @@ class FileStream(object):
         return await File.from_boundary(self, self.receive, self.boundary)
 
 
-class SettingsMixin(object):
-    settings_path = None
-
-    @property
-    @property_cache
-    def settings(self):
-        # type: () -> Settings
-        return SettingsLoader().load(self.settings_path or "settings")
-
-    @classmethod
-    def register_path(cls, settings_path):
-        cls.settings_path = settings_path
-
-
 class InheritType(Enum):
     DUPLICATE = 0  # 重名且类型相符，在参数列表和赋值中不体现，在super中体现
     OVERWRITE = 1  # 重名但是类型不同，全部位置要体现，但是需要父类的参数改名字
@@ -219,3 +205,29 @@ class InjectManager(object):
 
 
 inject = InjectManager()
+
+
+class SettingsMixin(object):
+    settings_path = None
+
+    def property(func):
+        """
+        这是一个假的property，它存在的意义在于误导pycharm，
+        使cache_classproperty可以像property一样被注释类型。
+        :param func:
+        :return:
+        """
+        return func
+
+    @property
+    @cache_classproperty
+    def settings(cls):
+        # type: () -> Settings
+        return SettingsLoader().load(cls.settings_path or "settings")
+
+    @classmethod
+    def register_path(cls, settings_path):
+        cls.settings_path = settings_path
+
+
+del SettingsMixin.property

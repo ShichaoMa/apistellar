@@ -16,3 +16,7 @@ class TestSettingsMixin(object):
     def test_settings_overwrite(self):
         a = A()
         assert a.settings.get_int("A") == 2
+
+    def test_settings_mixin_not_have_property(self):
+        a = A()
+        assert not hasattr(a, "property")

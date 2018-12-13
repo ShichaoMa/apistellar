@@ -12,12 +12,16 @@ from .bases.components import Component
 from .bases.controller import Controller
 from .bases.response import FileResponse
 from .bases.model_factory import ModelFactory
-from .bases.entities import Session, Cookie, FormParam, FileStream, inject
+from .bases.entities import Session, Cookie, FormParam, \
+    FileStream, inject, SettingsMixin
 
 from .console import main as console
 
 from .solo import Solo
 from .solo.manager import SoloManager
+
+from .persistence import DriverMixin, conn_manager, \
+    conn_ignore, proxy, contextmanager
 
 from .types import Type, AsyncType, PersistentType, TypeEncoder, validators
 
@@ -25,4 +29,4 @@ from .route import route, get, post, delete, put, options, websocket
 
 from .helper import redirect, require
 
-__version__ = "1.0.29"    
+__version__ = "1.0.30"

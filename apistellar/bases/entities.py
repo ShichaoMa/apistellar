@@ -6,6 +6,9 @@ from urllib.parse import unquote
 from collections import namedtuple
 from flask.sessions import SecureCookieSession
 
+from toolkit import property_cache
+from toolkit.settings import SettingsLoader, Settings
+
 from .exceptions import Readonly
 
 Cookie = typing.NewType('Cookie', str)
@@ -164,6 +167,20 @@ class FileStream(object):
 
     async def __anext__(self):
         return await File.from_boundary(self, self.receive, self.boundary)
+
+
+class SettingsMixin(object):
+    settings_path = None
+
+    @property
+    @property_cache
+    def settings(self):
+        # type: () -> Settings
+        return SettingsLoader().load(self.settings_path or "settings")
+
+    @classmethod
+    def register_path(cls, settings_path):
+        cls.settings_path = settings_path
 
 
 class InheritType(Enum):

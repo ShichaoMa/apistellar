@@ -7,7 +7,6 @@ from collections import namedtuple
 
 from toolkit.singleton import Singleton
 from toolkit.frozen import FrozenSettings
-from toolkit.settings import SettingsLoader
 
 from werkzeug.http import parse_options_header
 from flask.sessions import SecureCookieSessionInterface
@@ -17,7 +16,8 @@ from apistar.conneg import negotiate_content_type
 from apistar import Route, exceptions, http, Component as _Component
 
 from .controller import Controller
-from .entities import Session, Cookie, FormParam, FileStream, DummyFlaskApp
+from .entities import Session, Cookie, FormParam, \
+    FileStream, DummyFlaskApp, SettingsMixin
 
 
 class Component(_Component):
@@ -63,21 +63,12 @@ class ServiceComponent(Component, metaclass=Singleton):
         return route.controller
 
 
-class SettingsComponent(Component):
+class SettingsComponent(Component, SettingsMixin):
     """
     注入Settings
     """
-    settings_path = None
-
-    def __init__(self):
-        self.settings = SettingsLoader().load(self.settings_path or "settings")
-
     def resolve(self) -> FrozenSettings:
         return self.settings
-
-    @classmethod
-    def register_path(cls, settings_path):
-        cls.settings_path = settings_path
 
 
 class CookiesComponent(Component):

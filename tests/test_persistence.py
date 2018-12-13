@@ -1,9 +1,9 @@
 import os
 import pytest
 
-from contextlib import contextmanager
 from apistellar.types import PersistentType
-from apistellar.persistence import DriverMixin, conn_ignore, get_callargs, proxy
+from apistellar.persistence import DriverMixin, conn_ignore, \
+    get_callargs, proxy, contextmanager
 
 
 class MyDriver(object):
@@ -134,6 +134,25 @@ class MultiDriverModel(PersistentType, DynamicTableNameMixin, MyDriverMixin):
         return table1, db1, driver
 
 
+class AsyncDriverMixin(MyDriverMixin):
+
+    @classmethod
+    @contextmanager
+    async def get_store(cls, self_or_cls, **callargs):
+        with super().get_store(self_or_cls, **callargs) as self_or_cls:
+            yield proxy(self_or_cls, 111, "a")
+
+
+class AsyncDriverModel(PersistentType, AsyncDriverMixin):
+    async def find_one(self):
+        driver = self.store.find_one()
+        return driver, self.a
+
+    def find_one_sync(self):
+        driver = self.store.find_one()
+        return driver
+
+
 class TestPersistence(object):
 
     def test_normal(self):
@@ -211,3 +230,15 @@ class TestPersistence(object):
         table, db, driver = MultiDriverModel().find_one(2)
         assert (table, db) == ("test_table_2", "test_db_2")
         assert isinstance(driver, MyDriver)
+
+    @pytest.mark.asyncio
+    async def test_async_driver_mixin(self):
+        driver, a = await AsyncDriverModel().find_one()
+        assert a == 111
+        assert isinstance(driver, MyDriver)
+
+    def test_async_driver_mixin_with_sync_method(self):
+        with pytest.warns(UserWarning):
+            with pytest.raises(AttributeError) as exc_info:
+                AsyncDriverModel().find_one_sync()
+        assert "find_one" in exc_info.value.args[0]

@@ -1,3 +1,4 @@
+import os
 import sys
 import inspect
 import asyncio
@@ -141,37 +142,60 @@ def proxy(obj, prop, prop_name):
         ])
 
 
-def conn_manager(func):
-    """
-    返回连接管理下的方法
-    :param func:
-    :return:
-    """
+class ConnectionManager(object):
 
-    if getattr(func, "conn_ignore", False):
-        return func
+    @staticmethod
+    def debug_callback():
+        return os.getenv("UNIT_TEST_MODE", "").lower() == "true"
 
-    if asyncio.iscoroutinefunction(func):
-        @wraps(func)
-        async def inner(self_or_cls, *args, **kwargs):
-            callargs = get_callargs(func, self_or_cls, *args, **kwargs)
-            callargs.pop("cls", None)
-            gen = self_or_cls.get_store(self_or_cls, **callargs)
-            async with gen as proxy_instance:
-                return await func(proxy_instance, *args, **kwargs)
-    else:
-        @wraps(func)
-        def inner(self_or_cls, *args, **kwargs):
-            callargs = get_callargs(func, self_or_cls, *args, **kwargs)
-            callargs.pop("cls", None)
-            gen = self_or_cls.get_store(self_or_cls, **callargs)
-            with gen as proxy_instance:
-                if proxy_instance is None:
-                    warnings.warn("All DriverMixin lose efficacy，because of "
-                                  "AsyncDriverMixin used with sync method.")
-                    proxy_instance = self_or_cls
-                return func(proxy_instance, *args, **kwargs)
-    return inner
+    def __init__(self, debug_callback=None):
+        if debug_callback:
+            self.debug_callback = debug_callback
+
+    def __call__(self, *args, debug_callback=None):
+        """
+        返回连接管理下的方法
+        :param func:
+        :return:
+        """
+        if debug_callback:
+            return self.__class__(debug_callback)
+
+        func = args[0]
+
+        if getattr(func, "conn_ignore", False):
+            return func
+
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def inner(self_or_cls, *args, **kwargs):
+                if self.debug_callback():
+                    return await func(self_or_cls, *args, **kwargs)
+
+                callargs = get_callargs(func, self_or_cls, *args, **kwargs)
+                callargs.pop("cls", None)
+                gen = self_or_cls.get_store(self_or_cls, **callargs)
+                async with gen as proxy_instance:
+                    return await func(proxy_instance, *args, **kwargs)
+        else:
+            @wraps(func)
+            def inner(self_or_cls, *args, **kwargs):
+                if self.debug_callback():
+                    return func(self_or_cls, *args, **kwargs)
+
+                callargs = get_callargs(func, self_or_cls, *args, **kwargs)
+                callargs.pop("cls", None)
+                gen = self_or_cls.get_store(self_or_cls, **callargs)
+                with gen as proxy_instance:
+                    if proxy_instance is None:
+                        warnings.warn("All DriverMixin lose efficacy，because of "
+                                      "AsyncDriverMixin used with sync method.")
+                        proxy_instance = self_or_cls
+                    return func(proxy_instance, *args, **kwargs)
+        return inner
+
+
+conn_manager = ConnectionManager()
 
 
 def conn_ignore(func):

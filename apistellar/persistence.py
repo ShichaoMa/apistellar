@@ -188,8 +188,8 @@ class ConnectionManager(object):
                 gen = self_or_cls.get_store(self_or_cls, **callargs)
                 with gen as proxy_instance:
                     if proxy_instance is None:
-                        warnings.warn("All DriverMixin lose efficacy，because of "
-                                      "AsyncDriverMixin used with sync method.")
+                        warnings.warn("All DriverMixin lost efficacy，because "
+                                      "of async mixin used with sync method.")
                         proxy_instance = self_or_cls
                     return func(proxy_instance, *args, **kwargs)
         return inner

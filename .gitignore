@@ -9,4 +9,5 @@ htmlcov/
 *log
 *logs
 *lock.json
+setup.cfg
 node_modules/

@@ -10,6 +10,6 @@ usefixtures =
     mock
 ;`UNIT_TEST_MODE` used to ignore DriverMixin wrapper conn_manager,
 ;for it is a module of apistellar, to test it, UNIT_TEST_MODE need
-;to be false。
+;to be false.
 env =
     UNIT_TEST_MODE=false

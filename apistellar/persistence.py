@@ -5,8 +5,8 @@ import asyncio
 import warnings
 
 from functools import wraps
-from contextlib import _GeneratorContextManager
 from types import FunctionType, MethodType
+from contextlib import _GeneratorContextManager
 
 from pyaop import Proxy, Return, AOP
 
@@ -36,7 +36,7 @@ class _AsyncGeneratorContextManager(_GeneratorContextManager):
                 if inspect.isgenerator(self.gen):
                     self.gen.send(None)
                 else:
-                    raise StopIteration()
+                    return False
             except StopIteration:
                 return False
             else:
@@ -135,7 +135,10 @@ def proxy(obj, prop, prop_name):
 
     def common(proxy, name, value=None):
         if name == prop_name:
-            Return(prop)
+            if value:
+                raise RuntimeError(f"{prop_name} readonly!")
+            else:
+                Return(prop)
 
     return Proxy(obj, before=[
         AOP.Hook(common, ["__getattribute__", "__setattr__", "__delattr__"]),

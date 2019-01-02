@@ -225,7 +225,8 @@ def routing(controller):
         if hasattr(prop, "routes"):
             for route in prop.routes:
                 route.controller = instance
-            routes.extend(prop.routes)
+                add_annotation(route.handler, get_base(controller))
+                routes.append(route)
 
     for child_controller in controller.__subclasses__():
         child_include = routing(child_controller)
@@ -234,6 +235,31 @@ def routing(controller):
 
     if routes:
         return Include(controller.prefix, controller.name, routes)
+
+
+def get_base(cls):
+    """
+    获取除object外的祖先类
+    :param cls:
+    :return:
+    """
+    if cls.__base__ == object:
+        return cls
+    return get_base(cls.__base__)
+
+
+def add_annotation(method, annotation, arg_name="self"):
+    """
+    如果定义的方法存在arg_name， 则为其加上类型注释.
+    :param method:
+    :param annotation:
+    :param arg_name:
+    :return:
+    """
+    if hasattr(method, "__code__") and \
+            arg_name in method.__code__.co_varnames and \
+            arg_name not in method.__annotations__:
+        method.__annotations__[arg_name] = annotation
 
 
 class ArgparseHelper(Action):

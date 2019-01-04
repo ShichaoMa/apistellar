@@ -165,6 +165,7 @@ def logging_format(method, parttern, name, ca_name):
 
 
 def print_routing(routes, write=print, format=logging_format):
+
     for route, parents in walk_route(routes):
         name = reduce(lambda x, y: f"{x}:{y.name}", parents[1:], "view")\
                + ":" + route.name
@@ -189,9 +190,9 @@ def walk_route(routes, parents=None):
             yield route, parents
 
 
-def load_packages(current_path):
+def walk_packages(current_path):
     """
-    加载当前路径下的所有package，使得其中的Vontroller子类得以激活
+    加载当前路径下的所有package，使得其中的Controller子类得以激活
     加载一个包时，如果包下面有子包，只需要导入子包，父包也会一起
     被加载。项目约定Controller子类必须定义在包中(__init__.py)。
     所以只考虑加载所有包，不考虑加载其它模块。
@@ -204,10 +205,31 @@ def load_packages(current_path):
     for file in files:
         if os.path.isdir(file):
             find_dir = True
-            if not load_packages(file):
+            if not walk_packages(file):
                 __import__(file.replace("/", ".").strip("."))
 
     return find_dir
+
+
+def walk_modules(current_path, app_name=None):
+    """
+    由于walk_packages只加载到包。所以在只能将Controller定义在包中，
+    但在引用service层时，各个包中的service层相互引用，有可能会出现循环引用，
+    所以还是遍历所有模块吧，但是启动时的性能会差一些。
+    :param current_path:
+    :return:
+    """
+    if app_name is None:
+        app_name = os.path.basename(os.path.abspath(current_path))
+
+    for root, dir, filenames in os.walk(os.path.join(current_path, app_name)):
+        for fn in filenames:
+            if fn.endswith(".py") and not fn.startswith("_"):
+                fn = fn[:-3]
+                __import__(os.path.join(root, fn).replace("/", ".").strip("."))
+
+
+load_packages = walk_modules
 
 
 def routing(controller):

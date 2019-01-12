@@ -14,10 +14,12 @@ from flask.sessions import SecureCookieSessionInterface
 from apistar.server.asgi import ASGIReceive
 from apistar.conneg import negotiate_content_type
 from apistar import Route, exceptions, http, Component as _Component
+from apistar.server.validation import ValidatedPathParams, ValidatedQueryParams
 
 from .controller import Controller
 from .entities import Session, Cookie, FormParam, \
-    FileStream, DummyFlaskApp, SettingsMixin
+    FileStream, DummyFlaskApp, SettingsMixin, CommentAnnotation
+from ..types import validators
 
 
 class Component(_Component):
@@ -164,3 +166,38 @@ class FormParamComponent(Component):
                 form: http.RequestData) -> FormParam:
         if parameter.name in (form or {}):
             return FormParam(form[parameter.name])
+
+
+class PrimitiveCommentComponent(Component):
+
+    def can_handle_parameter(self, parameter: inspect.Parameter):
+
+        return isinstance(parameter.annotation, type) and \
+               issubclass(parameter.annotation, CommentAnnotation) and \
+               parameter.annotation.type in \
+               {http.QueryParam, int, bool, float, str}
+
+    def resolve(self,
+                parameter: inspect.Parameter,
+                path_params: ValidatedPathParams,
+                query_params: ValidatedQueryParams):
+        params = path_params if (
+                    parameter.name in path_params) else query_params
+        has_default = parameter.default is not parameter.empty
+        allow_null = parameter.default is None
+
+        param_validator = {
+            parameter.empty: validators.Any(),
+            str: validators.String(allow_null=allow_null),
+            int: validators.Integer(allow_null=allow_null),
+            float: validators.Number(allow_null=allow_null),
+            bool: validators.Boolean(allow_null=allow_null)
+        }[parameter.annotation.__base__]
+
+        validator = validators.Object(
+            properties=[(parameter.name, param_validator)],
+            required=[] if has_default else [parameter.name]
+        )
+
+        params = validator.validate(params, allow_coerce=True)
+        return params.get(parameter.name, parameter.default)

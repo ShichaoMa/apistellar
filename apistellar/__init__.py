@@ -14,6 +14,7 @@ from .bases.response import FileResponse
 from .bases.model_factory import ModelFactory
 from .bases.entities import Session, Cookie, FormParam, \
     FileStream, inject, SettingsMixin
+from .bases.route import route, get, post, delete, put, options, websocket
 
 from .console import main as console
 
@@ -25,7 +26,6 @@ from .persistence import DriverMixin, conn_manager, \
 
 from .types import Type, AsyncType, PersistentType, TypeEncoder, validators
 
-from .route import route, get, post, delete, put, options, websocket
 
 from .helper import redirect, require
 

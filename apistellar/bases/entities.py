@@ -231,3 +231,22 @@ class SettingsMixin(object):
 
 
 del SettingsMixin.property
+
+
+class CommentAnnotation(object):
+    comment = None
+    type = None
+
+
+def comment(ann_type, comm):
+    """
+    为参数增加注释
+    :param ann_type:
+    :param comm:
+    :return:
+    """
+
+    return type("CommentAnnotation%s" % ann_type.__name__,
+                (CommentAnnotation,),
+                {"comment": comm, "type": ann_type})
+

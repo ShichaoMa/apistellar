@@ -8,13 +8,12 @@ from apistar import ASyncApp, exceptions
 from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 from apistar.server.asgi import ASGIScope, ASGISend
+from apistellar.painter import ShowLogPainter, AppLogPainter
 
-from .bases.controller import Controller
 from .bases.websocket import WebSocketApp
 from .bases.components import SettingsComponent, Component
 from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
-from .helper import load_packages, routing, print_routing, TypeEncoder, \
-    find_children, enhance_response
+from .helper import TypeEncoder, find_children, enhance_response
 
 __all__ = ["Application"]
 enhance_response(Response)
@@ -105,50 +104,37 @@ def application(app_name,
     """
     logger = logging.getLogger(app_name)
     os.chdir(current_dir)
-    sys.path.insert(0, current_dir)
     sys.modules.pop(app_name, None)
-    load_packages(".")
-    include = routing(Controller)
     SettingsComponent.register_path(settings_path)
+    with AppLogPainter(logger.debug, current_dir).paint() as routes:
 
-    if include:
-        routes = [include]
-        print_routing(routes, write=logger.debug)
-    else:
-        logger.info("Noting to route. ")
-        routes = []
-    custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
-    hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks
-    app = FixedAsyncApp(
-        routes,
-        template_dir=template_dir,
-        static_dir=static_dir,
-        packages=packages,
-        schema_url=schema_url,
-        docs_url=docs_url,
-        static_url=static_url,
-        components=find_children(Component),
-        event_hooks=hooks)
+        custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
+        hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks
+        app = FixedAsyncApp(
+            routes,
+            template_dir=template_dir,
+            static_dir=static_dir,
+            packages=packages,
+            schema_url=schema_url,
+            docs_url=docs_url,
+            static_url=static_url,
+            components=find_children(Component),
+            event_hooks=hooks)
 
-    app.debug = debug
-    return app
+        app.debug = debug
+        return app
 
 
 Application = application
 
 
 def show_routes():
-    sys.path.insert(0, ".")
     formatter = "{:<40} {:<7} {:<40} {:<}"
 
     def show_format(method, parttern, name, ca_name):
         return formatter.format(name, method, parttern, ca_name)
 
-    load_packages(".")
-    include = routing(Controller)
-    if include:
-        print(formatter.format(
-            "Name", "Method", "URI Pattern", "Controller#Action"))
-        print_routing([include], format=show_format)
-    else:
-        print("Noting to route. ")
+    with ShowLogPainter(show_format).paint() as routes:
+        if routes:
+            print(formatter.format(
+                "Name", "Method", "URI Pattern", "Controller#Action"))

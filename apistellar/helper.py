@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import time
 import glob
@@ -8,6 +9,7 @@ import inspect
 
 from functools import reduce, wraps
 from collections.abc import Mapping
+from contextlib import contextmanager
 from asyncio import Future, get_event_loop
 from argparse import Action, _SubParsersAction
 
@@ -158,36 +160,6 @@ def find_children(cls, initialize=True, kwargs=None):
     if initialize:
         kwargs = kwargs or dict()
     return [c(**kwargs) if initialize else c for c in _load(cls.__subclasses__())]
-
-
-def logging_format(method, parttern, name, ca_name):
-    return f"Route method: {method}, url: {parttern} to {name}."
-
-
-def print_routing(routes, write=print, format=logging_format):
-
-    for route, parents in walk_route(routes):
-        name = reduce(lambda x, y: f"{x}:{y.name}", parents[1:], "view")\
-               + ":" + route.name
-        cont = route.controller.__class__
-        ca_name = f"{cont.__module__}:{cont.__name__}#{route.handler.__name__}"
-        pattern = reduce(
-            lambda x, y: x.rstrip('/') + y.url, parents, "").rstrip("/")\
-                  + route.url
-        write(format(route.method, pattern, name, ca_name))
-
-
-def walk_route(routes, parents=None):
-    for route in routes:
-        if parents is None:
-            current_parents = []
-        else:
-            current_parents = parents[:]
-        if isinstance(route, Include):
-            current_parents.append(route)
-            yield from walk_route(route.routes, current_parents)
-        else:
-            yield route, parents
 
 
 def walk_packages(current_path):

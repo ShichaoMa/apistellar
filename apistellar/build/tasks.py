@@ -1,30 +1,33 @@
 import re
+import os
+import sys
 import string
 
-from abc import ABC, abstractmethod
 from importlib import import_module
 from os import makedirs, sep, listdir, getcwd
-from apistellar.types import validators
 from os.path import join, exists, abspath, dirname, isdir, basename
 
+from toolkit import load
+from apistellar.types import validators
+from apistellar.helper import TypeEncoder
+from apistellar.painter import DocPainter
 
-__all__ = ["Task", "Project", "Service", "Model", "Solo"]
+__all__ = ["Task", "Project", "Service", "Model", "Solo", "Document"]
 
 
-class Task(ABC):
+class Task(object):
     def __init__(self):
         self.template = None
         self.kwargs = {}
 
     def create(self, env, **kwargs):
         task = kwargs.pop("task")
-        names = kwargs.pop("name")
+        names = kwargs.pop("name", [])
         self.kwargs.update(kwargs)
+
         for name in names:
             self.enrich_kwargs(self.validate_name(name))
-            dir = self.kwargs["dirname"]
-            makedirs(dir, exist_ok=True)
-
+            makedirs(self.kwargs["dirname"], exist_ok=True)
             self.copytree(env, task)
         print("、".join(names), "已创建。")
 
@@ -36,7 +39,6 @@ class Task(ABC):
         self.kwargs["dirname"] = name
 
     @classmethod
-    @abstractmethod
     def enrich_parser(cls, sub_parser):
         pass
 
@@ -44,10 +46,13 @@ class Task(ABC):
         if dest_path is None:
             dest_path = self.kwargs["dirname"]
         copy_path = join(self.template, task)
+
         for file in listdir(copy_path):
             file = join(copy_path, file)
+
             if file.count("__pycache__"):
                 continue
+
             if isdir(file):
                 dir_name = abspath(join(dest_path, self.render_path_name(file)))
                 makedirs(dir_name, exist_ok=True)
@@ -59,6 +64,7 @@ class Task(ABC):
                 if exists(filename) and \
                         input(f"{filename}已存在，是否覆盖y/n?") not in ["y", "yes"]:
                     continue
+
                 with open(filename, "w") as f:
                     f.write(template.render(**self.kwargs))
                     f.write("\n")
@@ -198,3 +204,42 @@ class Solo(ModuleTask):
     @classmethod
     def enrich_parser(cls, sub_parser):
         sub_parser.add_argument("name", nargs="+", help="独立任务程序名称")
+
+
+class Document(Task):
+
+    def create(self, env, **kwargs):
+        task = kwargs.pop("task")
+        names = kwargs.pop("name", [])
+        module = kwargs["module"]
+        location = os.getcwd()
+
+        if module:
+            current_dir = dirname(load(module).__file__)
+            sys.modules.pop(module, None)
+        else:
+            current_dir = "."
+        os.chdir(current_dir)
+
+        painter = DocPainter(current_dir)
+        makedirs(names[0], exist_ok=True)
+
+        for parent, doc in painter.paint().items():
+            import json
+            print(json.dumps(doc, indent=1))
+            doc["dirname"] = join(location, names[0])
+            doc["enumerate"] = enumerate
+            doc["bool"] = bool
+            doc["iter"] = DocPainter.iter_interface
+            doc["len"] = len
+            doc["map"] = map
+            doc["file_path"] = join(*doc["parents"])
+            self.kwargs = doc
+            self.copytree(env, task)
+
+        print(f"{names[0]}已创建。")
+
+    @classmethod
+    def enrich_parser(cls, sub_parser):
+        sub_parser.add_argument("name", nargs=1, help="文档名称")
+        sub_parser.add_argument("-m", "--module", help="模块地址", default=None)

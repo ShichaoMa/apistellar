@@ -11,7 +11,8 @@ from apistar.server.asgi import ASGIScope, ASGISend
 from apistellar.painter import ShowLogPainter, AppLogPainter
 
 from .bases.websocket import WebSocketApp
-from .bases.components import SettingsComponent, Component
+from .bases.components import SettingsComponent, Component, \
+    ValidateRequestDataComponent
 from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from .helper import TypeEncoder, find_children, enhance_response
 
@@ -107,7 +108,8 @@ def application(app_name,
     sys.modules.pop(app_name, None)
     SettingsComponent.register_path(settings_path)
     with AppLogPainter(logger.debug, current_dir).paint() as routes:
-
+        components = find_children(Component)
+        components.append(ValidateRequestDataComponent())
         custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
         hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks
         app = FixedAsyncApp(
@@ -118,7 +120,7 @@ def application(app_name,
             schema_url=schema_url,
             docs_url=docs_url,
             static_url=static_url,
-            components=find_children(Component),
+            components=components,
             event_hooks=hooks)
 
         app.debug = debug

@@ -1,7 +1,16 @@
 # -*- coding:utf-8 -*-
+
 from apistar import Route
+from apistar.server import core
+from apistar.codecs import jsonschema
+from apistellar import types
+
 
 __all__ = ["route", "get", "post", "delete", "put", "options"]
+
+# mock掉apistar中的types和validators
+jsonschema.validators = core.validators = types.validators
+jsonschema.types = core.types = types
 
 
 def route(prefix, name=None):

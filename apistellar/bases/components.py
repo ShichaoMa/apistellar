@@ -11,9 +11,12 @@ from toolkit.frozen import FrozenSettings
 from werkzeug.http import parse_options_header
 from flask.sessions import SecureCookieSessionInterface
 
+from apistar.types import validators
 from apistar.server.asgi import ASGIReceive
 from apistar.conneg import negotiate_content_type
 from apistar import Route, exceptions, http, Component as _Component
+
+from apistellar.types import Type
 
 from .controller import Controller
 from .entities import Session, Cookie, FormParam, \
@@ -164,3 +167,37 @@ class FormParamComponent(Component):
                 form: http.RequestData) -> FormParam:
         if parameter.name in (form or {}):
             return FormParam(form[parameter.name])
+
+
+class ValidateRequestDataComponent(_Component):
+    """
+    当不存在可以处理model的factory时，使用这个类来接管，将request data生成model对象
+    """
+    def identity(self, parameter: inspect.Parameter):
+        """
+        修复annotation_name重名的Bug
+        """
+        parameter_name = parameter.name.lower()
+        annotation_name = str(parameter.annotation)
+        import pdb;pdb.set_trace()
+        # If `resolve_parameter` includes `Parameter` then we use an identifier
+        # that is additionally parameterized by the parameter name.
+        args = inspect.signature(self.resolve).parameters.values()
+        if inspect.Parameter in [arg.annotation for arg in args]:
+            return annotation_name + ':' + parameter_name
+
+        # Standard case is to use the class name, lowercased.
+        return annotation_name
+
+    def can_handle_parameter(self, parameter: inspect.Parameter):
+        return issubclass(parameter.annotation, Type)
+
+    def resolve(self,
+                route: Route,
+                data: http.RequestData):
+        body_field = route.link.get_body_field()
+        if not body_field or not body_field.schema:
+            return data
+
+        validator = body_field.schema
+        return validator.model(data)

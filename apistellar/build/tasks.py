@@ -224,7 +224,6 @@ class Document(Task):
         os.chdir(current_dir)
 
         painter = DocPainter(current_dir, parser)
-        makedirs(names[0], exist_ok=True)
         # 不再提醒是否覆盖
         global input
         input = self._input

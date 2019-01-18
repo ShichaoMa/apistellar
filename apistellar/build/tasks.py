@@ -3,14 +3,15 @@ import os
 import sys
 import string
 
+from collections import OrderedDict
 from importlib import import_module
 from os import makedirs, sep, listdir, getcwd
 from os.path import join, exists, abspath, dirname, isdir, basename
 
 from toolkit import load
+from toolkit.markdown_helper import MarkDownRender
 from apistellar.types import validators
-from apistellar.helper import TypeEncoder
-from apistellar.painter import DocPainter
+from apistellar.document import DocPainter
 
 __all__ = ["Task", "Project", "Service", "Model", "Solo", "Document"]
 
@@ -210,6 +211,7 @@ class Document(Task):
 
     def create(self, env, **kwargs):
         task = kwargs.pop("task")
+        parser = kwargs.pop("parser")
         names = kwargs.pop("name", [])
         module = kwargs["module"]
         location = os.getcwd()
@@ -221,25 +223,44 @@ class Document(Task):
             current_dir = "."
         os.chdir(current_dir)
 
-        painter = DocPainter(current_dir)
+        painter = DocPainter(current_dir, parser)
         makedirs(names[0], exist_ok=True)
+        # 不再提醒是否覆盖
+        global input
+        input = self._input
+        base_dir_name = join(location, names[0])
+        indices = OrderedDict()
 
         for parent, doc in painter.paint().items():
-            import json
-            print(json.dumps(doc, indent=1))
-            doc["dirname"] = join(location, names[0])
-            doc["enumerate"] = enumerate
-            doc["bool"] = bool
-            doc["iter"] = DocPainter.iter_interface
-            doc["len"] = len
-            doc["map"] = map
-            doc["file_path"] = join(*doc["parents"])
+            doc["dirname"] = base_dir_name
             self.kwargs = doc
+            fn = os.path.join(doc["file_path"], doc["doc_name"] + ".md.html")
+            indices[fn] = doc["doc_name"]
             self.copytree(env, task)
 
+        with open(os.path.join(base_dir_name, "index.md"), "w") as f:
+            f.write(f"# {names[0]}文档\n\n")
+            for index, (key, val) in enumerate(indices.items()):
+                f.write(f"{index+1}. [{val}]({key})\n")
+
         print(f"{names[0]}已创建。")
+        with MarkDownRender("github-markdown.css", base_dir_name) as mk_render:
+            output = mk_render.render()
+
+        if output:
+            os.system(f"open {output}")
+        else:
+            print("未找到可打开的文档！")
+
+    @staticmethod
+    def _input(prompt):
+        return "y"
 
     @classmethod
     def enrich_parser(cls, sub_parser):
         sub_parser.add_argument("name", nargs=1, help="文档名称")
         sub_parser.add_argument("-m", "--module", help="模块地址", default=None)
+        sub_parser.add_argument(
+            "-p", "--parser", help="parser模块地址",
+            default="apistellar.document.parser.RstDocParserDocParser")
+

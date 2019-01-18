@@ -1,32 +1,33 @@
 """
 PYTEST_DONT_REWRITE
 """
-from .app import Application, show_routes
+from apistellar.app import Application, show_routes
 
-from .build import main
-from .build.tasks import Task
+from apistellar.build import main
+from apistellar.build.tasks import Task
 
-from .bases.service import Service
-from .bases.hooks import Hook, Return
-from .bases.components import Component
-from .bases.controller import Controller
-from .bases.response import FileResponse
-from .bases.model_factory import ModelFactory
-from .bases.entities import Session, Cookie, FormParam, \
-    FileStream, inject, SettingsMixin
+from apistellar.bases.service import Service
+from apistellar.bases.hooks import Hook, Return
+from apistellar.bases.components import Component
+from apistellar.bases.controller import Controller
+from apistellar.bases.response import FileResponse
+from apistellar.bases.model_factory import ModelFactory
+from apistellar.bases.entities import Session, Cookie, FormParam, \
+    FileStream, inject, SettingsMixin, UrlEncodeForm, MultiPartForm
 
-from .console import main as console
+from apistellar.console import main as console
 
-from .solo import Solo
-from .solo.manager import SoloManager
+from apistellar.solo import Solo
+from apistellar.solo.manager import SoloManager
 
-from .persistence import DriverMixin, conn_manager, \
+from apistellar.persistence import DriverMixin, conn_manager, \
     conn_ignore, proxy, contextmanager
 
-from .types import Type, AsyncType, PersistentType, TypeEncoder, validators
+from apistellar.types import Type, AsyncType, PersistentType, \
+    TypeEncoder, validators
 
-from .route import route, get, post, delete, put, options, websocket
+from apistellar.route import route, get, post, delete, put, options, websocket
 
-from .helper import redirect, require
+from apistellar.helper import redirect, require
 
-__version__ = "1.0.34"
+__version__ = "1.1.0" 

@@ -11,16 +11,16 @@ from toolkit.frozen import FrozenSettings
 from werkzeug.http import parse_options_header
 from flask.sessions import SecureCookieSessionInterface
 
-from apistar.types import validators
 from apistar.server.asgi import ASGIReceive
 from apistar.conneg import negotiate_content_type
+from apistar.server.validation import RequestDataComponent
 from apistar import Route, exceptions, http, Component as _Component
 
 from apistellar.types import Type
 
 from .controller import Controller
-from .entities import Session, Cookie, FormParam, \
-    FileStream, DummyFlaskApp, SettingsMixin
+from .entities import Session, Cookie, FormParam, FileStream, DummyFlaskApp, \
+    SettingsMixin, MultiPartForm, UrlEncodeForm
 
 
 class Component(_Component):
@@ -201,3 +201,15 @@ class ValidateRequestDataComponent(_Component):
 
         validator = body_field.schema
         return validator.model(data)
+
+
+class MultiPartComponent(RequestDataComponent, Component):
+
+    def can_handle_parameter(self, parameter: inspect.Parameter):
+        return parameter.annotation is MultiPartForm
+
+
+class UrlEncodeComponent(RequestDataComponent, Component):
+
+    def can_handle_parameter(self, parameter: inspect.Parameter):
+        return parameter.annotation is UrlEncodeForm

@@ -8,7 +8,7 @@ from apistar import ASyncApp, exceptions
 from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 from apistar.server.asgi import ASGIScope, ASGISend
-from apistellar.painter import ShowLogPainter, AppLogPainter
+from apistellar.document import ShowLogPainter, AppLogPainter
 
 from .bases.websocket import WebSocketApp
 from .bases.components import SettingsComponent, Component, \

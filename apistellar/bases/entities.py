@@ -14,6 +14,8 @@ from .exceptions import Readonly
 Cookie = typing.NewType('Cookie', str)
 FormParam = typing.NewType("FormParam", str)
 Session = typing.NewType("Session", SecureCookieSession)
+MultiPartForm = typing.NewType("MultiPartForm", dict)
+UrlEncodeForm = typing.NewType("UrlEncodeForm", dict)
 DummyFlaskApp = namedtuple(
     "DummyFlaskApp",
     "session_cookie_name,secret_key,permanent_session_lifetime,config")

@@ -462,23 +462,66 @@ async def wrapper(__container, {}):
         return await awaitable
     return awaitable
         """.format(args_def, error, args_def)
-
-        namespace = dict(__name__='entries_%s' % func.__name__)
-        namespace["func"] = func
-        namespace["wraps"] = wraps
-        namespace["judge"] = judge
-        exec(func_def, namespace)
-        wrapper = namespace["wrapper"]
-        new_func = types.FunctionType(
-            wrapper.__code__,
-            wrapper.__globals__,
-            wrapper.__name__,
-            func.__defaults__)
-        new_func.__annotations__.update(func.__annotations__)
-        new_func.__annotations__["__container"] = container_cls
-        return new_func
+        return _build_new_func(
+            func_def, func, {"judge": judge}, {"__container": container_cls})
 
     return auth
+
+
+def _build_new_func(func_def, func, nps=None, ans=None):
+    namespace = dict(__name__='entries_%s' % func.__name__)
+    if nps:
+        namespace.update(nps)
+
+    namespace["func"] = func
+    namespace["wraps"] = wraps
+    exec(func_def, namespace)
+    wrapper = namespace["wrapper"]
+    new_func = types.FunctionType(
+        wrapper.__code__,
+        wrapper.__globals__,
+        wrapper.__name__,
+        func.__defaults__)
+    new_func.__annotations__.update(func.__annotations__)
+    # 增加返回值封装信息
+    if hasattr(func, "__return_wrapped"):
+        new_func.__return_wrapped = func.__return_wrapped
+    new_func.__doc__ = func.__doc__
+    if ans:
+        new_func.__annotations__.update(ans)
+    return new_func
+
+
+def return_wrapped(success_code=0, success_key_name="data", error_info=None):
+    """
+    为handler的返回值提供默认的成功返回码及返回信息对应的key名称。
+    :param success_code:
+    :param success_key_name:
+    :param error_info:
+    :return:
+    """
+
+    def return_wrapper(func):
+        args = inspect.getfullargspec(func).args
+        args_def = ", ".join(args)
+        func_def = """
+@wraps(func)
+async def wrapper({}):
+    from collections.abc import Awaitable
+    awaitable = func({})
+    if isinstance(awaitable, Awaitable):
+        awaitable = await awaitable
+    return_val = dict(code=success_code)
+    return_val[success_key_name] = awaitable
+    return return_val
+        """.format(args_def, args_def)
+        nps = {"success_key_name": success_key_name,
+               "success_code": success_code,
+               "error_info": error_info}
+        new_func = _build_new_func(func_def, func, nps)
+        new_func.__return_wrapped = nps
+        return new_func
+    return return_wrapper
 
 
 class MySelf(object):

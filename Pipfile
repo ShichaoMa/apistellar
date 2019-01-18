@@ -1,0 +1,26 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pytest-apistellar = "*"
+pytest-cov = "*"
+pytest-asyncio = "*"
+pytest = "*"
+
+[packages]
+apistar = "==0.5.40"
+uvicorn = "==0.2.2"
+gunicorn = "*"
+toolkity = {editable = true,path = "./../toolkit"}
+ipython = "==6.4.0"
+whitenoise = "<=3.3.1"
+pyaop = "*"
+Flask = "==1.0.2"
+pytz = "*"
+aiofiles = "*"
+aiohttp = "*"
+
+[requires]
+python_version = "3.6"

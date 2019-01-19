@@ -9,6 +9,7 @@ from toolkit.singleton import Singleton
 from toolkit.frozen import FrozenSettings
 
 from werkzeug.http import parse_options_header
+from werkzeug.datastructures import ImmutableMultiDict
 from flask.sessions import SecureCookieSessionInterface
 
 from apistar.server.asgi import ASGIReceive
@@ -179,7 +180,6 @@ class ValidateRequestDataComponent(_Component):
         """
         parameter_name = parameter.name.lower()
         annotation_name = str(parameter.annotation)
-        import pdb;pdb.set_trace()
         # If `resolve_parameter` includes `Parameter` then we use an identifier
         # that is additionally parameterized by the parameter name.
         args = inspect.signature(self.resolve).parameters.values()
@@ -199,8 +199,21 @@ class ValidateRequestDataComponent(_Component):
         if not body_field or not body_field.schema:
             return data
 
+        if isinstance(data, ImmutableMultiDict):
+            data = self._change_to_dict(data)
         validator = body_field.schema
         return validator.model(data)
+
+    @staticmethod
+    def _change_to_dict(data):
+        """
+        由于form表单使用`werkzeug.datastructures.ImmutableMultiDict`来保存form中的
+        key-val, 当key只对应一个val时，我们希望得到key-val1这种形式，如果key对应多个val
+        我们希望得到key-[val1, val2...]这种形式。
+        :param data:
+        :return:
+        """
+        return {k: v if len(v) > 1 else v[0] or None for k, v in dict(data).items()}
 
 
 class MultiPartComponent(RequestDataComponent, Component):

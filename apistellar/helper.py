@@ -442,8 +442,8 @@ def require(
         error="Login required!"):
     """
     装饰一个可被注入的函数，注入container_cls的实例，
-    并调用judge判断其是否符合条件，否则抛出异常，
-    异常信息为error。
+    并调用judge判断其是否符合条件，否则抛出异常，异常信息为error。
+    注：在controller handler中使用时，必须装饰在路由装饰器前。
     :param container_cls:
     :param judge:
     :param error:
@@ -494,7 +494,7 @@ def _build_new_func(func_def, func, nps=None, ans=None):
 
 def return_wrapped(success_code=0, success_key_name="data", error_info=None):
     """
-    为handler的返回值提供默认的成功返回码及返回信息对应的key名称。
+    为handler的返回值提供默认的成功返回码及返回信息对应的key名称，必须装饰在路由装饰器前。
     :param success_code:
     :param success_key_name:
     :param error_info:

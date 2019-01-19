@@ -179,7 +179,7 @@ class RstDocParserDocParser(Parser):
             return []
 
         return [self._adjust_example(e) for e in re.findall(
-            r":return:\s+(`+[^`]+?`+)\s*(?=(?:(?::return)|$))", docstring,
+            r":return:\s+(.+?)\s*(?=(?:(?::return)|$))", docstring,
             re.DOTALL)]
 
     @cache_method()
@@ -315,7 +315,12 @@ class RstDocParserDocParser(Parser):
                 self._get_type_info(sign.return_annotation, structure))
             # info["return_structure"] = structure
 
-        info["return_example"] = self._extract_return_example(handler.__doc__)
+        return_ex = self._extract_return_example(handler.__doc__)
+        for ret_ex in return_ex:
+            if ret_ex.strip().startswith("`"):
+                info.setdefault("return_example", []).append(ret_ex)
+            else:
+                info.setdefault("return_desc", []).append(ret_ex)
         info["type_info"] = type_info
         # 获取返回响应信息
         return_wrapped = getattr(handler, "__return_wrapped", None)
@@ -323,7 +328,7 @@ class RstDocParserDocParser(Parser):
         if return_wrapped:
             info["resp_info"] = OrderedDict(
                 self._extract_resp_info(return_wrapped))
-            if info["return_type"]:
+            if "return_type" in info:
                 info[
                     "return_type"] = '{"code": xx, "%s": %s, "message": "xx"}' % (
                     return_wrapped["success_key_name"], info["return_type"])

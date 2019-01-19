@@ -212,9 +212,10 @@ class Document(Task):
     def create(self, env, **kwargs):
         task = kwargs.pop("task")
         parser = kwargs.pop("parser")
-        names = kwargs.pop("name", [])
+        name = kwargs.pop("name", [])[0]
         module = kwargs["module"]
-        location = os.getcwd()
+        location = abspath(join(os.getcwd(), kwargs.pop("location")))
+
 
         if module:
             current_dir = dirname(load(module).__file__)
@@ -227,22 +228,24 @@ class Document(Task):
         # 不再提醒是否覆盖
         global input
         input = self._input
-        base_dir_name = join(location, names[0])
-        indices = OrderedDict()
+        base_dir_name = join(location, name)
 
+        indices = OrderedDict()
         for parent, doc in painter.paint().items():
             doc["dirname"] = base_dir_name
             self.kwargs = doc
-            fn = os.path.join(doc["file_path"], doc["doc_name"] + ".md.html")
+            fn = os.path.join(
+                base_dir_name, doc["file_path"], doc["doc_name"] + ".md.html")
             indices[fn] = doc["doc_name"]
             self.copytree(env, task)
 
+        os.makedirs(base_dir_name, exist_ok=True)
         with open(os.path.join(base_dir_name, "index.md"), "w") as f:
-            f.write(f"# {names[0]}文档\n\n")
+            f.write(f"# {name}文档\n\n")
             for index, (key, val) in enumerate(indices.items()):
                 f.write(f"{index+1}. [{val}]({key})\n")
 
-        print(f"{names[0]}已创建。")
+        print(f"{name}已创建。")
         with MarkDownRender("github-markdown.css", base_dir_name) as mk_render:
             output = mk_render.render()
 
@@ -258,7 +261,8 @@ class Document(Task):
     @classmethod
     def enrich_parser(cls, sub_parser):
         sub_parser.add_argument("name", nargs=1, help="文档名称")
-        sub_parser.add_argument("-m", "--module", help="模块地址", default=None)
+        sub_parser.add_argument("-m", "--module", help="模块地址", required=True)
+        sub_parser.add_argument("-l", "--location", help="文章地址", default=".")
         sub_parser.add_argument(
             "-p", "--parser", help="parser模块地址",
             default="apistellar.document.parser.RstDocParserDocParser")

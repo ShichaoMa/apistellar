@@ -22,7 +22,7 @@
 {% if "json_params" in interface -%}
 ##### json请求体
 {% if interface["json_params"].get("desc") %}
-###### 描述
+###### 请求描述
 {{interface["json_params"]["desc"]}}
 {% endif %}
 {% if "model_type" in interface["json_params"] -%}
@@ -30,7 +30,7 @@
 ```{{interface["json_params"]["model_type"]}}```
 {% endif %}
 {% if interface["json_params"].get("example") %}
-###### 示例
+###### 请求示例
 {% for index, ex in enumerate(interface["json_params"]["example"]) %}
 {% if len(interface["json_params"]["example"]) > 1%}
 - 示例{{index + 1}}
@@ -39,14 +39,23 @@
 {% endfor %}
 {% endif %}
 {%- endif %}
-{% if "return_type" in interface or interface.get("return_example") %}
+{% if "return_type" in interface or interface.get("return_example") or interface.get("return_desc") %}
 ##### 返回信息
 {% if "return_type" in interface -%}
 ###### 返回类型
 ```{{interface["return_type"]}}```
 {% endif %}
+{% if interface.get("return_desc") %}
+###### 返回描述
+{% for index, ex in enumerate(interface["return_desc"]) %}
+{% if len(interface["return_desc"]) > 1%}
+- 描述{{index + 1}}
+{% endif %}
+{{ex}}
+{% endfor %}
+{% endif %}
 {% if interface.get("return_example") %}
-###### 示例
+###### 返回示例
 {% for index, ex in enumerate(interface["return_example"]) %}
 {% if len(interface["return_example"]) > 1%}
 - 示例{{index + 1}}
@@ -56,8 +65,8 @@
 {% endif %}
 {% endif %}
 {% if "resp_info" in interface -%}
-##### 响应码信息
-返回码|描述
+##### 返回响应码
+响应码|描述
 ::-|::-{% for code, msg in interface["resp_info"].items() %}
 {{code}}|{{msg}}{% endfor %}
 {% endif %}

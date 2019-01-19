@@ -8,6 +8,8 @@ pytest-apistellar = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
 pytest = "*"
+blog = {editable = true,path = "./../blog"}
+apistellar = {editable = true,path = "."}
 
 [packages]
 apistar = "==0.5.40"

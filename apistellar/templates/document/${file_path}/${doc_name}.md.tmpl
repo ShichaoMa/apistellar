@@ -4,7 +4,7 @@
 {% for model_name, fields in type_info.items() %}
 ### {{model_name}}
 字段名|类型|是否必须|是否可为空值|默认值|描述|示例
-::-|::-|::-|::-|::-|::-|::-{% for field_name, field in fields.items() %}
+:--|:--|:--|:--|:--|:--|:--{% for field_name, field in fields.items() %}
 {{field_name}}|{{field["type"]}}|{{"否" if "default" in field or field["allow_null"] else "是"}}|{{"是" if field["allow_null"] else "否"}}|{{field.get("default", "")}}|{{field.get("desc", "")}}|{{"<br>".join(field["example"])}}{% endfor %}
 {% endfor %}
 ## 接口定义
@@ -16,7 +16,7 @@
 {% for name, params in iter(interface) %}
 ##### {{name}}:
 参数名|类型|是否必须|默认值|描述|示例
-::-|::-|::-|::-|::-|::-{% for name, param in params.items() %}
+:--|:--|:--|:--|:--|:--{% for name, param in params.items() %}
 {{name}}|{{param["type"]}}|{{"否" if "default" in param else "是"}}|{{param.get("default", "")}}|{{param.get("desc", "")}}|{{"<br>".join(param["example"])}}{% endfor %}
 {% endfor %}
 {% if "json_params" in interface -%}
@@ -67,7 +67,7 @@
 {% if "resp_info" in interface -%}
 ##### 返回响应码
 响应码|描述
-::-|::-{% for code, msg in interface["resp_info"].items() %}
+:--|:--{% for code, msg in interface["resp_info"].items() %}
 {{code}}|{{msg}}{% endfor %}
 {% endif %}
 {% endfor %}

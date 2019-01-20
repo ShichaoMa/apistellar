@@ -68,8 +68,10 @@ class ConsoleManager(Manager):
     def beans(self):
         beans = dict()
         for component in self.components:
-            type = component.resolve.__annotations__["return"]
-            beans.setdefault(type.__name__, []).append((type, type.__module__))
+            if "return" in component.resolve.__annotations__:
+                type = component.resolve.__annotations__["return"]
+                beans.setdefault(type.__name__, []).append(
+                    (type, type.__module__))
         return beans
 
     @staticmethod

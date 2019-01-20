@@ -9,7 +9,7 @@ from collections import OrderedDict
 from abc import ABC, abstractmethod
 
 from toolkit import cache_method
-from apistar import Include, Route, http
+from apistar import Include, http
 
 from apistellar.types import Type
 from apistellar.bases.entities import FormParam, FileStream, \
@@ -75,6 +75,9 @@ class LogParser(Parser):
 
 
 class RstDocParserDocParser(Parser):
+    """
+    用于解析rst风格的注释，并生成文档json，用于渲染文档
+    """
     param_annotation_mapping = {
         http.QueryParam: "str",
         str: "str",
@@ -92,11 +95,6 @@ class RstDocParserDocParser(Parser):
     # 支持哪几种注释类型
     types = ("ex", "param", "type", "return")
     regex_tail = f"(?=(?:{'|'.join('(?::%s)' % type for type in types)}|$))"
-
-    @classmethod
-    def regex_format(cls, type, param_name, sub_reg="(.*?)"):
-        return r":{} +{}:{}\s+?{}".format(
-            type, param_name, sub_reg, cls.regex_tail)
 
     def parse_docs(self, routes):
         docs = OrderedDict()
@@ -135,148 +133,17 @@ class RstDocParserDocParser(Parser):
             yield ("表单参数", interface["form_params"])
 
     @classmethod
-    def _extract_param_desc(cls, docstring, param_name):
-        regex = cls.regex_format(type="param", param_name=param_name)
-        mth = re.search(regex, docstring, re.DOTALL)
+    def regex_format(cls, type, param_name, sub_reg="(.*?)"):
+        return r":{} +{}:{}\s+?{}".format(
+            type, param_name, sub_reg, cls.regex_tail)
 
-        if mth:
-            return mth.group(1).strip()
-
-    @classmethod
-    def _extract_param_type(cls, docstring, param_name):
-        regex = cls.regex_format(type="type", param_name=param_name)
-        mth = re.search(regex, docstring, re.DOTALL)
-
-        if mth:
-            return mth.group(1).strip()
-
-    def _extract_param_example(self, docstring, param_name):
-        regex = self.regex_format("ex", param_name, "(\s*?`+[^`]+?`+)")
-        examples = [self._adjust_example(e) for e in re.findall(
-            regex, docstring, re.DOTALL)]
-        # 为短示例增加序号
-        if len(examples) > 1 and "```" not in examples[0]:
-            examples = ["%d. %s" % (i + 1, self._adjust_example(e))
-                        for i, e in enumerate(examples)]
-        return examples
-
-    @classmethod
-    def _extract_comment(cls, docstring):
-        if not docstring:
-            return ""
-
-        mth = re.search(rf"^\s+(.*?){cls.regex_tail}", docstring, re.DOTALL)
-
-        if mth:
-            return mth.group(1)
-
-    def _get_params_attr(self, param, doc):
-        attributes = dict()
-
-        if param.default != inspect._empty:
-            attributes["default"] = param.default
-        attributes["type"] = self.param_annotation_mapping.get(
-            param.annotation, param.annotation.__name__)
-
-        if doc:
-            attributes["type"] = self._extract_param_type(
-                doc, param.name) or attributes["type"]
-            desc = self._extract_param_desc(doc, param.name)
-            if desc:
-                attributes["desc"] = desc.strip()
-            attributes["examples"] = self._extract_param_example(doc,
-                                                                param.name)
-
-        return attributes
-
-    def _extract_return_example(self, docstring):
-        if not docstring:
-            return []
-
-        return [self._adjust_example(e) for e in re.findall(
-            r":return:\s+(.+?)\s*(?=(?:(?::return)|$))", docstring,
-            re.DOTALL)]
-
-    @cache_method()
-    def _extract_type_annotation(self, cls):
-        info = dict()
-
-        for prop, validator in cls.validator.properties.items():
-            param = DummyParam(
-                prop, getattr(validator, "default", inspect._empty),
-                validator.__class__)
-            attributes = self._get_params_attr(param, cls.__doc__)
-            attributes["allow_null"] = validator.allow_null
-            info[prop] = attributes
-        return info
-
-    @staticmethod
-    def _adjust_example(ex):
-        ex = ex.strip()
-        lines = ex.split("\n")
-        if len(lines) > 1:
-            lines[-1] = lines[-1].strip()
-            ex = "\n".join(lines)
-        return ex
-
-    def _get_module_class_name(self, cls):
-        if isinstance(cls, typing.GenericMeta):
-            return str(cls)
-        else:
-            return f"{cls.__module__}.{cls.__name__}"
-
-    def _get_type_info(self, cls, structure):
-        if issubclass(cls, Type):
-            type_info = self._extract_type_annotation(cls)
-            structure[cls] = type_info
-            yield self._get_module_class_name(cls), type_info
-        elif hasattr(cls, "__args__"):
-            child = structure.setdefault(cls, OrderedDict())
-            for cls in getattr(cls, "__args__"):
-                yield from self._get_type_info(cls, child)
-        else:
-            type_info = dict()
-            structure[cls] = type_info
-            yield self._get_module_class_name(cls), type_info
-
-    @staticmethod
-    def _extract_resp_info(return_wrapped):
-        yield return_wrapped["success_code"], "返回成功"
-        for item in (return_wrapped.get("error_info") or {}).items():
-            yield item
-
-    def _enrich_params_from_example(self, attributes, params, name):
-        examples = attributes.get("examples")
-
-        for example in examples:
-            try:
-                ex_data = json.loads(example.strip("`json"))
-
-                for ex_name, ex in ex_data.items():
-                    exs = params.setdefault(
-                        ex_name, dict()).setdefault("examples", [])
-                    params.setdefault(ex_name, dict())["type"] = type(
-                        ex).__name__
-                    exs.append(f"`{json.dumps(ex)}`")
-
-            except json.JSONDecodeError as e:
-                print(f"Example format error "
-                      f"of {attributes['endpoint']} :{name}")
-                raise e
-
-    @staticmethod
-    def _inline_example(params):
-        for index, ex in enumerate(params.get("examples", [])[:]):
-            ex = '`' + ex.strip("`json").replace("\n", " ").strip() + '`'
-            params.get("examples")[index] = ex
-
-    def _extract_info(self, route: Route, parents):
+    def _extract_info(self, route, parents):
         info = dict()
         handler = route.handler
         type_info = dict()
         info["endpoint"] = self._extract_pattern(route, parents)
         info["method"] = route.method
-        info["comment"] = self._extract_comment(handler.__doc__).strip()
+        info["comment"] = self._extract_comment(handler.__doc__)
         params, form_params, path_params = (OrderedDict() for i in range(3))
         json_params = None
         sign = inspect.signature(handler)
@@ -339,12 +206,14 @@ class RstDocParserDocParser(Parser):
         if sign.return_annotation is not inspect._empty:
             info["return_type"] = self._get_module_class_name(
                 sign.return_annotation)
+            # TODO 这个暂时没有什么用处
             structure = dict()
-            type_info.update(
-                self._get_type_info(sign.return_annotation, structure))
-            # info["return_structure"] = structure
+            if issubclass(sign.return_annotation, Type):
+                type_info.update(
+                    self._get_type_info(sign.return_annotation, structure))
 
         return_ex = self._extract_return_example(handler.__doc__)
+
         for ret_ex in return_ex:
             if ret_ex.strip().startswith("`"):
                 info.setdefault("return_example", []).append(ret_ex)
@@ -357,10 +226,148 @@ class RstDocParserDocParser(Parser):
         if return_wrapped:
             info["resp_info"] = OrderedDict(
                 self._extract_resp_info(return_wrapped))
+
             if "return_type" in info:
-                info["return_type"] = '{"code": %s, ' \
-                                      '"%s": %s, ' \
-                                      '"message": "xx"}'% (
-                    return_wrapped["success_code"],
-                    return_wrapped["success_key_name"], info["return_type"])
+                info["return_type"] = '{"code": %s, "%s": %s, "message": "xx"}' \
+                                      % (return_wrapped["success_code"],
+                                         return_wrapped["success_key_name"],
+                                         info["return_type"])
         return info
+
+    @classmethod
+    def _extract_param_desc(cls, docstring, param_name):
+        regex = cls.regex_format(type="param", param_name=param_name)
+        mth = re.search(regex, docstring, re.DOTALL)
+
+        if mth:
+            return mth.group(1).strip()
+
+    @classmethod
+    def _extract_param_type(cls, docstring, param_name):
+        regex = cls.regex_format(type="type", param_name=param_name)
+        mth = re.search(regex, docstring, re.DOTALL)
+
+        if mth:
+            return mth.group(1).strip()
+
+    def _extract_param_example(self, docstring, param_name):
+        regex = self.regex_format("ex", param_name, "(\s*?`+[^`]+?`+)")
+        examples = [self._adjust_example(e) for e in re.findall(
+            regex, docstring, re.DOTALL)]
+        # 为短示例增加序号
+        if len(examples) > 1 and "```" not in examples[0]:
+            examples = ["%d. %s" % (i + 1, self._adjust_example(e))
+                        for i, e in enumerate(examples)]
+        return examples
+
+    @classmethod
+    def _extract_comment(cls, docstring):
+        if not docstring:
+            return ""
+
+        mth = re.search(rf"^\s+(.*?){cls.regex_tail}", docstring, re.DOTALL)
+
+        if mth:
+            return mth.group(1).strip()
+
+    def _get_params_attr(self, param, doc):
+        attributes = dict()
+
+        if param.default != inspect._empty:
+            attributes["default"] = param.default
+        attributes["type"] = self.param_annotation_mapping.get(
+            param.annotation, param.annotation.__name__)
+
+        if doc:
+            attributes["type"] = self._extract_param_type(
+                doc, param.name) or attributes["type"]
+            desc = self._extract_param_desc(doc, param.name)
+            if desc:
+                attributes["desc"] = desc.strip()
+            attributes["examples"] = self._extract_param_example(doc,
+                                                                param.name)
+
+        return attributes
+
+    def _extract_return_example(self, docstring):
+        if not docstring:
+            return []
+
+        return [self._adjust_example(e) for e in re.findall(
+            r":return:\s+(.+?)\s*(?=(?:(?::return)|$))", docstring,
+            re.DOTALL)]
+
+    @cache_method()
+    def _extract_type_annotation(self, cls):
+        info = dict()
+
+        for prop, validator in cls.validator.properties.items():
+            param = DummyParam(
+                prop, getattr(validator, "default", inspect._empty),
+                validator.__class__)
+            attributes = self._get_params_attr(param, cls.__doc__)
+            attributes["allow_null"] = validator.allow_null
+            info[prop] = attributes
+        return info
+
+    @staticmethod
+    def _adjust_example(ex):
+        ex = ex.strip()
+        lines = ex.split("\n")
+        if len(lines) > 1:
+            lines[-1] = lines[-1].strip()
+            ex = "\n".join(lines)
+        return ex
+
+    def _get_module_class_name(self, cls):
+        if isinstance(cls, typing.GenericMeta):
+            return str(cls)
+        elif issubclass(cls, Type):
+            return f"{cls.__module__}.{cls.__name__}"
+        else:
+            return cls.__name__
+
+    def _get_type_info(self, cls, structure):
+        if issubclass(cls, Type):
+            type_info = self._extract_type_annotation(cls)
+            structure[cls] = type_info
+            yield self._get_module_class_name(cls), type_info
+        elif hasattr(cls, "__args__"):
+            child = structure.setdefault(cls, OrderedDict())
+            for cls in getattr(cls, "__args__"):
+                yield from self._get_type_info(cls, child)
+        else:
+            type_info = dict()
+            structure[cls] = type_info
+            yield self._get_module_class_name(cls), type_info
+
+    @staticmethod
+    def _extract_resp_info(return_wrapped):
+        yield return_wrapped["success_code"], "返回成功"
+        for item in (return_wrapped.get("error_info") or {}).items():
+            yield item
+
+    def _enrich_params_from_example(self, attributes, params, name):
+        examples = attributes.get("examples")
+
+        for example in examples:
+            try:
+                ex_data = json.loads(example.strip("`json"))
+
+                for ex_name, ex in ex_data.items():
+                    exs = params.setdefault(
+                        ex_name, dict()).setdefault("examples", [])
+                    params.setdefault(ex_name, dict())["type"] = type(
+                        ex).__name__
+                    exs.append(f"`{json.dumps(ex)}`")
+
+            except json.JSONDecodeError as e:
+                print(f"Example format error "
+                      f"of {attributes['endpoint']} :{name}")
+                raise e
+
+    @staticmethod
+    def _inline_example(params):
+        for index, ex in enumerate(params.get("examples", [])[:]):
+            ex = '`' + ex.strip("`json").replace("\n", " ").strip() + '`'
+            params.get("examples")[index] = ex

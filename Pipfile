@@ -10,12 +10,13 @@ pytest-asyncio = "*"
 pytest = "*"
 blog = {editable = true,path = "./../blog"}
 apistellar = {editable = true,path = "."}
+pylint = "*"
 
 [packages]
 apistar = "==0.5.40"
 uvicorn = "==0.2.2"
 gunicorn = "*"
-toolkity = {editable = true,path = "./../toolkit"}
+toolkity = "==1.7.28"
 ipython = "==6.4.0"
 whitenoise = "<=3.3.1"
 pyaop = "*"

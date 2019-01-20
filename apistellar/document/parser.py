@@ -89,6 +89,14 @@ class RstDocParserDocParser(Parser):
         UrlEncodeForm: "dict",
         http.QueryParams: "dict"
     }
+    # 支持哪几种注释类型
+    types = ("ex", "param", "type", "return")
+    regex_tail = f"(?=(?:{'|'.join('(?::%s)' % type for type in types)}|$))"
+
+    @classmethod
+    def regex_format(cls, type, param_name, sub_reg="(.*?)"):
+        return r":{} +{}:{}\s+?{}".format(
+            type, param_name, sub_reg, cls.regex_tail)
 
     def parse_docs(self, routes):
         docs = OrderedDict()
@@ -126,50 +134,57 @@ class RstDocParserDocParser(Parser):
         if "form_params" in interface:
             yield ("表单参数", interface["form_params"])
 
-    @staticmethod
-    def _extract_param_desc(docstring, param_name):
-        mth = re.search(
-            rf":param +{param_name}: (.*?)(?=((:ex)|(:param)|(:return)|$))",
-            docstring, re.DOTALL)
+    @classmethod
+    def _extract_param_desc(cls, docstring, param_name):
+        regex = cls.regex_format(type="param", param_name=param_name)
+        mth = re.search(regex, docstring, re.DOTALL)
 
         if mth:
-            return mth.group(1)
+            return mth.group(1).strip()
+
+    @classmethod
+    def _extract_param_type(cls, docstring, param_name):
+        regex = cls.regex_format(type="type", param_name=param_name)
+        mth = re.search(regex, docstring, re.DOTALL)
+
+        if mth:
+            return mth.group(1).strip()
 
     def _extract_param_example(self, docstring, param_name):
+        regex = self.regex_format("ex", param_name, "(\s*?`+[^`]+?`+)")
         examples = [self._adjust_example(e) for e in re.findall(
-            rf":ex +{param_name}:\s+(`+[^`]+?`+)"
-            rf"\s+(?=(?:(?::ex)|(?::param)|(?::return)|$))",
-            docstring, re.DOTALL)]
+            regex, docstring, re.DOTALL)]
         # 为短示例增加序号
         if len(examples) > 1 and "```" not in examples[0]:
             examples = ["%d. %s" % (i + 1, self._adjust_example(e))
                         for i, e in enumerate(examples)]
         return examples
 
-    @staticmethod
-    def _extract_comment(docstring):
+    @classmethod
+    def _extract_comment(cls, docstring):
         if not docstring:
             return ""
 
-        mth = re.search(
-            r"^\s+(.*?)(?=((:ex)|(:param)|(:return)|$))", docstring, re.DOTALL)
+        mth = re.search(rf"^\s+(.*?){cls.regex_tail}", docstring, re.DOTALL)
 
         if mth:
             return mth.group(1)
 
     def _get_params_attr(self, param, doc):
         attributes = dict()
-        attributes["type"] = self.param_annotation_mapping.get(
-            param.annotation, param.annotation.__name__)
 
         if param.default != inspect._empty:
             attributes["default"] = param.default
+        attributes["type"] = self.param_annotation_mapping.get(
+            param.annotation, param.annotation.__name__)
 
         if doc:
+            attributes["type"] = self._extract_param_type(
+                doc, param.name) or attributes["type"]
             desc = self._extract_param_desc(doc, param.name)
             if desc:
                 attributes["desc"] = desc.strip()
-            attributes["example"] = self._extract_param_example(doc,
+            attributes["examples"] = self._extract_param_example(doc,
                                                                 param.name)
 
         return attributes
@@ -231,7 +246,7 @@ class RstDocParserDocParser(Parser):
             yield item
 
     def _enrich_params_from_example(self, attributes, params, name):
-        examples = attributes.get("example")
+        examples = attributes.get("examples")
 
         for example in examples:
             try:
@@ -239,7 +254,7 @@ class RstDocParserDocParser(Parser):
 
                 for ex_name, ex in ex_data.items():
                     exs = params.setdefault(
-                        ex_name, dict()).setdefault("example", [])
+                        ex_name, dict()).setdefault("examples", [])
                     params.setdefault(ex_name, dict())["type"] = type(
                         ex).__name__
                     exs.append(f"`{json.dumps(ex)}`")
@@ -248,6 +263,12 @@ class RstDocParserDocParser(Parser):
                 print(f"Example format error "
                       f"of {attributes['endpoint']} :{name}")
                 raise e
+
+    @staticmethod
+    def _inline_example(params):
+        for index, ex in enumerate(params.get("examples", [])[:]):
+            ex = '`' + ex.strip("`json").replace("\n", " ").strip() + '`'
+            params.get("examples")[index] = ex
 
     def _extract_info(self, route: Route, parents):
         info = dict()
@@ -291,9 +312,17 @@ class RstDocParserDocParser(Parser):
                     params[name] = attributes
 
             elif issubclass(param.annotation, Type):
-                json_params = self._get_params_attr(param, handler.__doc__)
-                json_params["model_type"] = self._get_module_class_name(
-                    param.annotation)
+                model_params = self._get_params_attr(param, handler.__doc__)
+                # 用户指定了从表单中过来的model而不是json
+                if model_params["type"] == "form":
+                    model_params["type"] = self._get_module_class_name(
+                        param.annotation)
+                    self._inline_example(model_params)
+                    form_params[param.name] = model_params
+                else:
+                    json_params = model_params
+                    json_params["model_type"] = self._get_module_class_name(
+                        param.annotation)
                 structure = dict()
                 type_info.update(
                     self._get_type_info(param.annotation, structure))
@@ -329,7 +358,9 @@ class RstDocParserDocParser(Parser):
             info["resp_info"] = OrderedDict(
                 self._extract_resp_info(return_wrapped))
             if "return_type" in info:
-                info[
-                    "return_type"] = '{"code": xx, "%s": %s, "message": "xx"}' % (
+                info["return_type"] = '{"code": %s, ' \
+                                      '"%s": %s, ' \
+                                      '"message": "xx"}'% (
+                    return_wrapped["success_code"],
                     return_wrapped["success_key_name"], info["return_type"])
         return info

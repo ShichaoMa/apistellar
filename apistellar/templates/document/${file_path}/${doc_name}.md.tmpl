@@ -5,7 +5,7 @@
 ### {{model_name}}
 字段名|类型|是否必须|是否可为空值|默认值|描述|示例
 :--|:--|:--|:--|:--|:--|:--{% for field_name, field in fields.items() %}
-{{field_name}}|{{field["type"]}}|{{"否" if "default" in field or field["allow_null"] else "是"}}|{{"是" if field["allow_null"] else "否"}}|{{field.get("default", "")}}|{{field.get("desc", "")}}|{{"<br>".join(field["example"])}}{% endfor %}
+{{field_name}}|{{field["type"]}}|{{"否" if "default" in field or field["allow_null"] else "是"}}|{{"是" if field["allow_null"] else "否"}}|{{field.get("default", "")}}|{{field.get("desc", "")}}|{{"<br>".join(field["examples"])}}{% endfor %}
 {% endfor %}
 ## 接口定义
 {% for index, interface in enumerate(interfaces) %}
@@ -17,7 +17,7 @@
 #### {{name}}:
 参数名|类型|是否必须|默认值|描述|示例
 :--|:--|:--|:--|:--|:--{% for name, param in params.items() %}
-{{name}}|{{param["type"]}}|{{"否" if "default" in param else "是"}}|{{param.get("default", "")}}|{{param.get("desc", "")}}|{{"<br>".join(param["example"])}}{% endfor %}
+{{name}}|{{param["type"]}}|{{"否" if "default" in param else "是"}}|{{param.get("default", "")}}|{{param.get("desc", "")}}|{{"<br>".join(param["examples"])}}{% endfor %}
 {% endfor %}
 {% if "json_params" in interface -%}
 #### json请求体
@@ -27,12 +27,12 @@
 {% endif %}
 {% if "model_type" in interface["json_params"] -%}
 ##### 模型类型
-```{{interface["json_params"]["model_type"]}}```
+{{interface["json_params"]["model_type"]}}
 {% endif %}
-{% if interface["json_params"].get("example") %}
+{% if interface["json_params"].get("examples") %}
 ##### 请求示例
-{% for index, ex in enumerate(interface["json_params"]["example"]) %}
-{% if len(interface["json_params"]["example"]) > 1%}
+{% for index, ex in enumerate(interface["json_params"]["examples"]) %}
+{% if len(interface["json_params"]["examples"]) > 1%}
 ###### 示例{{index + 1}}
 {% endif %}
 {{ex}}
@@ -43,7 +43,7 @@
 #### 返回信息
 {% if "return_type" in interface -%}
 ##### 返回类型
-```{{interface["return_type"]}}```
+{{interface["return_type"]}}
 {% endif %}
 {% if interface.get("return_desc") %}
 ##### 返回描述

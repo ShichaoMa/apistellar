@@ -153,7 +153,7 @@ class Drivable(Task):
             "-d", "--driver", help="驱动 eg：pymongo:MongoClient")
 
 
-class Model(Drivable, ModuleTask):
+class Model(ModuleTask):
     """
     模型层
     """

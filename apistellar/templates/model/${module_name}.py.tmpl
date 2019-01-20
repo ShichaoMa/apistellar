@@ -1,4 +1,4 @@
-from apistellar import {{"Async" if async else ""}}Type, validators, ModelFactory, inject
+from apistellar import {{"Async" if async else ""}}Type, validators
 {% if module %}{{"from %s import %s\n" % (module, cls)}} {% endif %}
 
 class {{class_name}}({{"Async" if async else ""}}Type):{% if module %}{{"\n    " + cls.lower()}} = inject << {{cls}} {% endif %}
@@ -17,10 +17,3 @@ class {{class_name}}({{"Async" if async else ""}}Type):{% if module %}{{"\n    "
         """
         pass
             {% endif %}
-
-class {{class_name}}Factory(ModelFactory):
-
-    model = {{class_name}}
-
-    async def product(self) -> {{class_name}}:
-        return {{class_name}}()

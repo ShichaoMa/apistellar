@@ -3,13 +3,14 @@ import sys
 import asyncio
 import inspect
 
+from apistar import Route
 from IPython import embed
 from IPython.core import formatters
-from toolkit import cache_property
+
+from apistellar.bases.manager import Manager
+from apistellar.helper import get_real_method
 
 from .mocker import Mocker
-from ..bases.manager import Manager
-from ..helper import get_real_method
 
 # bugfix
 formatters.get_real_method = get_real_method
@@ -26,7 +27,10 @@ class ConsoleManager(Manager):
         def wrapper(arg: type):
             return arg
 
-        return await self.injector.run_async([wrapper], dict(self.state))
+        route = Route("/", "post", wrapper)
+        state = dict(self.state)
+        state["route"] = route
+        return await self.injector.run_async([wrapper], state)
 
     def mock(self, mocker):
         """
@@ -48,31 +52,6 @@ class ConsoleManager(Manager):
             self.mock_keys.append(identity)
             self.state[identity] = val
             self.injector.initial[identity] = type
-
-    def __getattr__(self, item):
-        assert item in self.beans, f"{item} cannot inject!"
-        beans = self.beans[item]
-        if len(beans) == 1:
-            bean, _ = beans[0]
-        else:
-            i = input("Same bean name: {}: ".format(
-                ", ".join(f"({index+1}) of {module}" for index, (_, module)
-                                                in enumerate(beans))))
-            bean = beans[int(i) - 1][0]
-        return self._await(self.resolve(bean))
-
-    def __getitem__(self, item):
-        return self.__getattr__(item)
-
-    @cache_property
-    def beans(self):
-        beans = dict()
-        for component in self.components:
-            if "return" in component.resolve.__annotations__:
-                type = component.resolve.__annotations__["return"]
-                beans.setdefault(type.__name__, []).append(
-                    (type, type.__module__))
-        return beans
 
     @staticmethod
     def _await(awaitable):
@@ -97,13 +76,13 @@ class ConsoleManager(Manager):
 
     def start(self):
         if sys.version_info < (3, 7, 0):
-            await = self._await
+            locals()["await"] = self._await
         else:
-            _await = self._await
+            locals()["_await"] = self._await
         mock = self.mock
 
-        def inject(class_name):
-            return getattr(self, class_name)
+        def inject(cls):
+            return self._await(self.resolve(cls))
 
         embed()
 

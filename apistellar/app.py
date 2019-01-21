@@ -109,6 +109,7 @@ def application(app_name,
     SettingsComponent.register_path(settings_path)
     with AppLogPainter(logger.debug, current_dir).paint() as routes:
         components = find_children(Component)
+        # ValidateRequestDataComponent是用来兜底的，所以要放到最后
         components.append(ValidateRequestDataComponent())
         custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
         hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks

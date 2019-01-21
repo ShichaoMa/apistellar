@@ -77,7 +77,7 @@ class SettingsComponent(Component, SettingsMixin):
 
 
 class CookiesComponent(Component):
-    def resolve(self, cookie: http.Header) -> typing.Dict[str, Cookie]:
+    def resolve(self, cookie: http.Header = None) -> typing.Dict[str, Cookie]:
         cookies = dict()
         if cookie:
             for c in cookie.split(";"):
@@ -91,7 +91,10 @@ class CookieComponent(Component):
     def resolve(self,
                 parameter: Parameter,
                 cookies: typing.Dict[str, Cookie]) -> Cookie:
-        return cookies.get(parameter.name.replace('_', '-'))
+        name = parameter.name.replace('_', '-')
+        assert name in cookies or parameter.default != inspect._empty, \
+            f"Cookie: {name} not found!"
+        return Cookie(cookies[name])
 
 
 class DummyFlaskAppComponent(Component):
@@ -166,9 +169,11 @@ class FileStreamComponent(Component):
 class FormParamComponent(Component):
 
     def resolve(self, parameter: inspect.Parameter,
-                form: http.RequestData) -> FormParam:
-        if parameter.name in (form or {}):
-            return FormParam(form[parameter.name])
+                form: UrlEncodeForm) -> FormParam:
+        name = parameter.name
+        assert name in (form or {}) or parameter.default != inspect._empty, \
+            f"Form Param: {name} not found!"
+        return FormParam(form[name])
 
 
 class ValidateRequestDataComponent(_Component):

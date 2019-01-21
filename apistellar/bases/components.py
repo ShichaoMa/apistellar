@@ -14,6 +14,7 @@ from flask.sessions import SecureCookieSessionInterface
 
 from apistar.server.asgi import ASGIReceive
 from apistar.conneg import negotiate_content_type
+from apistar.server.asgi import ASGI_COMPONENTS
 from apistar.server.validation import RequestDataComponent
 from apistar import Route, exceptions, http, Component as _Component
 
@@ -226,3 +227,29 @@ class UrlEncodeComponent(RequestDataComponent, Component):
 
     def can_handle_parameter(self, parameter: inspect.Parameter):
         return parameter.annotation is UrlEncodeForm
+
+
+class HeaderComponent(_Component):
+    def resolve(self,
+                parameter: Parameter,
+                headers: http.Headers) -> http.Header:
+        name = parameter.name.replace('_', '-')
+        assert name in headers or parameter.default != inspect._empty, \
+            f"Header: {name} not found!"
+        return http.Header(headers.get(name, parameter.default))
+
+
+class QueryParamComponent(_Component):
+    def resolve(self,
+                parameter: Parameter,
+                query_params: http.QueryParams) -> http.QueryParam:
+        name = parameter.name
+        assert name in query_params or parameter.default != inspect._empty, \
+            f"Query Param: {name} not found!"
+        return http.QueryParam(query_params.get(name, parameter.default))
+
+
+# apistar自带的component会在找不query param或header的时候，返回None。
+# 现在改成如果有默认值存在，使用默认值，否则报错。
+ASGI_COMPONENTS[8].resolve = QueryParamComponent().resolve
+ASGI_COMPONENTS[10].resolve = HeaderComponent().resolve

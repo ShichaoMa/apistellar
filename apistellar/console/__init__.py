@@ -24,7 +24,7 @@ class ConsoleManager(Manager):
         self.mock_keys = list()
 
     async def resolve(self, type):
-        def wrapper(arg: type):
+        def wrapper(arg: type=None):
             return arg
 
         route = Route("/", "post", wrapper)

@@ -190,9 +190,7 @@ class RstDocParserDocParser(Parser):
                     json_params = model_params
                     json_params["model_type"] = self._get_module_class_name(
                         param.annotation)
-                structure = dict()
-                type_info.update(
-                    self._get_type_info(param.annotation, structure))
+                self._enrich_type_info(sign.return_annotation, type_info)
 
         if params:
             info["params"] = params
@@ -206,11 +204,7 @@ class RstDocParserDocParser(Parser):
         if sign.return_annotation is not inspect._empty:
             info["return_type"] = self._get_module_class_name(
                 sign.return_annotation)
-            # TODO 这个暂时没有什么用处
-            structure = dict()
-            if issubclass(sign.return_annotation, Type):
-                type_info.update(
-                    self._get_type_info(sign.return_annotation, structure))
+            self._enrich_type_info(sign.return_annotation, type_info)
 
         return_ex = self._extract_return_example(handler.__doc__)
 
@@ -233,6 +227,20 @@ class RstDocParserDocParser(Parser):
                                          return_wrapped["success_key_name"],
                                          info["return_type"])
         return info
+
+    def _is_type_like_class(self, cls):
+        if hasattr(cls, "__args__"):
+            for cls in cls.__args__:
+                ret_val = self._is_type_like_class(cls)
+                if ret_val:
+                    return True
+        else:
+            return issubclass(cls, Type)
+
+    def _enrich_type_info(self, cls, type_info):
+        for cls, info in self._get_type_info(cls):
+            if issubclass(cls, Type):
+                type_info[self._get_module_class_name(cls)] = info
 
     @classmethod
     def _extract_param_desc(cls, docstring, param_name):
@@ -319,31 +327,30 @@ class RstDocParserDocParser(Parser):
             ex = "\n".join(lines)
         return ex
 
-    def _get_module_class_name(self, cls):
-        if isinstance(cls, typing.GenericMeta):
+    @staticmethod
+    def _get_module_class_name(cls):
+        if isinstance(cls, (typing.GenericMeta, typing._Union)):
             return str(cls)
         elif issubclass(cls, Type):
             return f"{cls.__module__}.{cls.__name__}"
         else:
             return cls.__name__
 
-    def _get_type_info(self, cls, structure):
+    def _get_type_info(self, cls):
         if issubclass(cls, Type):
             type_info = self._extract_type_annotation(cls)
-            structure[cls] = type_info
-            yield self._get_module_class_name(cls), type_info
+            yield cls, type_info
         elif hasattr(cls, "__args__"):
-            child = structure.setdefault(cls, OrderedDict())
             for cls in getattr(cls, "__args__"):
-                yield from self._get_type_info(cls, child)
+                yield from self._get_type_info(cls)
         else:
             type_info = dict()
-            structure[cls] = type_info
-            yield self._get_module_class_name(cls), type_info
+            yield cls, type_info
 
     @staticmethod
     def _extract_resp_info(return_wrapped):
         yield return_wrapped["success_code"], "返回成功"
+
         for item in (return_wrapped.get("error_info") or {}).items():
             yield item
 

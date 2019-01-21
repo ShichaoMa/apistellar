@@ -94,7 +94,7 @@ class CookieComponent(Component):
         name = parameter.name.replace('_', '-')
         assert name in cookies or parameter.default != inspect._empty, \
             f"Cookie: {name} not found!"
-        return Cookie(cookies[name])
+        return Cookie(cookies.get(name, parameter.default))
 
 
 class DummyFlaskAppComponent(Component):
@@ -173,7 +173,7 @@ class FormParamComponent(Component):
         name = parameter.name
         assert name in (form or {}) or parameter.default != inspect._empty, \
             f"Form Param: {name} not found!"
-        return FormParam(form[name])
+        return FormParam(form.get(name, parameter.default))
 
 
 class ValidateRequestDataComponent(_Component):

@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
+import os
 import sys
-import inspect
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -28,8 +28,10 @@ class Painter(ABC):
         获取所有routes
         :return:
         """
+        self.current_dir, app_name = os.path.split(self.current_dir.rstrip("/"))
         sys.path.insert(0, self.current_dir)
-        load_packages(".")
+
+        load_packages(self.current_dir, app_name)
         include = routing(Controller)
         routes = [include] if include else []
         return routes

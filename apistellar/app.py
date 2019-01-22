@@ -105,7 +105,7 @@ def application(app_name,
     """
     logger = logging.getLogger(app_name)
     os.chdir(current_dir)
-    sys.modules.pop(app_name, None)
+    #sys.modules.pop(app_name, None)
     SettingsComponent.register_path(settings_path)
     with AppLogPainter(logger.debug, current_dir).paint() as routes:
         components = find_children(Component)

@@ -191,14 +191,14 @@ def walk_modules(current_path, app_name=None):
     :param current_path:
     :return:
     """
-    if app_name is None:
-        app_name = os.path.basename(os.path.abspath(current_path))
-
-    for root, dir, filenames in os.walk(os.path.join(current_path, app_name)):
+    current_path = current_path.rstrip("/")
+    for root, dir, filenames in os.walk(os.path.join(current_path, app_name, app_name)):
         for fn in filenames:
             if fn.endswith(".py") and not fn.startswith("_"):
                 fn = fn[:-3]
-                __import__(os.path.join(root, fn).replace("/", ".").strip("."))
+                module_name = os.path.join(root, fn).replace(current_path, "")\
+                    .replace("/", ".").strip(".")
+                __import__(module_name)
 
 
 load_packages = walk_modules

@@ -49,8 +49,9 @@ def cfg_manage(cfg_tpl_filename):
 with cfg_manage(__file__.replace(".py", ".cfg.tpl")):
     setup(
         name="{{name}}",
-        version=get_version("{{name}}"),
-        packages=find_packages(exclude=("tests*",)),
+        version=get_version("src/{{name}}"),
+        packages=find_packages("src"),
+        package_dir={'': 'src'},
         include_package_data=True,
         install_requires=install_requires(),
         author="",

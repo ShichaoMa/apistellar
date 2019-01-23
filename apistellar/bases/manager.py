@@ -1,3 +1,4 @@
+import os
 import sys
 
 from apistar.server.asgi import ASGI_COMPONENTS
@@ -13,10 +14,9 @@ class Manager(object):
 
     @staticmethod
     def initialize(path, app_name=None):
+        path, app_name = os.path.split(path.rstrip("/"))
         sys.path.insert(0, path)
-        if app_name:
-            sys.modules.pop(app_name, None)
-        load_packages(".")
+        load_packages(path, app_name)
 
     def finalize(self, settings="settings"):
         SettingsComponent.register_path(settings)

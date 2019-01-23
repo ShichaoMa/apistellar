@@ -225,7 +225,7 @@ class SettingsMixin(object):
     @cache_classproperty
     def settings(cls):
         # type: () -> Settings
-        return SettingsLoader().load(cls.settings_path or "settings")
+        return SettingsLoader().load(SettingsMixin.settings_path or "settings")
 
     @classmethod
     def register_path(cls, settings_path):

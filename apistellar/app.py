@@ -11,8 +11,8 @@ from apistar.server.asgi import ASGIScope, ASGISend
 from apistellar.document import ShowLogPainter, AppLogPainter
 
 from .bases.websocket import WebSocketApp
-from .bases.components import SettingsComponent, Component, \
-    ValidateRequestDataComponent
+from .bases.entities import SettingsMixin
+from .bases.components import Component, ValidateRequestDataComponent
 from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from .helper import TypeEncoder, find_children, enhance_response
 
@@ -106,7 +106,8 @@ def application(app_name,
     logger = logging.getLogger(app_name)
     os.chdir(current_dir)
     #sys.modules.pop(app_name, None)
-    SettingsComponent.register_path(settings_path)
+    SettingsMixin.register_path(settings_path)
+
     with AppLogPainter(logger.debug, current_dir).paint() as routes:
         components = find_children(Component)
         # ValidateRequestDataComponent是用来兜底的，所以要放到最后

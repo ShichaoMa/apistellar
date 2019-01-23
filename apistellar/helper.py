@@ -192,14 +192,18 @@ def walk_modules(current_path, app_name=None):
     :return:
     """
     current_path = current_path.rstrip("/")
-    for root, dir, filenames in os.walk(os.path.join(current_path, app_name, app_name)):
+    for root, _, filenames in os.walk(os.path.join(current_path, app_name, app_name)):
+        imported = False
         for fn in filenames:
             if fn.endswith(".py") and not fn.startswith("_"):
                 fn = fn[:-3]
                 module_name = os.path.join(root, fn).replace(current_path, "")\
                     .replace("/", ".").strip(".")
                 __import__(module_name)
-
+                imported = True
+        # 如果整个包都没有被导入过，则导入一下这个包，主要是为了加载__init__.py
+        if not imported:
+            __import__(root.replace(current_path, "").replace("/", ".").strip("."))
 
 load_packages = walk_modules
 

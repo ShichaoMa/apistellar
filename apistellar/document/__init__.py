@@ -28,6 +28,8 @@ class Painter(ABC):
         获取所有routes
         :return:
         """
+        # 这一步是为了将settings.py所以目录加入可搜索路径
+        sys.path.insert(0, self.current_dir)
         self.current_dir, app_name = os.path.split(self.current_dir.rstrip("/"))
         sys.path.insert(0, self.current_dir)
 

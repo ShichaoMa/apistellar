@@ -14,6 +14,8 @@ class Manager(object):
 
     @staticmethod
     def initialize(path, app_name=None):
+        # 这一步是为了将settings.py所以目录加入可搜索路径
+        sys.path.insert(0, path)
         path, app_name = os.path.split(path.rstrip("/"))
         sys.path.insert(0, path)
         load_packages(path, app_name)

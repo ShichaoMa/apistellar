@@ -8,7 +8,7 @@ from functools import wraps
 from types import FunctionType, MethodType
 from contextlib import _GeneratorContextManager
 
-from pyaop import Proxy, Return, AOP
+from apistellar.helper import proxy
 
 
 def contextmanager(func):
@@ -121,28 +121,6 @@ class _AsyncGeneratorContextManager(_GeneratorContextManager):
                     return False
                 raise
             raise RuntimeError("generator didn't stop after throw()")
-
-
-def proxy(obj, prop, prop_name):
-    """
-    为object对象代理一个属性
-    :param obj:
-    :param prop: 属性
-    :param prop_name: 属性名
-    :return:
-    """
-    assert isinstance(prop_name, str), "prop_name must be string!"
-
-    def common(proxy, name, value=None):
-        if name == prop_name:
-            if value:
-                raise RuntimeError(f"{prop_name} readonly!")
-            else:
-                Return(prop)
-
-    return Proxy(obj, before=[
-        AOP.Hook(common, ["__getattribute__", "__setattr__", "__delattr__"]),
-        ])
 
 
 class ConnectionManager(object):

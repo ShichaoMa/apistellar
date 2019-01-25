@@ -88,7 +88,7 @@ class ShowLogPainter(LogPainter):
     """
 
     def __init__(self, format):
-        super(ShowLogPainter, self).__init__(print, format, ".")
+        super(ShowLogPainter, self).__init__(print, format, os.getcwd())
 
 
 class DocPainter(Painter):

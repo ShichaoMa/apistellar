@@ -6,10 +6,12 @@ import glob
 import email
 import types
 import inspect
+import logging
 
-from functools import reduce, wraps
+from urllib.parse import urljoin
+from functools import wraps, reduce
 from collections.abc import Mapping
-from contextlib import contextmanager
+from pyaop import Proxy, Return, AOP
 from asyncio import Future, get_event_loop
 from argparse import Action, _SubParsersAction
 
@@ -611,6 +613,126 @@ def cache_classproperty(func):
             setattr(args[0], prop_name, func(*args, **kwargs))
         return args[0].__dict__[prop_name]
     return wrapper
+
+
+def proxy(obj, prop, prop_name):
+    """
+    为object对象代理一个属性
+    :param obj:
+    :param prop: 属性
+    :param prop_name: 属性名
+    :return:
+    """
+    assert isinstance(prop_name, str), "prop_name must be string!"
+
+    def common(proxy, name, value=None):
+        if name == prop_name:
+            if value:
+                raise RuntimeError(f"{prop_name} readonly!")
+            else:
+                Return(prop)
+
+    return Proxy(obj, before=[
+        AOP.Hook(common, ["__getattribute__", "__setattr__", "__delattr__"]),
+        ])
+
+
+class RestfulApi(object):
+
+    @cache_classproperty
+    def logger(cls):
+        """
+        增加cache_classproperty意义在于懒加载logger,
+        以避免format过早生效导致一些基础日志打印失败
+        :return:
+        """
+        logger = logging.getLogger(cls.__name__.lower())
+        logger.addHandler(logging.StreamHandler(sys.stdout))
+        return logger
+
+    def __init__(self, host, port):
+        super().__init__()
+        self.host = host
+        self.port = port
+        self.prefix = f'http://{host}:{port}'
+
+    def url(self, path):
+        return urljoin(self.prefix, path)
+
+
+def _find_ancestor(cls):
+    """
+    找到非object祖先类
+    :param cls:
+    :return:
+    """
+    if cls.__base__ == object:
+        return cls
+    return _find_ancestor(cls.__base__)
+
+
+def register(url, path=None, error_check=lambda x: x["code"] != 0):
+    """
+    为RPC方法注册路由
+    :param url:
+    :param path: 在返回的响应数据中，如果是json格式，那么除去响应码信息有用信息位置
+    :param error_check: 对于业务异常的检查回调函数
+    :return:
+    """
+    def request_wrapper(func):
+        @wraps(func)
+        async def inner(*args, **kwargs):
+            self = args[0]
+            u = _find_ancestor(self.__class__).url(self, url)
+            self.logger.debug("Search url: %s" % u)
+            self.logger.debug(
+                "Search query, args: %s, kwargs %s. " % (args[1:], kwargs))
+            self = proxy(self, u, "url")
+            data = None
+
+            try:
+                data = await func(self, *args[1:], **kwargs)
+                if error_check and isinstance(data, dict) and error_check(data):
+                    raise BackendServiceError(data)
+            except BackendServiceError as e:
+                raise e
+            except Exception as e:
+                self.logger.error(f"Error in calling {self.url}.return: {data}")
+                raise BackendInternalError() from e
+            return path_parse(path, data)
+
+        return inner
+    return request_wrapper
+
+
+def _val_get(data, y):
+    try:
+        return data[y]
+    except TypeError as e:
+        if y.isdigit():
+            return data[int(y)]
+        else:
+            raise e
+
+
+def path_parse(path, data):
+    """
+    从字典中获取指定路径下的数据
+    :param path: "a.b.1.c"
+    :param data: {"a": {"b": [{"c": 3}, {"c": 4}]}}
+    :return: 4
+    """
+    if not path:
+        return data
+    return reduce(_val_get, path.split("."), data)
+
+
+class BackendInternalError(RuntimeError):
+    pass
+
+
+class BackendServiceError(RuntimeError):
+    pass
 
 
 # mock state

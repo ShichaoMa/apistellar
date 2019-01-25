@@ -189,6 +189,10 @@ class Type(MutableMapping, metaclass=TypeMetaclass):
             else:
                 self._dict[k] = v
 
+    def reformat(self, field_name, value=None):
+        setattr(self, field_name,
+                self.__class__.validator.properties[field_name].validate(value))
+
     def to_dict(self):
         return json.loads(json.dumps(self, cls=TypeEncoder))
 

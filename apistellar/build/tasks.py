@@ -2,6 +2,7 @@ import re
 import os
 import sys
 import string
+import typing
 
 from collections import OrderedDict
 from importlib import import_module
@@ -13,7 +14,7 @@ from toolkit.markdown_helper import MarkDownRender
 from apistellar.types import validators
 from apistellar.document import DocPainter
 
-__all__ = ["Task", "Project", "Service", "Model", "Solo", "Document"]
+__all__ = ["Task", "Project", "Service", "Model", "Solo", "Document", "Rpc"]
 
 
 class Task(object):
@@ -186,8 +187,8 @@ class Model(ModuleTask):
             "-n", "--name", required=True, type=cls.to_list, help="models名称")
         sub_parser.add_argument(
             "-p", "--path", help="所属服务路径 eg: article/comment")
-        sub_parser.add_argument(
-            "-a", "--async", action="store_true", help="是否拥有异步获取属性的能力")
+        # sub_parser.add_argument(
+        #     "-a", "--async", action="store_true", help="是否拥有异步获取属性的能力")
         sub_parser.add_argument("fields", nargs="*", help="字段 eg: id:integer")
 
 
@@ -207,41 +208,143 @@ class Solo(ModuleTask):
         sub_parser.add_argument("name", nargs="+", help="独立任务程序名称")
 
 
-class Document(Task):
-
-    def create(self, env, **kwargs):
-        task = kwargs.pop("task")
-        parser = kwargs.pop("parser")
-        name = kwargs.pop("name", [])[0]
-        module = kwargs["module"]
-        location = abspath(join(os.getcwd(), kwargs.pop("location")))
-
-
+class APIRenderTask(Task):
+    """
+    通过API生成文档，RPC调用等
+    """
+    @staticmethod
+    def _cwd(module):
+        """
+        切换到模块包所在目录并返回
+        :param module:
+        :return:
+        """
         if module:
             current_dir = dirname(load(module).__file__)
             sys.modules.pop(module, None)
         else:
             current_dir = "."
         os.chdir(current_dir)
+        return current_dir
 
-        painter = DocPainter(current_dir, parser)
-        # 不再提醒是否覆盖
+    @staticmethod
+    def _ignore_input():
+        """
+        不再提醒是否覆盖
+        :return:
+        """
         global input
-        input = self._input
-        base_dir_name = join(location, name)
 
+        def _input(prompt):
+            return "y"
+        input = _input
+
+    def create(self, env, **kwargs):
+        name = kwargs.pop("name", [])[0]
+        self._ignore_input()
+        base_dir_name = abspath(join(os.getcwd(), kwargs.pop("location"), name))
+        cwd = self._cwd(kwargs["module"])
         indices = OrderedDict()
-        for parent, doc in painter.paint().items():
-            doc["dirname"] = base_dir_name
-            self.kwargs = doc
-            fn = os.path.join(
-                base_dir_name, doc["file_path"], doc["doc_name"] + ".md.html")
-            indices[fn] = doc["doc_name"]
-            self.copytree(env, task)
 
+        for parent, doc in DocPainter(cwd, kwargs["parser"]).paint().items():
+            self.kwargs = self._enrich_kwargs(doc, base_dir_name, kwargs)
+            self._enrich_indices(doc, indices)
+            makedirs(self.kwargs["dirname"], exist_ok=True)
+            self.copytree(env, kwargs["task"])
+
+        self._finalize(indices, name, base_dir_name)
+
+    @classmethod
+    def _enrich_kwargs(cls, doc, base_dir_name, kwargs):
+        doc["dirname"] = base_dir_name
+        doc.setdefault("enumerate", enumerate)
+        doc.setdefault("bool", bool)
+        doc.setdefault("len", len)
+        doc.setdefault("map", map)
+        return doc
+
+    @staticmethod
+    def _enrich_indices(doc: dict, indices: dict):
+        """
+        在渲染完多个模块时，为能生成一个索引页(或`__init__.py`)保留一些数据
+        :param doc:
+        :param indices:
+        """
+
+    @staticmethod
+    def _finalize(indices: dict, name: str, base_dir_name: str):
+        """
+        使indices等数据生成一个索引页或执行其它收尾工作
+        :param indices:
+        :param name:
+        :param base_dir_name:
+        :return:
+        """
+    @classmethod
+    def enrich_parser(cls, sub_parser):
+        sub_parser.add_argument("name", nargs=1, help="输出名称")
+        sub_parser.add_argument("-m", "--module", help="模块地址", required=True)
+        sub_parser.add_argument("-l", "--location", help="输出地址", default=".")
+        sub_parser.add_argument(
+            "-p", "--parser", help="parser模块地址",
+            default="apistellar.document.parser.RstDocParserDocParser")
+
+
+class Document(APIRenderTask):
+
+    @staticmethod
+    def _enrich_indices(doc, indices):
+        """
+        生成index.md所需要的数据
+        :param doc:
+        :param indices:
+        :return:
+        """
+        fn = os.path.join(
+            doc["dirname"], doc["file_path"], doc["doc_name"] + ".md.html")
+        indices[fn] = doc["doc_name"]
+
+    @classmethod
+    def _enrich_kwargs(cls, doc, base_dir_name, kwargs):
+        """
+        为模板增加一个迭代器用来迭代接口
+        :param doc:
+        :param base_dir_name:
+        :param kwargs:
+        :return:
+        """
+        doc = super()._enrich_kwargs(doc, base_dir_name, kwargs)
+        doc.setdefault("iter", cls.iter_interface)
+        return doc
+
+    @staticmethod
+    def iter_interface(interface):
+        """
+        迭代接口里面的参数
+        :param interface:
+        :return:
+        """
+        if "params" in interface:
+            yield ("查询参数", interface["params"])
+
+        if "path_params" in interface:
+            yield ("路径参数", interface["path_params"])
+
+        if "form_params" in interface:
+            yield ("表单参数", interface["form_params"])
+
+    @staticmethod
+    def _finalize(indices, name, base_dir_name):
+        """
+        渲染markdown文档成html，并添加一个目录，同时打开文档
+        :param indices:
+        :param name:
+        :param base_dir_name:
+        :return:
+        """
         os.makedirs(base_dir_name, exist_ok=True)
         with open(os.path.join(base_dir_name, "index.md"), "w") as f:
-            f.write(f"# {name}文档\n\n")
+            f.write(f"# {name}\n\n")
             for index, (key, val) in enumerate(indices.items()):
                 f.write(f"{index+1}. [{val}]({key})\n")
 
@@ -250,20 +353,149 @@ class Document(Task):
             output = mk_render.render()
 
         if output:
-            os.system(f"open {output}")
+            try:
+                os.system(f"open {output}")
+            except Exception:
+                print(f"打开{output}失败! ")
         else:
             print("未找到可打开的文档！")
 
+    @classmethod
+    def enrich_parser(cls, sub_parser):
+        super().enrich_parser(sub_parser)
+
+
+class Rpc(APIRenderTask):
+
     @staticmethod
-    def _input(prompt):
-        return "y"
+    def _enrich_indices(doc, indices):
+        """
+        生成__init__.py所需要的数据
+        :param doc:
+        :param indices:
+        :return:
+        """
+        indices[doc["controller"].capitalize()] = doc["controller"]
+
+    @classmethod
+    def _enrich_kwargs(cls, doc, base_dir_name, kwargs):
+        """
+        增加一些渲染参数
+        :param doc:
+        :param base_dir_name:
+        :param kwargs:
+        :return:
+        """
+        doc = super()._enrich_kwargs(doc, base_dir_name, kwargs)
+        doc["dirname"] = base_dir_name
+        base = kwargs["base"]
+        assert base.count(":") == 1, f"Invalid format: {base}"
+        doc["base_module"], doc["base_class"] = base.split(":")
+        doc.setdefault("agg", cls._agg_interface_aiohttp)
+        doc.setdefault("str", str)
+        return doc
+
+    @staticmethod
+    def _agg_interface_aiohttp(interface):
+        """
+        将一个接口中的数据组合成构建方法所需要的部分结构
+        :param interface:
+        :return:
+        """
+        args_def = ""
+        body_def = ""
+        call_args_def = ""
+        if "path_params" in interface:
+            pass
+
+        if "json_params" in interface:
+            args_def += f"json: dict, "
+            call_args_def += ", json=json"
+
+        if "form_params" in interface:
+            args_def += f"form_fields: typing.List[dict], "
+            form_body = """
+            data = FormData()
+            for meta in form_fields:
+                data.add_field(meta["name"],
+                               meta["value"],
+                               filename=meta.get("filename"),
+                               content_type=meta.get("content_type"))"""
+            call_args_def += ", data=data"
+            body_def += form_body
+
+        if "params" in interface:
+            params = list()
+
+            for name, param in interface["params"].items():
+                args_def += f"{name}: {param['type']}"
+                params.append(name)
+                # 服务端有默认参数，所以客户端不需要主动传参，默认为None
+                if "default" in param:
+                    args_def += "=None"
+                args_def += ", "
+
+            if params:
+                pair = ""
+                for name in params:
+                    pair += f'\n            if {name}:' \
+                            f'\n                params["{name}"] = {name}'
+
+                body_def += "\n            params = dict()%s" % pair
+            call_args_def += ", params=params"
+
+        args_def += "cookies=None"
+        if "return_wrapped" in interface:
+            method = "json"
+            success_key_name = interface["return_wrapped"]["success_key_name"]
+            success_code = interface["return_wrapped"]["success_code"]
+        else:
+            success_code = None
+            success_key_name = None
+
+            if "return_class" in interface:
+                if interface["return_class"] == bytes:
+                    method = "read"
+                else:
+                    method = "json"
+            else:
+                method = "read"
+
+        if method == "read":
+            error_check = "None"
+        else:
+            error_check = 'lambda x: x["code"] != %s' % success_code
+
+        return args_def, body_def, call_args_def, \
+               method, error_check, success_key_name
+
+    @staticmethod
+    def _finalize(indices, name, base_dir_name):
+        """
+        生成一个__init__.py，将所有模块中的接口结合起来
+        :param indices:
+        :param name:
+        :param base_dir_name:
+        :return:
+        """
+        os.makedirs(base_dir_name, exist_ok=True)
+        tmpl = f"class {name.capitalize()}(%s):\n    pass"
+        with open(os.path.join(base_dir_name, "__init__.py"), "w") as f:
+            f.write(f"# {name} API\n")
+            import_str = ""
+            base_str = ""
+            for key, val in indices.items():
+                import_str += f"from .{val} import {key}\n"
+                base_str += f"{key}, "
+            f.write(import_str + "\n\n")
+            f.write(tmpl % base_str[:-2])
+
+        print(f"{name} 驱动已创建。")
 
     @classmethod
     def enrich_parser(cls, sub_parser):
-        sub_parser.add_argument("name", nargs=1, help="文档名称")
-        sub_parser.add_argument("-m", "--module", help="模块地址", required=True)
-        sub_parser.add_argument("-l", "--location", help="文章地址", default=".")
+        super().enrich_parser(sub_parser)
         sub_parser.add_argument(
-            "-p", "--parser", help="parser模块地址",
-            default="apistellar.document.parser.RstDocParserDocParser")
-
+            "-b", "--base",
+            default="apistellar.helper:RestfulApi",
+            help="rpc基类 eg：apistellar.helper:RestfulApi")

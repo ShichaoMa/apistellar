@@ -8,8 +8,6 @@ pytest-apistellar = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
 pytest = "*"
-blog = {editable = true,path = "./../blog"}
-apistellar = {editable = true,path = "."}
 pylint = "*"
 
 [packages]

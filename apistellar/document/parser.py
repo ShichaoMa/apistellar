@@ -103,6 +103,7 @@ class RstDocParserDocParser(Parser):
             ps = tuple(x.name for x in parents[1:])
             doc = docs.setdefault(ps, dict())
             doc.setdefault("parents", ps)
+            doc["controller"] = self._get_controller_name(parents)
             doc_name = route.controller.__class__.__doc__
             doc_name = doc_name.strip() if doc_name else \
                 route.controller.__class__.__name__
@@ -112,30 +113,20 @@ class RstDocParserDocParser(Parser):
             info = self._extract_info(route, parents)
             all_type_info.update(info.pop("type_info", dict()))
             interfaces.append(info)
-
-            doc.setdefault("enumerate", enumerate)
-            doc.setdefault("bool", bool)
-            doc.setdefault("iter", self.iter_interface)
-            doc.setdefault("len", len)
-            doc.setdefault("map", map)
             doc.setdefault("file_path", os.path.join(*ps))
         return docs
-
-    @staticmethod
-    def iter_interface(interface):
-        if "params" in interface:
-            yield ("查询参数", interface["params"])
-
-        if "path_params" in interface:
-            yield ("路径参数", interface["path_params"])
-
-        if "form_params" in interface:
-            yield ("表单参数", interface["form_params"])
 
     @classmethod
     def regex_format(cls, type, param_name, sub_reg="(.*?)"):
         return r":{} +{}:{}\s+?{}".format(
             type, param_name, sub_reg, cls.regex_tail)
+
+    @staticmethod
+    def _get_controller_name(parents):
+        if len(parents) > 2:
+            return reduce(lambda x, y: x + "_" + y.name, parents[1:])
+        else:
+            return parents[1].name
 
     def _extract_info(self, route, parents):
         info = dict()
@@ -204,6 +195,7 @@ class RstDocParserDocParser(Parser):
         if sign.return_annotation is not inspect._empty:
             info["return_type"] = self._get_module_class_name(
                 sign.return_annotation)
+            info["return_class"] = sign.return_annotation
             self._enrich_type_info(sign.return_annotation, type_info)
 
         return_ex = self._extract_return_example(handler.__doc__)
@@ -220,6 +212,7 @@ class RstDocParserDocParser(Parser):
         if return_wrapped:
             info["resp_info"] = OrderedDict(
                 self._extract_resp_info(return_wrapped))
+            info["return_wrapped"] = return_wrapped
 
             if "return_type" in info:
                 info["return_type"] = '{"code": %s, "%s": %s, "message": "xx"}' \
@@ -354,7 +347,8 @@ class RstDocParserDocParser(Parser):
         for item in (return_wrapped.get("error_info") or {}).items():
             yield item
 
-    def _enrich_params_from_example(self, attributes, params, name):
+    @staticmethod
+    def _enrich_params_from_example(attributes, params, name):
         examples = attributes.get("examples")
 
         for example in examples:

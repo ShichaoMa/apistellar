@@ -44,7 +44,8 @@ pip install apistellar
 - [使用apistellar测试插件pytest-apistellar进行单元测试](https://github.com/ShichaoMa/apistellar/wiki/使用apistellar测试插件pytest-apistellar进行单元测试)
 - [model持久化方案](https://github.com/ShichaoMa/apistellar/wiki/model%E6%8C%81%E4%B9%85%E5%8C%96%E6%96%B9%E6%A1%88)
 - [
-API接口文档自动生成](https://github.com/ShichaoMa/apistellar/wiki/API%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90)
+API接口文档自动生成](https://github.com/ShichaoMa/apistellar/wiki/API接口文档自动生成)
+- [RESTFul RPC客户端驱动包一键生成](https://github.com/ShichaoMa/apistellar/wiki/RESTFul-RPC客户端驱动包一键生成)
 
 参考资料
 

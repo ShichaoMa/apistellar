@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import time
@@ -9,9 +10,11 @@ import inspect
 import logging
 
 from urllib.parse import urljoin
+from aiohttp import ClientSession
 from functools import wraps, reduce
 from collections.abc import Mapping
 from pyaop import Proxy, Return, AOP
+from types import FunctionType, MethodType
 from asyncio import Future, get_event_loop
 from argparse import Action, _SubParsersAction
 
@@ -206,6 +209,7 @@ def walk_modules(current_path, app_name=None):
         # 如果整个包都没有被导入过，则导入一下这个包，主要是为了加载__init__.py
         if not imported:
             __import__(root.replace(current_path, "").replace("/", ".").strip("."))
+
 
 load_packages = walk_modules
 
@@ -507,6 +511,9 @@ def return_wrapped(success_code=0, success_key_name="data", error_info=None):
     :return:
     """
 
+    assert isinstance(success_key_name, str), "`success_key_name` must be str!"
+    assert isinstance(success_code, int), "`success_code` must be int!"
+
     def return_wrapper(func):
         args = inspect.getfullargspec(func).args
         args_def = ", ".join(args)
@@ -660,6 +667,10 @@ class RestfulApi(object):
         return urljoin(self.prefix, path)
 
 
+def path_repl(mth):
+    return "{" + mth.group(1).lstrip("+") + "}"
+
+
 def _find_ancestor(cls):
     """
     找到非object祖先类
@@ -671,35 +682,73 @@ def _find_ancestor(cls):
     return _find_ancestor(cls.__base__)
 
 
-def register(url, path=None, error_check=lambda x: x["code"] != 0):
+def get_callargs(func, *args, **kwargs):
+    """
+    找到层层装饰器下最里层的函数的callargs
+    :param func:
+    :param args:
+    :param kwargs:
+    :return:
+    """
+    for closure in func.__closure__ or []:
+        if isinstance(closure.cell_contents, (FunctionType, MethodType)):
+            func = closure.cell_contents
+            return get_callargs(func, *args, **kwargs)
+
+    args = inspect.getcallargs(func, *args, **kwargs)
+    spec = inspect.getfullargspec(func)
+    if spec.varkw:
+        args.update(args.pop(spec.varkw, {}))
+
+    return args
+
+
+def register(url, path=None, error_check=None, conn_timeout=9,
+             read_timeout=9, have_path_param=False):
     """
     为RPC方法注册路由
     :param url:
-    :param path: 在返回的响应数据中，如果是json格式，那么除去响应码信息有用信息位置
-    :param error_check: 对于业务异常的检查回调函数
+    :param path: 在返回的响应数据中，如果是json格式，有用数据位置如`data.value
+    `对应{"data": {"value": "有用的数据"}}，非json不需要填写。
+    :param error_check: 在返回的响应数据中，如果是json格式，
+    用来检查该json是否有效的回调函数，一般会配合响应码来检查。
+    :param conn_timeout:
+    :param read_timeout:
+    :param have_path_param: 是否有restful风格的路径参数
     :return:
     """
     def request_wrapper(func):
         @wraps(func)
         async def inner(*args, **kwargs):
-            self = args[0]
-            u = _find_ancestor(self.__class__).url(self, url)
-            self.logger.debug("Search url: %s" % u)
-            self.logger.debug(
-                "Search query, args: %s, kwargs %s. " % (args[1:], kwargs))
-            self = proxy(self, u, "url")
-            data = None
+            cookies = kwargs.pop("cookies", None)
 
-            try:
-                data = await func(self, *args[1:], **kwargs)
-                if error_check and isinstance(data, dict) and error_check(data):
-                    raise BackendServiceError(data)
-            except BackendServiceError as e:
-                raise e
-            except Exception as e:
-                self.logger.error(f"Error in calling {self.url}.return: {data}")
-                raise BackendInternalError() from e
-            return path_parse(path, data)
+            async with ClientSession(
+                    conn_timeout=conn_timeout, read_timeout=read_timeout,
+                    cookies=cookies) as session:
+                self = args[0]
+                u = _find_ancestor(self.__class__).url(self, url)
+                if have_path_param:
+                    callargs = get_callargs(func, *args, **kwargs)
+                    path_params = callargs.pop("path_params", None)
+                    u = re.sub('{([^}]*)}', path_repl, u).format(**path_params)
+                self.logger.debug("Search url: %s" % u)
+                self.logger.debug(
+                    "Search query, args: %s, kwargs %s. " % (args[1:], kwargs))
+                self = proxy(proxy(self, u, "url"), session, "session")
+                data = None
+
+                try:
+                    data = await func(self, *args[1:], **kwargs)
+                    if error_check and isinstance(
+                            data, dict) and error_check(data):
+                        raise BackendServiceError(data)
+                except BackendServiceError as e:
+                    raise e
+                except Exception as e:
+                    self.logger.error(
+                        f"Error in calling {self.url}.return: {data}")
+                    raise BackendInternalError() from e
+                return path_parse(path, data)
 
         return inner
     return request_wrapper

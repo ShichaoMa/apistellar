@@ -5,10 +5,10 @@ import asyncio
 import warnings
 
 from functools import wraps
-from types import FunctionType, MethodType
+from types import FunctionType
 from contextlib import _GeneratorContextManager
 
-from apistellar.helper import proxy
+from apistellar.helper import proxy, get_callargs
 
 
 def contextmanager(func):
@@ -230,24 +230,3 @@ class PersistentMeta(type):
                     attrs[attr_name] = classmethod(conn_manager(func))
 
         return super(PersistentMeta, mcs).__new__(mcs, name, bases, attrs)
-
-
-def get_callargs(func, *args, **kwargs):
-    """
-    找到层层装饰器下最里层的函数的callargs
-    :param func:
-    :param args:
-    :param kwargs:
-    :return:
-    """
-    for closure in func.__closure__ or []:
-        if isinstance(closure.cell_contents, (FunctionType, MethodType)):
-            func = closure.cell_contents
-            return get_callargs(func, *args, **kwargs)
-
-    args = inspect.getcallargs(func, *args, **kwargs)
-    spec = inspect.getfullargspec(func)
-    if spec.varkw:
-        args.update(args.pop(spec.varkw, {}))
-
-    return args

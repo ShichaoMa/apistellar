@@ -78,6 +78,51 @@ class RstDocParserDocParser(Parser):
     """
     用于解析rst风格的注释，并生成文档json，用于渲染文档
     """
+    keywords = {
+        'and',
+        'as',
+        'assert',
+        'async',
+        'await',
+        'break',
+        'class',
+        'continue',
+        'def',
+        'del',
+        'elif',
+        'else',
+        'except',
+        'finally',
+        'for',
+        'from',
+        'global',
+        'if',
+        'import',
+        'in',
+        'is',
+        'lambda',
+        'not',
+        'or',
+        'pass',
+        'raise',
+        'return',
+        'try',
+        'while',
+        'with',
+        'yield'}
+    nums_mapping = {
+        "0": "zero",
+        "1": "one",
+        "2": "two",
+        "3": "three",
+        "4": "four",
+        "5": "five",
+        "6": "six",
+        "7": "seven",
+        "8": "eight",
+        "9": "nine"
+    }
+
     param_annotation_mapping = {
         http.QueryParam: "str",
         str: "str",
@@ -128,11 +173,30 @@ class RstDocParserDocParser(Parser):
         else:
             return parents[1].name
 
+    @classmethod
+    def _get_name(cls, route, endpoint):
+        """
+        找到一个可以唯一描述的名字，去掉非法字符，
+        如果首字母是数字将其转换成英文，如果是关键字加个_
+        :param route:
+        :param endpoint:
+        :return:
+        """
+        name = "_".join(endpoint.strip("/").split("/")) or route.handler.__name__
+        name = "".join(re.findall(r"([\w_]+)", name))
+        if name[0].isdigit():
+            name = cls.nums_mapping[name[0]] + name[1:]
+        if name in cls.keywords:
+            name = name + "_"
+        return name
+
     def _extract_info(self, route, parents):
         info = dict()
         handler = route.handler
         type_info = dict()
-        info["endpoint"] = self._extract_pattern(route, parents)
+        endpoint = self._extract_pattern(route, parents)
+        info["endpoint"] = endpoint
+        info["name"] = self._get_name(route, endpoint)
         info["method"] = route.method
         info["comment"] = self._extract_comment(handler.__doc__)
         params, form_params, path_params = (OrderedDict() for i in range(3))

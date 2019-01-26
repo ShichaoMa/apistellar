@@ -2,7 +2,6 @@ import re
 import os
 import sys
 import string
-import typing
 
 from collections import OrderedDict
 from importlib import import_module
@@ -10,9 +9,10 @@ from os import makedirs, sep, listdir, getcwd
 from os.path import join, exists, abspath, dirname, isdir, basename
 
 from toolkit import load
-from toolkit.markdown_helper import MarkDownRender
 from apistellar.types import validators
 from apistellar.document import DocPainter
+from toolkit.markdown_helper import MarkDownRender
+
 
 __all__ = ["Task", "Project", "Service", "Model", "Solo", "Document", "Rpc"]
 
@@ -240,6 +240,12 @@ class APIRenderTask(Task):
         input = _input
 
     def create(self, env, **kwargs):
+        """
+        创建一个模板实例
+        :param env:
+        :param kwargs: 解析命令行获取的参数
+        :return:
+        """
         name = kwargs.pop("name", [])[0]
         self._ignore_input()
         base_dir_name = abspath(join(os.getcwd(), kwargs.pop("location"), name))
@@ -393,6 +399,12 @@ class Rpc(APIRenderTask):
         doc["base_module"], doc["base_class"] = base.split(":")
         doc.setdefault("agg", cls._agg_interface_aiohttp)
         doc.setdefault("str", str)
+        if kwargs["conn_timeout"]:
+            doc.setdefault(
+                "conn_timeout", ", conn_timeout=%d" % kwargs["conn_timeout"])
+        if kwargs["read_timeout"]:
+            doc.setdefault(
+                "read_timeout", ", read_timeout=%d" % kwargs["read_timeout"])
         return doc
 
     @staticmethod
@@ -405,8 +417,10 @@ class Rpc(APIRenderTask):
         args_def = ""
         body_def = ""
         call_args_def = ""
+        have_path_param = ""
         if "path_params" in interface:
-            pass
+            args_def += f"path_params: dict, "
+            have_path_param = ", have_path_param=True"
 
         if "json_params" in interface:
             args_def += f"json: dict, "
@@ -414,13 +428,12 @@ class Rpc(APIRenderTask):
 
         if "form_params" in interface:
             args_def += f"form_fields: typing.List[dict], "
-            form_body = """
-            data = FormData()
-            for meta in form_fields:
-                data.add_field(meta["name"],
-                               meta["value"],
-                               filename=meta.get("filename"),
-                               content_type=meta.get("content_type"))"""
+            form_body = """        data = FormData()
+        for meta in form_fields:
+            data.add_field(meta["name"],
+                           meta["value"],
+                           filename=meta.get("filename"),
+                           content_type=meta.get("content_type"))\n"""
             call_args_def += ", data=data"
             body_def += form_body
 
@@ -438,13 +451,14 @@ class Rpc(APIRenderTask):
             if params:
                 pair = ""
                 for name in params:
-                    pair += f'\n            if {name}:' \
-                            f'\n                params["{name}"] = {name}'
+                    pair += f'        if {name} is not None:' \
+                            f'\n            params["{name}"] = {name}\n'
 
-                body_def += "\n            params = dict()%s" % pair
+                body_def += "        params = dict()\n%s" % pair
             call_args_def += ", params=params"
 
-        args_def += "cookies=None"
+        args_def += "cookies: dict=None"
+
         if "return_wrapped" in interface:
             method = "json"
             success_key_name = interface["return_wrapped"]["success_key_name"]
@@ -454,20 +468,25 @@ class Rpc(APIRenderTask):
             success_key_name = None
 
             if "return_class" in interface:
-                if interface["return_class"] == bytes:
+                if interface["return_class"] in (bytes, str):
                     method = "read"
                 else:
                     method = "json"
             else:
                 method = "read"
 
-        if method == "read":
-            error_check = "None"
+        if method == "read" or success_code is None:
+            error_check = ""
         else:
-            error_check = 'lambda x: x["code"] != %s' % success_code
+            error_check = ', error_check=lambda x: x["code"] != %s' % success_code
 
-        return args_def, body_def, call_args_def, \
-               method, error_check, success_key_name
+        if success_key_name is None:
+            success_key_name = ""
+        else:
+            success_key_name = f', "{success_key_name}"'
+
+        return args_def, body_def, call_args_def, method, \
+               error_check, success_key_name, have_path_param
 
     @staticmethod
     def _finalize(indices, name, base_dir_name):
@@ -480,10 +499,12 @@ class Rpc(APIRenderTask):
         """
         os.makedirs(base_dir_name, exist_ok=True)
         tmpl = f"class {name.capitalize()}(%s):\n    pass"
+
         with open(os.path.join(base_dir_name, "__init__.py"), "w") as f:
             f.write(f"# {name} API\n")
             import_str = ""
             base_str = ""
+
             for key, val in indices.items():
                 import_str += f"from .{val} import {key}\n"
                 base_str += f"{key}, "
@@ -499,3 +520,11 @@ class Rpc(APIRenderTask):
             "-b", "--base",
             default="apistellar.helper:RestfulApi",
             help="rpc基类 eg：apistellar.helper:RestfulApi")
+
+        sub_parser.add_argument(
+            "-ct", "--conn-timeout", type=int,
+            help="连接超时时间， 单位：秒")
+
+        sub_parser.add_argument(
+            "-rt", "--read-timeout", type=int,
+            help="数据读取时间， 单位：秒")

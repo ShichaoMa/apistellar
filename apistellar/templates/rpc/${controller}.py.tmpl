@@ -1,20 +1,18 @@
 # {{doc_name}} PRC调用
 import typing
 
+from apistellar.helper import register
 from aiohttp import ClientSession, FormData
 from {{base_module}} import {{base_class}}
-from apistellar.helper import register
 
 
 class {{"".join(map(str.capitalize, controller.split("_")))}}({{base_class}}):
     # 这个url会被连接上域名和注册的endpoint之后注入到方法中使用。
     url = None  # type: str
-{% for index, interface in enumerate(interfaces) %}{% set args_def, body_def, call_args_def, resp_method, error_check, success_key_name = agg(interface) %}
-    @register("{{interface["endpoint"]}}", {{success_key_name.__repr__() +", " if success_key_name else ""}}error_check={{error_check}})
-    async def {{"_".join(interface["endpoint"].strip("/").split("/"))}}(self, {{args_def}}):
-        async with ClientSession(
-                conn_timeout=10, read_timeout=10, cookies=cookies) as session:
-{{body_def}}
-            resp = await session.{{interface["method"].lower()}}(self.url{{call_args_def}})
-            return await resp.{{resp_method}}()
+    session = None  # type: ClientSession
+{% for index, interface in enumerate(interfaces) %}{% set args_def, body_def, call_args_def, resp_method, error_check, success_key_name, have_path_param = agg(interface) %}
+    @register("{{interface["endpoint"]}}"{{success_key_name}}{{error_check}}{{conn_timeout}}{{read_timeout}}{{have_path_param}})
+    async def {{interface["name"]}}(self, {{args_def}}):
+{{url_def}}{{body_def}}        resp = await self.session.{{interface["method"].lower()}}(self.url{{call_args_def}})
+        return await resp.{{resp_method}}()
 {% endfor %}

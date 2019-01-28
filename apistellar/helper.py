@@ -229,7 +229,7 @@ def routing(controller):
         if hasattr(prop, "routes"):
             for route in prop.routes:
                 route.controller = instance
-                add_annotation(route.handler, get_base(controller))
+                add_annotation(route.handler, _find_ancestor(controller))
                 routes.append(route)
 
     for child_controller in controller.__subclasses__():
@@ -239,17 +239,6 @@ def routing(controller):
 
     if routes:
         return Include(controller.prefix, controller.name, routes)
-
-
-def get_base(cls):
-    """
-    获取除object外的祖先类
-    :param cls:
-    :return:
-    """
-    if cls.__base__ == object:
-        return cls
-    return get_base(cls.__base__)
 
 
 def add_annotation(method, annotation, arg_name="self"):
@@ -671,13 +660,14 @@ def path_repl(mth):
     return "{" + mth.group(1).lstrip("+") + "}"
 
 
-def _find_ancestor(cls):
+def _find_ancestor(cls, until_not_have=None):
     """
-    找到非object祖先类
+    查找祖先，直到祖先为object或者祖先没有until_not_have这个属性时，返回当前类。
     :param cls:
     :return:
     """
-    if cls.__base__ == object:
+    if until_not_have and not hasattr(cls.__base__, until_not_have) \
+            or cls.__base__ == object:
         return cls
     return _find_ancestor(cls.__base__)
 
@@ -726,7 +716,8 @@ def register(url, path=None, error_check=None, conn_timeout=9,
                     conn_timeout=conn_timeout, read_timeout=read_timeout,
                     cookies=cookies) as session:
                 self = args[0]
-                u = _find_ancestor(self.__class__).url(self, url)
+                u = _find_ancestor(self.__class__, "url").url(self, url)
+
                 if have_path_param:
                     callargs = get_callargs(func, *args, **kwargs)
                     path_params = callargs.pop("path_params", None)

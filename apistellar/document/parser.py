@@ -414,18 +414,17 @@ class RstDocParserDocParser(Parser):
     @staticmethod
     def _enrich_params_from_example(attributes, params, name):
         examples = attributes.get("examples")
-
         for example in examples:
             try:
                 ex_data = json.loads(example.strip("`json"))
 
                 for ex_name, ex in ex_data.items():
-                    exs = params.setdefault(
-                        ex_name, dict()).setdefault("examples", [])
-                    params.setdefault(ex_name, dict())["type"] = type(
-                        ex).__name__
-                    exs.append(f"`{json.dumps(ex)}`")
-
+                    param = dict()
+                    param.setdefault(
+                        "examples", []).append(f"`{json.dumps(ex)}`")
+                    param["type"] = type(ex).__name__
+                    param["desc"] = attributes["desc"]
+                    params[ex_name] = param
             except json.JSONDecodeError as e:
                 print(f"Example format error "
                       f"of {attributes['endpoint']} :{name}")

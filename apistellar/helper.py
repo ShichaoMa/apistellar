@@ -18,6 +18,7 @@ from types import FunctionType, MethodType
 from asyncio import Future, get_event_loop
 from argparse import Action, _SubParsersAction
 
+from toolkit import find_ancestor
 from apistar import Include, Route
 from apistar.http import PathParams, Response
 from apistar.server.asgi import ASGIReceive, ASGIScope, ASGISend
@@ -229,7 +230,7 @@ def routing(controller):
         if hasattr(prop, "routes"):
             for route in prop.routes:
                 route.controller = instance
-                add_annotation(route.handler, _find_ancestor(controller))
+                add_annotation(route.handler, find_ancestor(controller))
                 routes.append(route)
 
     for child_controller in controller.__subclasses__():
@@ -658,18 +659,6 @@ class RestfulApi(object):
 
 def path_repl(mth):
     return "{" + mth.group(1).lstrip("+") + "}"
-
-
-def _find_ancestor(cls, until_not_have=None):
-    """
-    查找祖先，直到祖先为object或者祖先没有until_not_have这个属性时，返回当前类。
-    :param cls:
-    :return:
-    """
-    if until_not_have and not hasattr(cls.__base__, until_not_have) \
-            or cls.__base__ == object:
-        return cls
-    return _find_ancestor(cls.__base__)
 
 
 def get_callargs(func, *args, **kwargs):

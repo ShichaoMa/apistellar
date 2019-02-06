@@ -1,7 +1,7 @@
 """
 PYTEST_DONT_REWRITE
 """
-from apistellar.app import Application, show_routes
+from apistellar.app import Application, show_routes, settings
 
 from apistellar.build import main
 from apistellar.build.tasks import Task
@@ -30,4 +30,4 @@ from apistellar.route import route, get, post, delete, put, options, websocket
 
 from apistellar.helper import redirect, require, return_wrapped
 
-__version__ = "1.1.21"     
+__version__ = "1.1.22"     

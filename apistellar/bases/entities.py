@@ -6,7 +6,7 @@ from urllib.parse import unquote
 from collections import namedtuple
 from flask.sessions import SecureCookieSession
 
-from toolkit import cache_classproperty
+from toolkit import global_cache_classproperty
 from toolkit.settings import SettingsLoader, Settings
 
 from .exceptions import Readonly
@@ -212,19 +212,8 @@ inject = InjectManager()
 class SettingsMixin(object):
     settings_path = None
 
-    def property(func):
-        """
-        这是一个假的property，它存在的意义在于误导pycharm，
-        使cache_classproperty可以像property一样被注释类型。
-        :param func:
-        :return:
-        """
-        return func
-
-    @property
-    @cache_classproperty
-    def settings(cls):
-        # type: () -> Settings
+    @global_cache_classproperty
+    def settings(cls): #  type: Settings
         return SettingsLoader().load(SettingsMixin.settings_path or "settings")
 
     @classmethod
@@ -232,4 +221,3 @@ class SettingsMixin(object):
         cls.settings_path = settings_path
 
 
-del SettingsMixin.property

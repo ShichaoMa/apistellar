@@ -1,9 +1,10 @@
 import os
-import sys
 import asyncio
 import logging
 import traceback
 
+from toolkit import cache_classproperty
+from toolkit.settings import Settings, FrozenSettings
 from apistar import ASyncApp, exceptions
 from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
@@ -18,9 +19,12 @@ from .helper import TypeEncoder, find_children, enhance_response
 
 __all__ = ["Application"]
 enhance_response(Response)
+# 可以序列化Type子类
 JSONResponse.options["default"] = TypeEncoder().default
 
 del JSONResponse.charset
+
+settings = FrozenSettings(Settings())
 
 
 class FixedAsyncApp(ASyncApp):
@@ -89,6 +93,12 @@ class FixedAsyncApp(ASyncApp):
         else:
             return WebSocketApp(scope, self)
 
+    @cache_classproperty
+    def settings(cls):  # type: str
+        settings = SettingsMixin.settings
+        settings._json["PROJECT_PATH"] = os.path.abspath(os.getcwd())
+        return settings
+
 
 def application(app_name,
                 template_dir=None,
@@ -105,8 +115,8 @@ def application(app_name,
     """
     logger = logging.getLogger(app_name)
     os.chdir(current_dir)
-    #sys.modules.pop(app_name, None)
     SettingsMixin.register_path(settings_path)
+    settings._json.update(FixedAsyncApp.settings._json)
 
     with AppLogPainter(logger.debug, current_dir).paint() as routes:
         components = find_children(Component)
@@ -124,7 +134,6 @@ def application(app_name,
             static_url=static_url,
             components=components,
             event_hooks=hooks)
-
         app.debug = debug
         return app
 

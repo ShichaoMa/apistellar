@@ -11,10 +11,10 @@ pytest = "*"
 pylint = "*"
 
 [packages]
-apistar = "==0.5.40"
+apistar = "<=0.5.42"
 uvicorn = "==0.2.2"
 gunicorn = "*"
-toolkity = "==1.7.28"
+toolkity = ">=1.7.28"
 ipython = "==6.4.0"
 whitenoise = "<=3.3.1"
 pyaop = "*"

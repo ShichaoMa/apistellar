@@ -1,4 +1,5 @@
 import re
+import os
 import typing
 
 from enum import Enum
@@ -7,7 +8,7 @@ from collections import namedtuple
 from flask.sessions import SecureCookieSession
 
 from toolkit import global_cache_classproperty
-from toolkit.settings import SettingsLoader, Settings
+from toolkit.settings import SettingsLoader, Settings, FrozenSettings
 
 from .exceptions import Readonly
 
@@ -20,11 +21,20 @@ DummyFlaskApp = namedtuple(
     "DummyFlaskApp",
     "session_cookie_name,secret_key,permanent_session_lifetime,config")
 
+settings = FrozenSettings(Settings())
+
 
 class File(object):
     mime_type_regex = re.compile(rb"Content-Type: (\S*)")
     content_length_regex = re.compile(rb"Content-Length: (\d*)")
-    disposition_regex = re.compile(rb'Content-Disposition: form-data(?:; name\*?=\"?(?:(?P<name_enc>[\w\-]+?)\'(?P<name_lang>\w*)\')?(?P<name>[^\";]*)\"?)?.*?(?:; filename\*?=\"?(?:(?P<enc>[\w\-]+?)\'(?P<lang>\w*)\')?(?P<filename>[^\"]*?)\"?)?(?:$|\r\n)')
+    disposition_regex = re.compile(
+        rb'Content-Disposition: form-data(?:; name\*?=\"?'
+        rb'(?:(?P<name_enc>[\w\-]+?)'
+        rb'\'(?P<name_lang>\w*)\')?'
+        rb'(?P<name>[^\";]*)\"?)?.*?(?:; filename\*?=\"?'
+        rb'(?:(?P<enc>[\w\-]+?)'
+        rb'\'(?P<lang>\w*)\')?'
+        rb'(?P<filename>[^\"]*?)\"?)?(?:$|\r\n)')
 
     def __init__(self, stream, receive, boundary, name,
                  filename, mimetype, content_length):
@@ -213,11 +223,17 @@ class SettingsMixin(object):
     settings_path = None
 
     @global_cache_classproperty
-    def settings(cls): #  type: Settings
-        return SettingsLoader().load(SettingsMixin.settings_path or "settings")
-
-    @classmethod
-    def register_path(cls, settings_path):
-        cls.settings_path = settings_path
+    def settings(cls):  # type: Settings
+        return SettingsLoader().load(
+            SettingsMixin.settings_path or "settings",
+            default={"PROJECT_PATH": os.path.abspath(os.getcwd())})
 
 
+def init_settings(settings_path):
+    """
+    初始化settings
+    :param settings_path:
+    :return:
+    """
+    SettingsMixin.settings_path = settings_path
+    settings._json.update(SettingsMixin.settings._json)

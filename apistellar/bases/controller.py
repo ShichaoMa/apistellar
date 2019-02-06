@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-from ..route import route
+from apistellar.route import route
 
 
 @route("", name="view")

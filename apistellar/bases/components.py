@@ -1,3 +1,4 @@
+import os
 import typing
 import inspect
 
@@ -110,6 +111,7 @@ class DummyFlaskAppComponent(Component):
             'SESSION_REFRESH_EACH_REQUEST': True,
             'SERVER_NAME': None,
         }
+        self.default_key = os.urandom(24)
 
     def resolve(self, settings: FrozenSettings,
         host: http.Header,
@@ -118,7 +120,7 @@ class DummyFlaskAppComponent(Component):
         config["SERVER_NAME"] = host or ip_host
         return DummyFlaskApp(
             config=settings.get("SESSION_CONFIG", config),
-            secret_key=settings.get("SECRET_KEY"),
+            secret_key=settings.get("SECRET_KEY", self.default_key),
             permanent_session_lifetime=timedelta(
                 days=settings.get("PERMANENT_SESSION_LIFETIME", 31)),
             session_cookie_name=settings.get(
@@ -134,8 +136,9 @@ class SessionComponent(Component):
     def resolve(self,
                 app: DummyFlaskApp,
                 cookies: typing.Dict[str, Cookie]) -> Session:
-            request = self.dummy_request(cookies=cookies)
-            return self.session_interface.open_session(app, request)
+        request = self.dummy_request(cookies=cookies)
+        session = self.session_interface.open_session(app, request)
+        return session
 
 
 class FileStreamComponent(Component):

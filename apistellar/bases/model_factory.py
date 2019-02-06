@@ -1,3 +1,4 @@
+# 过时
 from .metas import ModelFactoryMeta
 from .components import Component
 

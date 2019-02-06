@@ -3,19 +3,17 @@ import asyncio
 import logging
 import traceback
 
-from toolkit import cache_classproperty
-from toolkit.settings import Settings, FrozenSettings
 from apistar import ASyncApp, exceptions
 from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 from apistar.server.asgi import ASGIScope, ASGISend
-from apistellar.document import ShowLogPainter, AppLogPainter
 
-from .bases.websocket import WebSocketApp
-from .bases.entities import SettingsMixin
-from .bases.components import Component, ValidateRequestDataComponent
-from .bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
-from .helper import TypeEncoder, find_children, enhance_response
+from apistellar.bases.websocket import WebSocketApp
+from apistellar.document import ShowLogPainter, AppLogPainter
+from apistellar.bases.entities import init_settings, settings
+from apistellar.bases.components import Component, ValidateRequestDataComponent
+from apistellar.bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
+from apistellar.helper import TypeEncoder, find_children, enhance_response
 
 __all__ = ["Application"]
 enhance_response(Response)
@@ -23,8 +21,6 @@ enhance_response(Response)
 JSONResponse.options["default"] = TypeEncoder().default
 
 del JSONResponse.charset
-
-settings = FrozenSettings(Settings())
 
 
 class FixedAsyncApp(ASyncApp):
@@ -93,19 +89,9 @@ class FixedAsyncApp(ASyncApp):
         else:
             return WebSocketApp(scope, self)
 
-    @cache_classproperty
-    def settings(cls):  # type: str
-        settings = SettingsMixin.settings
-        settings._json["PROJECT_PATH"] = os.path.abspath(os.getcwd())
-        return settings
-
 
 def application(app_name,
-                template_dir=None,
-                static_dir=None,
                 packages=None,
-                schema_url='/schema/',
-                docs_url='/docs/',
                 static_url='/static/',
                 settings_path="settings",
                 debug=True,
@@ -115,8 +101,7 @@ def application(app_name,
     """
     logger = logging.getLogger(app_name)
     os.chdir(current_dir)
-    SettingsMixin.register_path(settings_path)
-    settings._json.update(FixedAsyncApp.settings._json)
+    init_settings(settings_path)
 
     with AppLogPainter(logger.debug, current_dir).paint() as routes:
         components = find_children(Component)
@@ -126,11 +111,11 @@ def application(app_name,
         hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks
         app = FixedAsyncApp(
             routes,
-            template_dir=template_dir,
-            static_dir=static_dir,
+            template_dir=settings.get("TEMPLATE_DIR"),
+            static_dir=settings.get("STATIC_DIR"),
             packages=packages,
-            schema_url=schema_url,
-            docs_url=docs_url,
+            schema_url=None,
+            docs_url=None,
             static_url=static_url,
             components=components,
             event_hooks=hooks)

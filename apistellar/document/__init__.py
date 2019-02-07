@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from toolkit import cache_property, load
 
 from apistellar.bases.controller import Controller
+from apistellar.bases.entities import init_settings
 from apistellar.helper import load_packages, routing
 
 from .parser import LogParser
@@ -19,8 +20,9 @@ class Painter(ABC):
     """
     routes = None
 
-    def __init__(self, current_dir):
+    def __init__(self, current_dir, settings_path=None):
         self.current_dir = current_dir
+        self.settings_path = settings_path
 
     @cache_property
     def routes(self):
@@ -32,7 +34,7 @@ class Painter(ABC):
         sys.path.insert(0, self.current_dir)
         self.current_dir, app_name = os.path.split(self.current_dir.rstrip("/"))
         sys.path.insert(0, self.current_dir)
-
+        init_settings(self.settings_path)
         load_packages(self.current_dir, app_name)
         include = routing(Controller)
         routes = [include] if include else []
@@ -51,8 +53,8 @@ class LogPainter(Painter):
     打印route的简单信息，如日志等
     """
 
-    def __init__(self, write, format, current_dir):
-        super(LogPainter, self).__init__(current_dir)
+    def __init__(self, write, format, current_dir, settings_path=None):
+        super(LogPainter, self).__init__(current_dir, settings_path)
         self.write = write
         self.format = format
         self.parser = LogParser()
@@ -74,8 +76,9 @@ class AppLogPainter(LogPainter):
     在app启动时的routes日志输出
     """
 
-    def __init__(self, write, current_dir):
-        super(AppLogPainter, self).__init__(write, self._format, current_dir)
+    def __init__(self, write, current_dir, settings_path):
+        super(AppLogPainter, self).__init__(
+            write, self._format, current_dir, settings_path)
 
     @staticmethod
     def _format(method, parttern, name, ca_name):

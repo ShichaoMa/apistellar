@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 import logging
 import traceback
@@ -101,9 +102,8 @@ def application(app_name,
     """
     logger = logging.getLogger(app_name)
     os.chdir(current_dir)
-    init_settings(settings_path)
 
-    with AppLogPainter(logger.debug, current_dir).paint() as routes:
+    with AppLogPainter(logger.debug, current_dir, settings_path).paint() as routes:
         components = find_children(Component)
         # ValidateRequestDataComponent是用来兜底的，所以要放到最后
         components.append(ValidateRequestDataComponent())

@@ -1,19 +1,20 @@
+import os
 import pytest
 
 from aiohttp import ClientSession
 from apistar.http import Response
-from apistellar import Controller, get, route, Application
+from apistellar import Controller, get, route, Application, show_routes
 
 
 @route("/exception")
 class ExceptionController(Controller):
 
     @get("/")
-    def exception():
+    def exception(self):
         1/0
 
     @get("/response")
-    def exception_response():
+    def exception_response(self):
         try:
             1/0
         except ZeroDivisionError:
@@ -91,3 +92,26 @@ class TestException(object):
 @pytest.mark.prop("apistellar.app.routing", ret_val=[])
 def test_app_no_route():
     Application("test")
+
+
+@pytest.mark.prop("apistellar.helper.routing", ret_val=[])
+@pytest.mark.path(os.path.dirname(__file__))
+def test_show_routes_without_include(capsys):
+    show_routes()
+    captured = capsys.readouterr()
+    assert captured.out.count("Noting to route. ")
+
+
+@pytest.mark.path(os.path.dirname(__file__))
+def test_show_routes_with_include(capsys):
+    @route("/")
+    class HaveRoutes(Controller):
+        @get("/")
+        def hello(self):
+            pass
+
+    show_routes()
+    captured = capsys.readouterr()
+    assert captured.out.count(
+        "view:haveroutes:hello                    GET     /                                        test_app:HaveRoutes#hello")
+

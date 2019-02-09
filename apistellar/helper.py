@@ -297,47 +297,6 @@ def parse_date(ims):
         return None
 
 
-def parse_range_header(header, maxlen=0):
-    """
-    Yield (start, end) ranges parsed from a HTTP Range header. Skip
-        unsatisfiable ranges. The end index is non-inclusive.
-    :param header:
-    :param maxlen:
-    :return:
-    """
-    if not header or header[:6] != 'bytes=': return
-    ranges = [r.split('-', 1) for r in header[6:].split(',') if '-' in r]
-    for start, end in ranges:
-        try:
-            if not start:  # bytes=-100    -> last 100 bytes
-                start, end = max(0, maxlen-int(end)), maxlen
-            elif not end:  # bytes=100-    -> all but the first 99 bytes
-                start, end = int(start), maxlen
-            else:          # bytes=100-200 -> bytes 100-200 (inclusive)
-                start, end = int(start), min(int(end)+1, maxlen)
-            if 0 <= start < end <= maxlen:
-                yield start, end
-        except ValueError:
-            pass
-
-
-async def file_iter_range(fp, offset, bytes, maxread=1024*1024):
-    """
-    Yield chunks from a range in a file. No chunk is bigger than maxread.
-    :param fp:
-    :param offset:
-    :param bytes:
-    :param maxread:
-    :return:
-    """
-    await fp.seek(offset)
-    while bytes > 0:
-        part = await fp.read(min(bytes, maxread))
-        if not part: break
-        bytes -= len(part)
-        yield part
-
-
 class TypeEncoder(json.JSONEncoder):
     options = {Mapping: dict}
 

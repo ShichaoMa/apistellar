@@ -13,6 +13,7 @@ from werkzeug.http import parse_options_header
 from werkzeug.datastructures import ImmutableMultiDict
 from flask.sessions import SecureCookieSessionInterface
 
+from apistar.exceptions import BadRequest
 from apistar.server.asgi import ASGIReceive
 from apistar.conneg import negotiate_content_type
 from apistar.server.asgi import ASGI_COMPONENTS
@@ -26,15 +27,13 @@ from .entities import Session, Cookie, FormParam, FileStream, DummyFlaskApp, \
     SettingsMixin, MultiPartForm, UrlEncodeForm
 
 
-class Component(_Component):
-
+class IdentityInterface(object):
     def identity(self, parameter: inspect.Parameter):
         """
         修复annotation_name重名的Bug
         """
         parameter_name = parameter.name.lower()
         annotation_name = str(parameter.annotation)
-
         # If `resolve_parameter` includes `Parameter` then we use an identifier
         # that is additionally parameterized by the parameter name.
         args = inspect.signature(self.resolve).parameters.values()
@@ -44,18 +43,20 @@ class Component(_Component):
         # Standard case is to use the class name, lowercased.
         return annotation_name
 
-    def resolve(self, *args, **kwargs) -> object:
+    def resolve(self):
+        raise NotImplementedError()
+
+
+class Component(IdentityInterface, _Component):
+
+    def resolve(self, *args, **kwargs):
         raise NotImplementedError()
 
     def can_handle_parameter(self, parameter: inspect.Parameter):
         """重写这个方法是为了增加typing.Union类型的判定"""
         return_annotation = inspect.signature(self.resolve).return_annotation
         if return_annotation is inspect.Signature.empty:
-            msg = (
-                'Component "%s" must include a return annotation on the '
-                '`resolve()` method, or override `can_handle_parameter`'
-            )
-            raise exceptions.ConfigurationError(msg % self.__class__.__name__)
+            return False
         return type(return_annotation) == typing._Union and \
                parameter.annotation in return_annotation.__args__ or \
                parameter.annotation is return_annotation
@@ -144,29 +145,22 @@ class SessionComponent(Component):
 class FileStreamComponent(Component):
     media_type = 'multipart/form-data'
 
-    async def decode(self, receive, headers):
-        try:
-            mime_type, mime_options = parse_options_header(
-                headers['content-type'])
-        except KeyError:
-            mime_type, mime_options = '', {}
-
-        boundary = mime_options.get('boundary', "").encode()
-        if boundary is None:
-            raise ValueError('Missing boundary')
-
-        return FileStream(receive, boundary)
+    async def decode(self, receive, content_type):
+        mime_type, mime_options = parse_options_header(content_type)
+        boundary = mime_options.get('boundary')
+        if not boundary:
+            raise BadRequest('Missing boundary')
+        return FileStream(receive, boundary.encode())
 
     async def resolve(self,
                       receive: ASGIReceive,
-                      headers: http.Headers,
                       content_type: http.Header) -> FileStream:
         try:
             negotiate_content_type([self], content_type)
         except exceptions.NoCodecAvailable:
             raise exceptions.UnsupportedMediaType()
 
-        return await self.decode(receive, headers)
+        return await self.decode(receive, content_type)
 
 
 class FormParamComponent(Component):
@@ -179,39 +173,33 @@ class FormParamComponent(Component):
         return FormParam(form.get(name, parameter.default))
 
 
-class ValidateRequestDataComponent(_Component):
+class ComposeTypeComponent(IdentityInterface, _Component):
     """
-    当不存在可以处理model的factory时，使用这个类来接管，将request data生成model对象
+    使用request_data和query_params来生成model
     """
-    def identity(self, parameter: inspect.Parameter):
-        """
-        修复annotation_name重名的Bug
-        """
-        parameter_name = parameter.name.lower()
-        annotation_name = str(parameter.annotation)
-        # If `resolve_parameter` includes `Parameter` then we use an identifier
-        # that is additionally parameterized by the parameter name.
-        args = inspect.signature(self.resolve).parameters.values()
-        if inspect.Parameter in [arg.annotation for arg in args]:
-            return annotation_name + ':' + parameter_name
-
-        # Standard case is to use the class name, lowercased.
-        return annotation_name
 
     def can_handle_parameter(self, parameter: inspect.Parameter):
         return issubclass(parameter.annotation, Type)
 
     def resolve(self,
                 route: Route,
-                data: http.RequestData):
-        body_field = route.link.get_body_field()
-        if not body_field or not body_field.schema:
-            return data
+                data: http.RequestData,
+                parameter: inspect.Parameter,
+                query_params: http.QueryParams):
+        data = data or query_params
+        if not data:
+            if parameter.default != inspect._empty:
+                data = parameter.default
+            else:
+                raise BadRequest(f"{parameter.name} cannot be empty!")
 
         if isinstance(data, ImmutableMultiDict):
             data = self._change_to_dict(data)
-        validator = body_field.schema
-        return validator.model(data)
+
+        try:
+            return parameter.annotation(data)
+        except Exception:
+            return data
 
     @staticmethod
     def _change_to_dict(data):

@@ -7,7 +7,7 @@ from apistar.server.validation import VALIDATION_COMPONENTS
 
 from apistellar.bases.entities import init_settings
 from apistellar.helper import load_packages, find_children, STATE, INITIAL
-from apistellar.bases.components import Component, ValidateRequestDataComponent
+from apistellar.bases.components import Component, ComposeTypeComponent
 
 
 class Manager(object):
@@ -27,7 +27,7 @@ class Manager(object):
         self.state = STATE
         self.state["app"] = self
         self.components = find_children(Component)
-        self.components.append(ValidateRequestDataComponent())
+        self.components.append(ComposeTypeComponent())
         self.injector = ASyncInjector(
             list(ASGI_COMPONENTS + VALIDATION_COMPONENTS) + self.components,
             INITIAL)

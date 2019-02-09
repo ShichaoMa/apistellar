@@ -1,5 +1,29 @@
 # apistellar WEB框架
 
+## Badge
+
+### GitHub
+
+[![GitHub followers](https://img.shields.io/github/followers/shichaoma.svg?label=github%20follow)](https://github.com/shichao.ma)
+[![GitHub repo size in bytes](https://img.shields.io/github/repo-size/shichaoma/apistellar.svg)](https://github.com/shichaoma/apistellar)
+[![GitHub stars](https://img.shields.io/github/stars/shichaoma/apistellar.svg?label=github%20stars)](https://github.com/shichaoma/apistellar)
+[![GitHub release](https://img.shields.io/github/release/shichaoma/apistellar.svg)](https://github.com/shichaoma/apistellar/releases)
+[![Github commits (since latest release)](https://img.shields.io/github/commits-since/shichaoma/apistellar/latest.svg)](https://github.com/shichaoma/apistellar)
+
+[![Github All Releases](https://img.shields.io/github/downloads/shichaoma/apistellar/total.svg)](https://github.com/shichaoma/apistellar/releases)
+[![GitHub Release Date](https://img.shields.io/github/release-date/shichaoma/apistellar.svg)](https://github.com/shichaoma/apistellar/releases)
+
+### PyPi
+
+[![PyPI](https://img.shields.io/pypi/v/apistellar.svg)](https://pypi.org/project/apistellar/)
+[![PyPI - Wheel](https://img.shields.io/pypi/wheel/apistellar.svg)](https://pypi.org/project/apistellar/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/apistellar.svg)](https://pypi.org/project/apistellar/)
+[![PyPI - Format](https://img.shields.io/pypi/format/apistellar.svg)](https://pypi.org/project/apistellar/)
+[![PyPI - Implementation](https://img.shields.io/pypi/implementation/apistellar.svg)](https://pypi.org/project/apistellar/)
+[![PyPI - Status](https://img.shields.io/pypi/status/apistellar.svg)](https://pypi.org/project/apistellar/)
+
+## DESC
+
 apistellar是基于apistar的web构建工具，同时增强了apistar的功能，使用apistellar可以轻松构建适合生产环境的web项目。
 
 apistellar部分设计灵感参考ruby on rails
@@ -17,14 +41,14 @@ apistellar部分设计灵感参考ruby on rails
 - 提供上传文件流对象，对大文件上传完美支持。
 - Apistar作者在uvicorn中提供了websocket支持，但是未集成到apistar中，apistellar对二者进行了集成，完美支持websocket。
 
-# INSTALL
+## INSTALL
 ```
 # python 3.6 required
 pip install apistellar
 ```
 
-# DOC
-## 目录
+## DOC
+### 目录
 
 - [Quick Start](https://github.com/ShichaoMa/apistellar/wiki/Quick-Start)
 - [apistellar项目组成](https://github.com/ShichaoMa/apistellar/wiki/apistellar项目组成)

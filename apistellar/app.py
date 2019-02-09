@@ -12,7 +12,7 @@ from apistar.server.asgi import ASGIScope, ASGISend
 from apistellar.bases.websocket import WebSocketApp
 from apistellar.document import ShowLogPainter, AppLogPainter
 from apistellar.bases.entities import init_settings, settings
-from apistellar.bases.components import Component, ValidateRequestDataComponent
+from apistellar.bases.components import Component, ComposeTypeComponent
 from apistellar.bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from apistellar.helper import TypeEncoder, find_children, enhance_response
 
@@ -105,8 +105,8 @@ def application(app_name,
 
     with AppLogPainter(logger.debug, current_dir, settings_path).paint() as routes:
         components = find_children(Component)
-        # ValidateRequestDataComponent是用来兜底的，所以要放到最后
-        components.append(ValidateRequestDataComponent())
+        # ComposeTypeComponent是用来兜底的，所以要放到最后
+        components.append(ComposeTypeComponent())
         custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
         hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks
         app = FixedAsyncApp(

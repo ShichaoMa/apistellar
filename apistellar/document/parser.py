@@ -142,6 +142,12 @@ class RstDocParserDocParser(Parser):
     regex_tail = f"(?=(?:{'|'.join('(?::%s)' % type for type in types)}|$))"
 
     def parse_docs(self, routes):
+        """
+        从路由信息中获取可用于渲染文档的信息
+
+        :param routes:
+        :return:
+        """
         docs = OrderedDict()
 
         for route, parents in self.walk_route(routes):
@@ -178,6 +184,7 @@ class RstDocParserDocParser(Parser):
         """
         找到一个可以唯一描述的名字，去掉非法字符，
         如果首字母是数字将其转换成英文，如果是关键字加个_
+
         :param route:
         :param endpoint:
         :return:
@@ -191,6 +198,13 @@ class RstDocParserDocParser(Parser):
         return name
 
     def _extract_info(self, route, parents):
+        """
+        获取每篇文档的具体信息
+
+        :param route:
+        :param parents:
+        :return:
+        """
         info = dict()
         handler = route.handler
         type_info = dict()
@@ -235,15 +249,19 @@ class RstDocParserDocParser(Parser):
 
             elif issubclass(param.annotation, Type):
                 model_params = self._get_params_attr(param, handler.__doc__)
-                # 用户指定了从表单中过来的model而不是json
-                if model_params["type"] == "form":
-                    model_params["type"] = self._get_module_class_name(
-                        param.annotation)
-                    self._inline_example(model_params)
-                    form_params[param.name] = model_params
-                else:
+                # 用户指定了是从表单中过来的model而不是从json过来的
+                if model_params["type"] not in ("form", "query"):
                     json_params = model_params
                     json_params["model_type"] = self._get_module_class_name(
+                        param.annotation)
+                else:
+                    self._inline_example(model_params)
+                    name = self._get_model_args_name(param.annotation)
+                    if model_params["type"] == "form":
+                        form_params[name] = model_params
+                    else:
+                        params[name] = model_params
+                    model_params["type"] = self._get_module_class_name(
                         param.annotation)
                 self._enrich_type_info(sign.return_annotation, type_info)
 
@@ -284,6 +302,19 @@ class RstDocParserDocParser(Parser):
                                          return_wrapped["success_key_name"],
                                          info["return_type"])
         return info
+
+    @staticmethod
+    def _get_model_args_name(cls):
+        index = 0
+        names = list()
+        for name in cls.validator.properties:
+            if index > 2:
+                names.append("...")
+                break
+            else:
+                names.append(name)
+                index += 1
+        return ",".join(names)
 
     def _is_type_like_class(self, cls):
         if hasattr(cls, "__args__"):
@@ -349,8 +380,8 @@ class RstDocParserDocParser(Parser):
             desc = self._extract_param_desc(doc, param.name)
             if desc:
                 attributes["desc"] = desc.strip()
-            attributes["examples"] = self._extract_param_example(doc,
-                                                                param.name)
+            attributes["examples"] = self._extract_param_example(
+                doc, param.name)
 
         return attributes
 

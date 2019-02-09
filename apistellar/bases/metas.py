@@ -124,7 +124,6 @@ async def resolve(self{}):
 
         product_method = props.get("product")
         return_type = product_method.__annotations__.get("return")
-        assert return_type, "product need return type!"
         inject_props, assignment_props = list(), list()
         name_str = mcs.extract(product_method, inject_props)
         return_str = f"return await self.product({name_str})"
@@ -154,6 +153,7 @@ async def resolve(self{}):
         exec(func_def, namespace)
         props["resolve"] = namespace["resolve"]
         cls = super().__new__(mcs, class_name, bases, props)
-        props["resolve"].__annotations__['return'] = return_type
+        if return_type:
+            props["resolve"].__annotations__['return'] = return_type
         props["resolve"].__globals__[class_name] = cls
         return cls

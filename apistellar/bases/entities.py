@@ -13,14 +13,18 @@ from toolkit.settings import SettingsLoader, Settings, FrozenSettings
 from .exceptions import Readonly
 
 Cookie = typing.NewType('Cookie', str)
+# 用于标记已知名字的表单字段
 FormParam = typing.NewType("FormParam", str)
 Session = typing.NewType("Session", SecureCookieSession)
+# 这种类型用于标记有且只有文件的表单
 MultiPartForm = typing.NewType("MultiPartForm", dict)
+# 这种类型用于标记不存在文件的表单
 UrlEncodeForm = typing.NewType("UrlEncodeForm", dict)
 DummyFlaskApp = namedtuple(
     "DummyFlaskApp",
     "session_cookie_name,secret_key,permanent_session_lifetime,config")
 
+# 全局settings对象，使用init_settings来初始化
 settings = FrozenSettings(Settings())
 
 
@@ -68,7 +72,9 @@ class File(object):
         while True:
             # 如果存在read过程中剩下的，则直接返回
             if self._last:
-                yield self._last
+                read = self._last
+                self._last = b""
+                yield read
                 continue
 
             index = self.stream.body.find(self.tmpboundary)
@@ -79,11 +85,12 @@ class File(object):
                 self._size += len(read)
                 yield read
                 if self._last:
-                    yield self._last
+                    read = self._last
+                    self._last = b""
+                    yield read
                 break
             else:
-                if self.stream.closed:
-                    raise RuntimeError("Uncomplete content!")
+                assert not self.stream.closed, "Content not complete!"
                 # 若没有找到分隔线，为了防止分隔线被读取了一半
                 # 选择只返回少于分隔线长度的部分body
                 read = stream.body[:-self.boundary_len]
@@ -93,6 +100,12 @@ class File(object):
                 await self.get_message(self.receive, stream)
 
     async def read(self, size=10240):
+        """
+        推荐直接迭代File对象，性能较好
+
+        :param size:
+        :return:
+        """
         read = b""
         assert size > 0, (999, "Read size must > 0")
         while len(read) < size:
@@ -102,22 +115,22 @@ class File(object):
                 return read
             read = read + buffer
             read, self._last = read[:size], read[size:]
+
         return read
 
     @staticmethod
     async def get_message(receive, stream):
         message = await receive()
 
-        if not message['type'] == 'http.request':
-            raise RuntimeError(
-                f"Unexpected ASGI message type: {message['type']}.")
+        assert message['type'] == 'http.request', \
+            f"Unexpected ASGI message type: {message['type']}."
 
         if not message.get('more_body', False):
             stream.closed = True
         stream.body += message.get("body", b"")
 
     def tell(self):
-        return self._size
+        return self._size - len(self._last)
 
     @classmethod
     async def from_boundary(cls, stream, receive, boundary):
@@ -224,6 +237,13 @@ class SettingsMixin(object):
 
     @global_cache_classproperty
     def settings(cls):  # type: Settings
+        """
+        这个应该在app加载时调用，这样project_path才准确。
+        由于有些项目可能在模块作用域就需要使用settings中的配置，
+        所以调用应该在项目模块加载之前。
+
+        :return:
+        """
         return SettingsLoader().load(
             SettingsMixin.settings_path or "settings",
             default={"PROJECT_PATH": os.path.abspath(os.getcwd())})

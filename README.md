@@ -72,7 +72,7 @@ pip install apistellar
 
 参考资料
 
-[asgi web框架 APIStar----终于等到你...](https://zhuanlan.zhihu.com/p/36297606)
-[妈妈再也不用担心我不写文档了，RESTful API文档一键生成！](https://zhuanlan.zhihu.com/p/55784077)
-[RESTful服务构建利器apistellar深度剖析](https://zhuanlan.zhihu.com/p/41843954)
-[asgi协议](https://github.com/django/asgiref/blob/master/specs/www.rst)
+- [asgi web框架 APIStar----终于等到你...](https://zhuanlan.zhihu.com/p/36297606)
+- [妈妈再也不用担心我不写文档了，RESTful API文档一键生成！](https://zhuanlan.zhihu.com/p/55784077)
+- [RESTful服务构建利器apistellar深度剖析](https://zhuanlan.zhihu.com/p/41843954)
+- [asgi协议](https://github.com/django/asgiref/blob/master/specs/www.rst)

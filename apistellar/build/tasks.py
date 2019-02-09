@@ -277,8 +277,8 @@ class APIRenderTask(Task):
         :param indices:
         """
 
-    @staticmethod
-    def _finalize(indices: dict, name: str, base_dir_name: str):
+    @classmethod
+    def _finalize(cls, indices: dict, name: str, base_dir_name: str):
         """
         使indices等数据生成一个索引页或执行其它收尾工作
         :param indices:
@@ -306,8 +306,7 @@ class Document(APIRenderTask):
         :param indices:
         :return:
         """
-        fn = os.path.join(
-            doc["dirname"], doc["file_path"], doc["doc_name"] + ".md.html")
+        fn = join(doc["file_path"], doc["doc_name"] + ".md.html")
         indices[fn] = doc["doc_name"]
 
     @classmethod
@@ -339,8 +338,8 @@ class Document(APIRenderTask):
         if "form_params" in interface:
             yield ("表单参数", interface["form_params"])
 
-    @staticmethod
-    def _finalize(indices, name, base_dir_name):
+    @classmethod
+    def _finalize(cls, indices, name, base_dir_name):
         """
         渲染markdown文档成html，并添加一个目录，同时打开文档
         :param indices:
@@ -350,25 +349,40 @@ class Document(APIRenderTask):
         """
         os.makedirs(base_dir_name, exist_ok=True)
         with open(os.path.join(base_dir_name, "index.md"), "w") as f:
-            f.write(f"# {name}\n\n")
-            for index, (key, val) in enumerate(indices.items()):
-                f.write(f"{index+1}. [{val}]({key})\n")
+            cls._write_index(f, indices, name)
+            print(f"{name}已创建。")
+            with MarkDownRender("github-markdown.css", base_dir_name) as mkr:
+                output = mkr.render()
 
-        print(f"{name}已创建。")
-        with MarkDownRender("github-markdown.css", base_dir_name) as mk_render:
-            output = mk_render.render()
+            if output:
+                try:
+                    os.system(f"open {output}")
+                except Exception:
+                    print(f"打开{output}失败! ")
+            else:
+                print("未找到可打开的文档！")
+            cls._write_index(f, indices, name, link_html=False)
 
-        if output:
-            try:
-                os.system(f"open {output}")
-            except Exception:
-                print(f"打开{output}失败! ")
-        else:
-            print("未找到可打开的文档！")
-
-    @classmethod
-    def enrich_parser(cls, sub_parser):
-        super().enrich_parser(sub_parser)
+    @staticmethod
+    def _write_index(file, indices, name, link_html=True):
+        """
+        向目录中写入内容。
+        :param file: 目录文件
+        :param indices: 目录索引
+        :param name: 文档名称
+        :param link_html: 目录markdown文件链接到的索引是否是html文件，否则是md文件,
+                          之所以以这两遍，是因为第一遍写入html索引连接，用于生成html文档
+                          第二遍写入md索引，用于生成md文档，方便在github中查看
+        :return:
+        """
+        file.seek(0)
+        file.truncate()
+        file.write(f"# {name}\n\n")
+        for index, (key, val) in enumerate(indices.items()):
+            if not link_html:
+                key = key.replace(".md.html", ".md")
+            file.write(f"{index + 1}. [{val}]({key})\n")
+        file.flush()
 
 
 class Rpc(APIRenderTask):
@@ -488,8 +502,8 @@ class Rpc(APIRenderTask):
         return args_def, body_def, call_args_def, method, \
                error_check, success_key_name, have_path_param
 
-    @staticmethod
-    def _finalize(indices, name, base_dir_name):
+    @classmethod
+    def _finalize(cls, indices, name, base_dir_name):
         """
         生成一个__init__.py，将所有模块中的接口结合起来
         :param indices:

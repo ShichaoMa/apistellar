@@ -22,7 +22,7 @@
 [![PyPI - Implementation](https://img.shields.io/pypi/implementation/apistellar.svg)](https://pypi.org/project/apistellar/)
 [![PyPI - Status](https://img.shields.io/pypi/status/apistellar.svg)](https://pypi.org/project/apistellar/)
 
-## DESC
+## Desc
 
 apistellar是基于apistar的web构建工具，同时增强了apistar的功能，使用apistellar可以轻松构建适合生产环境的web项目。
 
@@ -41,38 +41,38 @@ apistellar部分设计灵感参考ruby on rails
 - 提供上传文件流对象，对大文件上传完美支持。
 - Apistar作者在uvicorn中提供了websocket支持，但是未集成到apistar中，apistellar对二者进行了集成，完美支持websocket。
 
-## INSTALL
+## Install
 ```
 # python 3.6 required
 pip install apistellar
 ```
 
-## DOC
+## Doc
 ### 目录
 
-- [Quick Start](https://github.com/ShichaoMa/apistellar/wiki/Quick-Start)
-- [apistellar项目组成](https://github.com/ShichaoMa/apistellar/wiki/apistellar项目组成)
-- [model的使用方法](https://github.com/ShichaoMa/apistellar/wiki/model的使用方法)
-- [controller的使用方法](https://github.com/ShichaoMa/apistellar/wiki/controller的使用方法)
-- [service的使用方法](https://github.com/ShichaoMa/apistellar/wiki/service的使用方法)
-- [Session管理](https://github.com/ShichaoMa/apistellar/wiki/Session管理)
-- [使用require实现简单session认证](https://github.com/ShichaoMa/apistellar/wiki/使用require实现简单session认证)
-- [增强的EventHook](https://github.com/ShichaoMa/apistellar/wiki/增强的EventHook)
-- [错误码处理](https://github.com/ShichaoMa/apistellar/wiki/错误码处理)
-- [配置信息管理](https://github.com/ShichaoMa/apistellar/wiki/配置信息管理)
-- [自定义项目构建任务](https://github.com/ShichaoMa/apistellar/wiki/自定义项目构建任务)
-- [solo任务(离线任务)](https://github.com/ShichaoMa/apistellar/wiki/solo任务(离线任务))
-- [使用集成的IPython进行异步代码的调试](https://github.com/ShichaoMa/apistellar/wiki/使用集成的IPython进行异步代码的调试)
-- [大文件上传下载](https://github.com/ShichaoMa/apistellar/wiki/大文件上传下载)
-- [使用websocket进行通讯](https://github.com/ShichaoMa/apistellar/wiki/使用websocket进行通讯)
-- [使用apistellar测试插件pytest-apistellar进行单元测试](https://github.com/ShichaoMa/apistellar/wiki/使用apistellar测试插件pytest-apistellar进行单元测试)
-- [model持久化方案](https://github.com/ShichaoMa/apistellar/wiki/model%E6%8C%81%E4%B9%85%E5%8C%96%E6%96%B9%E6%A1%88)
-- [
-API接口文档自动生成](https://github.com/ShichaoMa/apistellar/wiki/API接口文档自动生成)
-- [RESTFul RPC客户端驱动包一键生成](https://github.com/ShichaoMa/apistellar/wiki/RESTFul-RPC客户端驱动包一键生成)
+1. [Quick Start](https://github.com/ShichaoMa/apistellar/wiki/Quick-Start)
+2. [apistellar项目组成](https://github.com/ShichaoMa/apistellar/wiki/apistellar项目组成)
+3. [model的使用方法](https://github.com/ShichaoMa/apistellar/wiki/model的使用方法)
+4. [controller的使用方法](https://github.com/ShichaoMa/apistellar/wiki/controller的使用方法)
+5. [service的使用方法](https://github.com/ShichaoMa/apistellar/wiki/service的使用方法)
+6. [Session管理](https://github.com/ShichaoMa/apistellar/wiki/Session管理)
+7. [使用require实现简单session认证](https://github.com/ShichaoMa/apistellar/wiki/使用require实现简单session认证)
+8. [增强的EventHook](https://github.com/ShichaoMa/apistellar/wiki/增强的EventHook)
+9. [错误码处理](https://github.com/ShichaoMa/apistellar/wiki/错误码处理)
+10. [配置信息管理](https://github.com/ShichaoMa/apistellar/wiki/配置信息管理)
+11. [自定义项目构建任务](https://github.com/ShichaoMa/apistellar/wiki/自定义项目构建任务)
+12. [solo任务(离线任务)](https://github.com/ShichaoMa/apistellar/wiki/solo任务(离线任务))
+13. [使用集成的IPython进行异步代码的调试](https://github.com/ShichaoMa/apistellar/wiki/使用集成的IPython进行异步代码的调试)
+14. [大文件上传下载](https://github.com/ShichaoMa/apistellar/wiki/大文件上传下载)
+15. [使用websocket进行通讯](https://github.com/ShichaoMa/apistellar/wiki/使用websocket进行通讯)
+16. [使用apistellar测试插件pytest-apistellar进行单元测试](https://github.com/ShichaoMa/apistellar/wiki/使用apistellar测试插件pytest-apistellar进行单元测试)
+17. [model持久化方案](https://github.com/ShichaoMa/apistellar/wiki/model%E6%8C%81%E4%B9%85%E5%8C%96%E6%96%B9%E6%A1%88)
+18. [API接口文档自动生成](https://github.com/ShichaoMa/apistellar/wiki/API接口文档自动生成)
+19. [RESTFul RPC客户端驱动包一键生成](https://github.com/ShichaoMa/apistellar/wiki/RESTFul-RPC客户端驱动包一键生成)
 
 参考资料
 
 [asgi web框架 APIStar----终于等到你...](https://zhuanlan.zhihu.com/p/36297606)
-
+[妈妈再也不用担心我不写文档了，RESTful API文档一键生成！](https://zhuanlan.zhihu.com/p/55784077)
+[RESTful服务构建利器apistellar深度剖析](https://zhuanlan.zhihu.com/p/41843954)
 [asgi协议](https://github.com/django/asgiref/blob/master/specs/www.rst)

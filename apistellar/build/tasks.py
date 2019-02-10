@@ -286,6 +286,7 @@ class APIRenderTask(Task):
         :param base_dir_name:
         :return:
         """
+
     @classmethod
     def enrich_parser(cls, sub_parser):
         sub_parser.add_argument("name", nargs=1, help="输出名称")
@@ -293,7 +294,7 @@ class APIRenderTask(Task):
         sub_parser.add_argument("-l", "--location", help="输出地址", default=".")
         sub_parser.add_argument(
             "-p", "--parser", help="parser模块地址",
-            default="apistellar.document.parser.RstDocParserDocParser")
+            default="apistellar.document.parser.RstDocParser")
 
 
 class Document(APIRenderTask):

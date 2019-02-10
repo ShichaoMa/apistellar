@@ -3,6 +3,7 @@ import os
 import json
 import typing
 import inspect
+import warnings
 
 from functools import reduce
 from collections import OrderedDict
@@ -64,6 +65,7 @@ class Parser(ABC):
 class LogParser(Parser):
 
     def parse_docs(self, routes):
+        duplicates = set()
         for route, parents in self.walk_route(routes):
             name = reduce(lambda x, y: f"{x}:{y.name}", parents[1:], "view") \
                    + ":" + route.name
@@ -71,10 +73,15 @@ class LogParser(Parser):
             ca_name = f"{cont.__module__}:{cont.__name__}" \
                       f"#{route.handler.__name__}"
             pattern = self._extract_pattern(route, parents)
+            identity = (route.method, pattern)
+            # 防止有重名冲突的路由
+            if identity in duplicates:
+                warnings.warn("Duplicate route %s:%s" % identity)
+            duplicates.add(pattern)
             yield route.method, pattern, name, ca_name
 
 
-class RstDocParserDocParser(Parser):
+class RstDocParser(Parser):
     """
     用于解析rst风格的注释，并生成文档json，用于渲染文档
     """

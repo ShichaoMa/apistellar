@@ -7,6 +7,7 @@ import warnings
 from functools import wraps
 from types import FunctionType
 from contextlib import _GeneratorContextManager
+from collections import MutableSequence, MutableSet
 
 from apistellar.helper import proxy, get_callargs
 
@@ -124,38 +125,61 @@ class _AsyncGeneratorContextManager(_GeneratorContextManager):
 
 
 class ConnectionManager(object):
+    proxy_driver_names = None
 
     @staticmethod
     def debug_callback():
         return os.getenv("UNIT_TEST_MODE", "").lower() == "true"
 
-    def __init__(self, debug_callback=None):
+    def __init__(self, debug_callback=None, proxy_driver_names: tuple=None):
         if debug_callback:
             self.debug_callback = debug_callback
+        if proxy_driver_names is not None:
+            assert isinstance(proxy_driver_names,
+                              (tuple, MutableSequence, MutableSet)), \
+                "proxy_driver_names TypeError, " \
+                "tuple, MutableSequence, MutableSet need!"
+            self.proxy_driver_names = proxy_driver_names
 
-    def __call__(self, *args, debug_callback=None):
+    @staticmethod
+    def get_generator(func, self_or_cls, need_proxy, *args, **kwargs):
+        callargs = get_callargs(func, self_or_cls, *args, **kwargs)
+        callargs.pop("cls", None)
+        # 将need_proxy代理到self_or_cls中
+        self_or_cls = proxy(self_or_cls, need_proxy, "_need_proxy")
+        return self_or_cls, self_or_cls.get_store(self_or_cls, **callargs)
+
+    def __call__(self, *args, debug_callback=None,
+                 proxy_driver_names=None, asyncable=False):
         """
         返回连接管理下的方法
         :param func:
+        :param proxy_driver_names: 可以被代理的驱动名称
+        :param asyncable: 有些方法可能是同步的，但是通过返回future来变成异步的
         :return:
         """
-        if debug_callback:
-            return self.__class__(debug_callback)
+        if debug_callback or proxy_driver_names:
+            return self.__class__(debug_callback, proxy_driver_names)
 
         func = args[0]
+
+        def need_proxy(driver_name):
+            if self.proxy_driver_names is None:
+                return True
+            return driver_name in self.proxy_driver_names
 
         if getattr(func, "conn_ignore", False):
             return func
 
-        if asyncio.iscoroutinefunction(func):
+        if asyncable or asyncio.iscoroutinefunction(func):
             @wraps(func)
             async def inner(self_or_cls, *args, **kwargs):
                 if self.debug_callback():
                     return await func(self_or_cls, *args, **kwargs)
 
-                callargs = get_callargs(func, self_or_cls, *args, **kwargs)
-                callargs.pop("cls", None)
-                gen = self_or_cls.get_store(self_or_cls, **callargs)
+                self_or_cls, gen = self.get_generator(
+                    func, self_or_cls, need_proxy, *args, **kwargs)
+
                 async with gen as proxy_instance:
                     return await func(proxy_instance, *args, **kwargs)
         else:
@@ -164,9 +188,9 @@ class ConnectionManager(object):
                 if self.debug_callback():
                     return func(self_or_cls, *args, **kwargs)
 
-                callargs = get_callargs(func, self_or_cls, *args, **kwargs)
-                callargs.pop("cls", None)
-                gen = self_or_cls.get_store(self_or_cls, **callargs)
+                self_or_cls, gen = self.get_generator(
+                    func, self_or_cls, need_proxy, *args, **kwargs)
+
                 with gen as proxy_instance:
                     if proxy_instance is None:
                         warnings.warn("All DriverMixin lost efficacy，because "

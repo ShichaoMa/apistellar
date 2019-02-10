@@ -48,7 +48,7 @@ apistellar部分设计灵感参考ruby on rails
 ### apistellar项目控制层类图
 ![apistellar项目控制层类图](https://github.com/ShichaoMa/apistellar/blob/master/resources/apistellar架构设计图/apistellar项目控制层类图.png)
 ### apistellar项目构建工具设计类图
-![apistellar项目构建工具设计类图](https://github.com/ShichaoMa/apistellar/blob/master/resources/apistellar架构设计图/apistellar项目构建工具设计类图)
+![apistellar项目构建工具设计类图](https://github.com/ShichaoMa/apistellar/blob/master/resources/apistellar架构设计图/apistellar项目构建工具设计类图.png)
 ### apistellar项目经典三层架构时序图
 ![apistellar项目经典三层架构时序图](https://github.com/ShichaoMa/apistellar/blob/master/resources/apistellar架构设计图/apistellar项目经典三层架构时序图.png)
 

@@ -1,0 +1,3 @@
+apistellar通常可以使用apistar-create project来创建一个完整的项目。
+
+项目主体主要分为三部分: controller, service, model，三种组件共同组成了一个服务模块。通常可以使用apistar-create service命令一次创建多个服务模块。service中定义了所有action，是请求的入口。在请求发起后，框架首先尝试调用action。当发现action需要特定参数时，则查找所有组件resolve方法的返回值来匹配参数类型。接下来的3节中会分别对上述组件展开进行讨论。

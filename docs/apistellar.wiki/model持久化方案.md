@@ -115,6 +115,5 @@ class MongoDriverMixin(DriverMixin):
         
 ```
 这种情况是被允许，但是要注意：
-  - contextmanager不再是python内置的，因为内置的不支持异步生成器。contextmanager要从apistellar从导入。
-  - 异步Mixin最好不要被其它Mixin继承，除非你可以理清mro顺序。
-  - 如果继承了异步Mixin创建业务类，那么其中的同步方法不能被conn_manager装饰。若装饰了，也不会有任何Mixin效果，还会收到警告。
+1. 所有Mixin都继承于DriverMixin(或其子类)，使用super调用父类的get_store方法，
+2. get_store需要被contextmanager装饰，contextmanager(非内置)来自于toolkit.async_context。

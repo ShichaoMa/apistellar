@@ -238,7 +238,5 @@ class TestPersistence(object):
         assert isinstance(driver, MyDriver)
 
     def test_async_driver_mixin_with_sync_method(self):
-        with pytest.warns(UserWarning):
-            with pytest.raises(AttributeError) as exc_info:
-                AsyncDriverModel().find_one_sync()
-        assert "find_one" in exc_info.value.args[0]
+        driver = AsyncDriverModel().find_one_sync()
+        assert isinstance(driver, MyDriver)

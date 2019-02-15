@@ -1,127 +1,13 @@
 import os
-import sys
-import inspect
 import asyncio
 import warnings
 
 from functools import wraps
 from types import FunctionType
-from contextlib import _GeneratorContextManager
 from collections import MutableSequence, MutableSet
 
+from toolkit.async_context import contextmanager
 from apistellar.helper import proxy, get_callargs
-
-
-def contextmanager(func):
-    @wraps(func)
-    def helper(*args, **kwds):
-        return _AsyncGeneratorContextManager(func, args, kwds)
-
-    return helper
-
-
-class _AsyncGeneratorContextManager(_GeneratorContextManager):
-    def __enter__(self):
-        try:
-            # 对于同步的方式驱动异步生成器，则什么也不返回，后续在业务层面警告
-            if inspect.isasyncgen(self.gen):
-                return
-            else:
-                return self.gen.send(None)
-        except StopIteration:
-            raise RuntimeError("generator didn't yield") from None
-
-    def __exit__(self, type, value, traceback):
-        if type is None:
-            try:
-                if inspect.isgenerator(self.gen):
-                    self.gen.send(None)
-                else:
-                    return False
-            except StopIteration:
-                return False
-            else:
-                raise RuntimeError("generator didn't stop")
-        else:
-            if value is None:
-                # Need to force instantiation so we can reliably
-                # tell if we get the same exception back
-                value = type()
-            try:
-                if inspect.isgenerator(self.gen):
-                    self.gen.throw(type, value, traceback)
-                else:
-                    raise value
-            except StopIteration as exc:
-                # Suppress StopIteration *unless* it's the same exception that
-                # was passed to throw().  This prevents a StopIteration
-                # raised inside the "with" statement from being suppressed.
-                return exc is not value
-            except RuntimeError as exc:
-                # Don't re-raise the passed in exception. (issue27122)
-                if exc is value:
-                    return False
-                # Likewise, avoid suppressing if a StopIteration exception
-                # was passed to throw() and later wrapped into a RuntimeError
-                # (see PEP 479).
-                if type is StopIteration and exc.__cause__ is value:
-                    return False
-                raise
-            except:
-                # only re-raise if it's *not* the exception that was
-                # passed to throw(), because __exit__() must not raise
-                # an exception unless __exit__() itself failed.  But throw()
-                # has to raise the exception to signal propagation, so this
-                # fixes the impedance mismatch between the throw() protocol
-                # and the __exit__() protocol.
-                #
-                if sys.exc_info()[1] is value:
-                    return False
-                raise
-            raise RuntimeError("generator didn't stop after throw()")
-
-    async def __aenter__(self):
-        try:
-            if inspect.isgenerator(self.gen):
-                return self.gen.send(None)
-            else:
-                return await self.gen.asend(None)
-        except (StopAsyncIteration, StopIteration):
-            raise RuntimeError("generator didn't yield") from None
-
-    async def __aexit__(self, type, value, traceback):
-        if type is None:
-            try:
-                if inspect.isgenerator(self.gen):
-                    self.gen.send(None)
-                else:
-                    await self.gen.asend(None)
-            except (StopAsyncIteration, StopIteration):
-                return False
-            else:
-                raise RuntimeError("generator didn't stop")
-        else:
-            if value is None:
-                value = type()
-            try:
-                if inspect.isgenerator(self.gen):
-                    await self.gen.throw(type, value, traceback)
-                else:
-                    await self.gen.athrow(type, value, traceback)
-            except (StopAsyncIteration, StopIteration) as exc:
-                return exc is not value
-            except RuntimeError as exc:
-                if exc is value:
-                    return False
-                if issubclass(type, (StopAsyncIteration, StopIteration))\
-                        and exc.__cause__ is value:
-                    return False
-                raise
-            except:
-                if sys.exc_info()[1] is value:
-                    return False
-                raise
-            raise RuntimeError("generator didn't stop after throw()")
 
 
 class ConnectionManager(object):
@@ -192,10 +78,6 @@ class ConnectionManager(object):
                     func, self_or_cls, need_proxy, *args, **kwargs)
 
                 with gen as proxy_instance:
-                    if proxy_instance is None:
-                        warnings.warn("All DriverMixin lost efficacy，because "
-                                      "of async mixin used with sync method.")
-                        proxy_instance = self_or_cls
                     return func(proxy_instance, *args, **kwargs)
         return inner
 
@@ -218,11 +100,8 @@ class DriverMixin(object):
     配合conn_manager用来控制数据库访问。
     DriverMixin实现需要注意以下三点：
     1 所有Mixin都继承于DriverMixin(或其子类)，使用super调用父类的get_store方法，
-      get_store需要被contextmanager装饰， contextmanager(非内置)来自于apistellar。
-    2 Mixin支持将get_store实现成异步的，但最好是叶子节点类，
-      异步Mixin最好不要被其它Mixin继承，除非你可以理清mro顺序。
-    3 如果继承了异步Mixin创建业务类，那么其中的同步方法不能被conn_manager装饰。
-      若装饰了，也不会有任何Mixin效果，还会收到警告。
+    2 get_store需要被contextmanager装饰，contextmanager(非内置)来自于toolkit.async_context。
+    3 Mixin支持将get_store实现成异步的。
     """
 
     @classmethod

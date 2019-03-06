@@ -1,5 +1,4 @@
 import os
-import sys
 import asyncio
 import logging
 import traceback
@@ -9,9 +8,9 @@ from apistar.http import Response, JSONResponse
 from apistar.server.components import ReturnValue
 from apistar.server.asgi import ASGIScope, ASGISend
 
+from apistellar.bases.entities import settings
 from apistellar.bases.websocket import WebSocketApp
 from apistellar.document import ShowLogPainter, AppLogPainter
-from apistellar.bases.entities import init_settings, settings
 from apistellar.bases.components import Component, ComposeTypeComponent
 from apistellar.bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
 from apistellar.helper import TypeEncoder, find_children, enhance_response

@@ -50,6 +50,22 @@ class ConnectionManager(object):
         func = args[0]
 
         def need_proxy(driver_name):
+            """
+            DriverMixin的子类在实现get_store时，
+            可以调用need_proxy来决定是否为实例添加一个driver， 如：
+            ```
+            with super().get_store(self_or_cls, **callargs) as self_or_cls:
+                if self_or_cls._need_proxy("store"):
+                    self_or_cls = proxy(self_or_cls, prop_name="store", prop=...)
+                try:
+                    yield self_or_cls
+                finally:
+                    conn.commit()
+
+            ```
+            :param driver_name: 添加的driver在实例中的属性名字。
+            :return:
+            """
             if self.proxy_driver_names is None:
                 return True
             return driver_name in self.proxy_driver_names

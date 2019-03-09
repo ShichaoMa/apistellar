@@ -1,14 +1,14 @@
 import sys
-import json
 import typing
 import logging
+import inspect
 import traceback
 
 from apistar import App, http
 from flask.sessions import SecureCookieSessionInterface
 
 from ..helper import HookReturn
-from .entities import Session, DummyFlaskApp
+from .entities import Session, DummyFlaskApp, Local
 
 
 class SessionHook(object):
@@ -128,6 +128,27 @@ class AccessLogHook(object):
                                     "status": status,
                                     "content_length": content_length,
                                     "agent": agent})
+
+
+class WebContextHook(Local):
+
+    def __init__(self):
+        params = [inspect.Parameter("self", inspect._POSITIONAL_OR_KEYWORD)]
+
+        for param_name, param_type in self.local_variable.items():
+            params.append(inspect.Parameter(
+                param_name, inspect._POSITIONAL_OR_KEYWORD,
+                annotation=param_type))
+
+        self.on_request.__func__.__signature__ = inspect.Signature(params)
+
+        self.on_request.__func__.__annotations__.update(self.local_variable)
+
+    def __getattr__(self, item):
+        raise AttributeError()
+
+    def on_request(self, **kwargs):
+        self.coroutinelocal[self.current_task()] = kwargs
 
 
 class Hook(object):

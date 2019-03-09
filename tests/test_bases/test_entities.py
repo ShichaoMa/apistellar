@@ -140,4 +140,5 @@ class TestFileStream(object):
                 while chunk:
                     await f.write(chunk)
                     chunk = await readexactly(resp.content, 1024000)
+                await f.flush()
                 assert await f.tell() == os.path.getsize(path)

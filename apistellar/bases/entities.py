@@ -3,11 +3,13 @@ import os
 import typing
 
 from enum import Enum
+from asyncio.tasks import Task
 from urllib.parse import unquote
 from collections import namedtuple
+from weakref import WeakKeyDictionary
 from flask.sessions import SecureCookieSession
 
-from toolkit import global_cache_classproperty
+from toolkit import global_cache_classproperty, load
 from toolkit.settings import SettingsLoader, Settings, FrozenSettings
 
 from .exceptions import Readonly
@@ -257,3 +259,45 @@ def init_settings(settings_path):
     """
     SettingsMixin.settings_path = settings_path
     settings._json.update(SettingsMixin.settings._json)
+
+
+class Local(object):
+    """
+    实现类似threadlocal的效果
+    """
+    coroutinelocal = WeakKeyDictionary()
+
+    @global_cache_classproperty
+    def local_variable(cls):
+        """
+        存储配置的可注入的上下文变量及其类型
+        :return:
+        """
+        lv = settings.get("LOCAL_VARIABLE",
+                          dict(scope="apistar.server.asgi.ASGIScope"))
+        var_types = dict()
+        for k, v in lv.items():
+            var_types[k] = load(v)
+        return var_types
+
+    @staticmethod
+    def current_task():
+        return Task.current_task()
+
+    def __getattr__(self, item):
+        return self.coroutinelocal[self.current_task()][item]
+
+    def __getitem__(self, item):
+        return self.coroutinelocal[self.current_task()][item]
+
+    def get(self, item, default=None):
+        try:
+            return self[item]
+        except KeyError:
+            return default
+
+    def __setattr__(self, key, value):
+        raise Readonly("Readonly object: Local!")
+
+
+coroutinelocal = Local()

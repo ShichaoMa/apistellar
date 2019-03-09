@@ -12,7 +12,8 @@ from apistellar.bases.entities import settings
 from apistellar.bases.websocket import WebSocketApp
 from apistellar.document import ShowLogPainter, AppLogPainter
 from apistellar.bases.components import Component, ComposeTypeComponent
-from apistellar.bases.hooks import ErrorHook, AccessLogHook, SessionHook, Hook
+from apistellar.bases.hooks import WebContextHook, ErrorHook, \
+    AccessLogHook, SessionHook, Hook
 from apistellar.helper import TypeEncoder, find_children, enhance_response
 
 __all__ = ["Application"]
@@ -107,7 +108,8 @@ def application(app_name,
         # ComposeTypeComponent是用来兜底的，所以要放到最后
         components.append(ComposeTypeComponent())
         custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
-        hooks = [AccessLogHook(), SessionHook(), ErrorHook()] + custom_hooks
+        hooks = [WebContextHook(), AccessLogHook(),
+                 SessionHook(), ErrorHook()] + custom_hooks
         app = FixedAsyncApp(
             routes,
             template_dir=settings.get("TEMPLATE_DIR"),

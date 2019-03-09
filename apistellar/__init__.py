@@ -14,21 +14,20 @@ from apistellar.bases.response import FileResponse
 from apistellar.bases.model_factory import ModelFactory
 from apistellar.bases.entities import Session, Cookie, FormParam, \
     FileStream, inject, SettingsMixin, UrlEncodeForm, MultiPartForm, \
-    settings, init_settings
+    settings, init_settings, coroutinelocal
 
 from apistellar.console import main as console
 
 from apistellar.solo import Solo
 from apistellar.solo.manager import SoloManager
 
-from apistellar.persistence import DriverMixin, conn_manager, \
-    conn_ignore, proxy, contextmanager
+from apistellar.persistence import DriverMixin, conn_manager, conn_ignore
 
 from apistellar.types import Type, AsyncType, PersistentType, \
     TypeEncoder, validators
 
 from apistellar.route import route, get, post, delete, put, options, websocket
 
-from apistellar.helper import redirect, require, return_wrapped
+from apistellar.helper import redirect, require, return_wrapped, proxy
 
-__version__ = "1.2.4"          
+__version__ = "1.2.5"          

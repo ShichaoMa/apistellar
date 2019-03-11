@@ -18,7 +18,8 @@ from types import FunctionType, MethodType
 from asyncio import Future, get_event_loop
 from argparse import Action, _SubParsersAction
 
-from toolkit import find_ancestor
+from toolkit import find_ancestor, cache_property
+
 from apistar import Include, Route
 from apistar.http import PathParams, Response
 from apistar.server.asgi import ASGIReceive, ASGIScope, ASGISend
@@ -606,13 +607,20 @@ class RestfulApi(object):
         logger.addHandler(logging.StreamHandler(sys.stdout))
         return logger
 
-    def __init__(self, host, port):
+    def __init__(self, lazy_addr_getter):
         super().__init__()
-        self.host = host
-        self.port = port
-        self.prefix = f'http://{host}:{port}'
+        self.host = None
+        self.port = None
+        self.lazy_addr_getter = lazy_addr_getter
 
-    def url(self, path):
+    @cache_property
+    def prefix(self):
+        if self.host:
+            return f'http://{self.host}:{self.port}'
+
+    async def url(self, path):
+        if not self.host:
+            self.host, self.port = await self.lazy_addr_getter()
         return urljoin(self.prefix, path)
 
 
@@ -664,7 +672,7 @@ def register(url, path=None, error_check=None, conn_timeout=9,
                     conn_timeout=conn_timeout, read_timeout=read_timeout,
                     cookies=cookies) as session:
                 self = args[0]
-                u = _find_ancestor(self.__class__, "url").url(self, url)
+                u = await find_ancestor(self.__class__, "url").url(self, url)
 
                 if have_path_param:
                     callargs = get_callargs(func, *args, **kwargs)

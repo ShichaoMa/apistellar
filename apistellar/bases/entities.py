@@ -267,14 +267,16 @@ class Local(object):
     """
     coroutinelocal = WeakKeyDictionary()
 
+    _default = dict(scope="apistar.server.asgi.ASGIScope")
+
     @global_cache_classproperty
     def local_variable(cls):
         """
         存储配置的可注入的上下文变量及其类型
         :return:
         """
-        lv = settings.get("LOCAL_VARIABLE",
-                          dict(scope="apistar.server.asgi.ASGIScope"))
+        lv = cls._default.copy()
+        lv.update(settings.get("LOCAL_VARIABLE", dict()))
         var_types = dict()
         for k, v in lv.items():
             var_types[k] = load(v)
@@ -298,6 +300,10 @@ class Local(object):
 
     def __setattr__(self, key, value):
         raise Readonly("Readonly object: Local!")
+
+    @classmethod
+    def set_default(cls, name, val_path):
+        cls._default[name] = val_path
 
 
 coroutinelocal = Local()

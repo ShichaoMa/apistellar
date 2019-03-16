@@ -1,6 +1,5 @@
 import os
 import asyncio
-import warnings
 
 from functools import wraps
 from types import FunctionType

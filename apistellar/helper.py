@@ -10,7 +10,6 @@ import inspect
 import logging
 
 from urllib.parse import urljoin
-from aiohttp import ClientSession
 from functools import wraps, reduce
 from collections.abc import Mapping
 from pyaop import Proxy, Return, AOP
@@ -663,6 +662,8 @@ def register(url, path=None, error_check=None, conn_timeout=9,
     :param have_path_param: 是否有restful风格的路径参数
     :return:
     """
+    from aiohttp import ClientSession
+
     def request_wrapper(func):
         @wraps(func)
         async def inner(*args, **kwargs):

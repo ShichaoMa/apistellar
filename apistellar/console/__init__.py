@@ -4,16 +4,10 @@ import asyncio
 import inspect
 
 from apistar import Route
-from IPython import embed
-from IPython.core import formatters
-
 from apistellar.bases.manager import Manager
 from apistellar.helper import get_real_method
 
 from .mocker import Mocker
-
-# bugfix
-formatters.get_real_method = get_real_method
 
 
 class ConsoleManager(Manager):
@@ -83,6 +77,13 @@ class ConsoleManager(Manager):
 
         def inject(cls):
             return self._await(self.resolve(cls))
+
+        from IPython.core import formatters
+        # bugfix
+        formatters.get_real_method = get_real_method
+
+        # 延迟加载
+        from IPython import embed
 
         embed()
 

@@ -11,7 +11,9 @@ from .mocker import Mocker
 
 
 class ConsoleManager(Manager):
-
+    """
+    交互式调式命令 apistar-console
+    """
     def __init__(self):
         self.initialize(os.getcwd())
         self.finalize()

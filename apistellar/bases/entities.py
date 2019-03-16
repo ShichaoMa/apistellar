@@ -238,7 +238,7 @@ class SettingsMixin(object):
     settings_path = None
 
     @global_cache_classproperty
-    def settings(cls):  # type: Settings
+    def settings(cls):
         """
         这个应该在app加载时调用，这样project_path才准确。
         由于有些项目可能在模块作用域就需要使用settings中的配置，

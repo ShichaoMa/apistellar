@@ -45,7 +45,7 @@ usage: solo_app.py test2 [-h] [--settings SETTINGS]
 Command 'import'
 usage: solo_app.py import [-h] [--settings SETTINGS] paths [paths ...]
 ```
-生成的solo任务类定义在任务同名包的__init__.py中。格式如下：
+生成的solo任务类定义在任务同名包的solo.py中。格式如下：
 ```python
 from apistellar import Solo
 
@@ -94,12 +94,11 @@ class Searcher(Solo):
         super(Searcher, self).__init__(**kwargs)
         self.id = id
 
-    async def setup(self, sqlite: Sqlite):
+    async def setup(self):
         """
         初始化
         :return:
         """
-        Article.init(sqlite=sqlite)
 
     async def run(self):
         """

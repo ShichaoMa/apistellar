@@ -1,7 +1,7 @@
 ### model的定义
 model通常被定义在模块根目录同名的文件中。
 
-apistellar提供了三个Type基类以供继承，Type、AsyncType和PersistentType，AsyncType提供了异步获取属性值的能力。稍后会介绍，PersistentType请看[model持久化方案](https://github.com/ShichaoMa/apistellar/wiki/model%E6%8C%81%E4%B9%85%E5%8C%96%E6%96%B9%E6%A1%88)。
+apistellar提供了两个Type基类以供继承，Type和PersistentType，PersistentType请看[model持久化方案](https://github.com/ShichaoMa/apistellar/wiki/model%E6%8C%81%E4%B9%85%E5%8C%96%E6%96%B9%E6%A1%88)。
 
 model用来定义稳定的数据模型， 并包含一些验证，如
 ```python
@@ -57,13 +57,13 @@ a = A()
 book = Book(a)
 ```
 ### 获取有效的的model
-通过format() 方法可以校验对象中的字段有效性，通过to_json() 方法可以将对象转换成json格式。
+通过format() 方法可以校验对象中的字段有效性，通过`to_dict()` 方法可以将对象转换成字典。
 ```python
 
 # 格式化b对象
 book.format()
-# 转换成json object
-jsonobj = book.to_json()
+# 转换成字典
+jsonobj = book.to_dict()
 # 或者直接dump
 json_str = json.dumps(book, cls=TypeEncoder())
 ```
@@ -157,68 +157,6 @@ class Teacher(Type):
     subject = validators.Proxy(Subject, default=Subject)
 ```
 
-### model属性获取
-AsyncType的子类拥有异步隐式从数据库获取属性的能力，只需要定义load方法
-```python
-class File(AsyncType):
-    _id = validators.String(format="object_id", default=ObjectId)
-    filename = validators.String()
-    user_id = validators.String()
-    mimetype = validators.String(enum=['application/vnd.ms-powerpoint',
-                                       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                                       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                       'application/vnd.ms-excel',
-                                       'application/pdf',
-                                       'application/msword',
-                                       'text/plain',
-                                       'image/png',
-                                       'image/jpg',
-                                       'image/jpeg',
-                                       'image/gif',
-                                       'image/bmp',
-                                       'application/zip'])
-    created_at = validators.DateTime(default=now)
-    updated_at = validators.DateTime(default=now)
-    content_length = validators.Integer(maximum=1024*1024*10)
-
-    async def load(self):
-        """
-        load方法使用self中的现在字段值(如：id)从特定数据源中获取数据。
-        load方法中禁止使用 await 获取self中的字段值，如果这个字段值不存在，
-        会引发无限递归，推荐直接使用self["id"]获取。
-        eg:
-        id = self.get("id")
-        assert id is not None, (777, "id is None, cannot load!")
-        return User(await self.col.find_one({"id": id}))
-        """
-        _id = self.get("_id")
-        assert _id is not None, (777, "id is None, cannot load!")
-        doc = await self.col.find_one({"_id": _id}) or {}
-        return File(doc)
-```
-定义File中的load方法，从数据库中通过已知属性查找File，获取方式包括点获取和下标获取，具体操作如下：
-```python
-
-@get()   # file通过FileComponent直接被注入
-async def show(file: File, service: S3Service):
-    """
-    单文件下载
-    :param file:
-    :param service:
-    :return:
-    """
-    # file中filename原本是不存在的，通过await 调用了load方法，从数据中异步获取到了filename
-    # 若该属性在定时指定了format，通过点获取的属性值，不会被格式化
-    filename = await file.filename
-    repo.logger.debug(f"I got {filename} from database!") 
-    # 上述操作完成数据库数据加载的工作，所以接下我们通过await获取其它属性不会再查找数据库
-    mimetype = await file.mimetype
-    repo.logger.debug(f"I got mimetype without lookup database!")
-    # 当然，我们还可以通过下标来获取，以下操作永远不会调用load方法
-    # 若该属性在定时指定了format，通过下标获取的属性值，会被格式化
-    created_at = file["created_at"]
-    return await service.show(file)
-```
 ### 自定义格式化类
 有时我们可能需要复杂数据类型，设想我们需要一个tags字段，在使用一个json进行model初始化时，tags字段可以是这样的：git,python，通过,链接所有tags。但是我们希望在调用format后，我们的model中的tags可以通过model.tags得到["git", "python"]，同时，当我们将model序列化时，tags又能被连接成字符串。
 

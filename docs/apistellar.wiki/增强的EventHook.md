@@ -1,5 +1,5 @@
 apistar使用event hook来为请求，响应，异常增加勾子。但apistar不支持从on_request on_response中直接返回请求来改变请求响应路径。
-star_builder对event hook进行了增强。
+apistellar对event hook进行了增强。
 ```python
 from apistellar import Session, Hook, Return
 

@@ -30,16 +30,16 @@ apistellar部分设计灵感参考ruby on rails
 
 除了apistar本身的特性以外，apistellar增加如下几点高级用法：
 
-- CSM架构，将控制层，业务层，模型层完全分离，耦合性降至最低。
-- 模板式定制各类模型，轻松扩展模型定义的模板类。
-- 适配sphinx注释语法，使用构建命令一键生成api文档。
-- 集成flask版的session实现。
-- 自带一些event hook，轻松集成异常、session处理。
-- 集成配置模块，集中管理所有配置信息。
-- 离线任务管理，同一web服务下的离线任务，轻松复用web模块定义的model, service等等可注入对象。模板一键创建。
-- 集成IPython交互式命令行工具，自动注入model, service等对象。提供异步代码执行能力，轻松调试各模块。
-- 提供上传文件流对象，对大文件上传完美支持。
-- Apistar作者在uvicorn中提供了websocket支持，但是未集成到apistar中，apistellar对二者进行了集成，完美支持websocket。
+1. CSM架构，将控制层，业务层，模型层完全分离，耦合性降至最低。
+2. 模板式定制各类模型，轻松扩展模型定义的模板类。
+3. 适配sphinx注释语法，使用构建命令一键生成api文档和RPC-client。
+4. 集成flask版的session实现。
+5. 自带一些event hook，轻松集成异常、session处理。
+6. 集成配置模块，集中管理所有配置信息。
+7. 离线任务管理，同一web服务下的离线任务，轻松复用web模块定义的model, service等等可注入对象。模板一键创建。
+8. 集成IPython交互式命令行工具，自动注入model, service等对象。提供异步代码执行能力，轻松调试各模块。
+9. 提供上传文件流对象，对大文件上传完美支持。
+10. Apistar作者在uvicorn中提供了websocket支持，但是未集成到apistar中，apistellar对二者进行了集成，完美支持websocket。
 
 ![apistellar项目web请求流程图](https://github.com/ShichaoMa/apistellar/blob/master/resources/apistellar架构设计图/apistellar项目web请求流程图.png)
 ![apistellar项目微服务及中间件调用解决方案示意图](https://github.com/ShichaoMa/apistellar/blob/master/resources/apistellar架构设计图/apistellar项目微服务及中间件调用解决方案示意图.png)

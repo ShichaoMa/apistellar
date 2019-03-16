@@ -75,7 +75,7 @@ pip install apistellar
 17. [model持久化方案](https://github.com/ShichaoMa/apistellar/blob/master/docs/apistellar.wiki/model持久化方案.md)
 18. [API接口文档自动生成](https://github.com/ShichaoMa/apistellar/blob/master/docs/apistellar.wiki/API接口文档自动生成.md)
 19. [RESTFul RPC客户端驱动包一键生成](https://github.com/ShichaoMa/apistellar/blob/master/docs/apistellar.wiki/RESTFul-RPC客户端驱动包一键生成.md)
-
+20. [全局对象](https://github.com/ShichaoMa/apistellar/blob/master/docs/apistellar.wiki/全局对象.md)
 参考资料
 
 - [asgi web框架 APIStar----终于等到你...](https://zhuanlan.zhihu.com/p/36297606)

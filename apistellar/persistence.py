@@ -1,5 +1,5 @@
 import os
-import asyncio
+import inspect
 
 from functools import wraps
 from types import FunctionType
@@ -11,12 +11,17 @@ from apistellar.helper import proxy, get_callargs
 
 class ConnectionManager(object):
     proxy_driver_names = None
+    meta_name = "__driver_meta"
 
     @staticmethod
     def debug_callback():
         return os.getenv("UNIT_TEST_MODE", "").lower() == "true"
 
-    def __init__(self, debug_callback=None, proxy_driver_names: tuple=None):
+    def __init__(self, debug_callback=None, proxy_driver_names: tuple=None,
+                 asyncable=False, asyncgen=False):
+        self.asyncable = asyncable
+        self.asyncgen = asyncgen
+
         if debug_callback:
             self.debug_callback = debug_callback
         if proxy_driver_names is not None:
@@ -34,17 +39,19 @@ class ConnectionManager(object):
         self_or_cls = proxy(self_or_cls, need_proxy, "_need_proxy")
         return self_or_cls, self_or_cls.get_store(self_or_cls, **callargs)
 
-    def __call__(self, *args, debug_callback=None,
-                 proxy_driver_names=None, asyncable=False):
+    def __call__(self, *args, debug_callback=None, proxy_driver_names=None,
+                 asyncable=False, asyncgen=False):
         """
         返回连接管理下的方法
         :param func:
         :param proxy_driver_names: 可以被代理的驱动名称
         :param asyncable: 有些方法可能是同步的，但是通过返回future来变成异步的
+        :param asyncgen: 有些方法可能返回异步生成器。
         :return:
         """
-        if debug_callback or proxy_driver_names:
-            return self.__class__(debug_callback, proxy_driver_names)
+        if not args:
+            return self.__class__(
+                debug_callback, proxy_driver_names, asyncable, asyncgen)
 
         func = args[0]
 
@@ -69,20 +76,30 @@ class ConnectionManager(object):
                 return True
             return driver_name in self.proxy_driver_names
 
-        if getattr(func, "conn_ignore", False):
-            return func
-
-        if asyncable or asyncio.iscoroutinefunction(func):
+        if self.asyncable or inspect.iscoroutinefunction(func):
             @wraps(func)
             async def inner(self_or_cls, *args, **kwargs):
+                # 将self.debug_callback()写在里面的原因是因为可运行时改变是否debug
                 if self.debug_callback():
                     return await func(self_or_cls, *args, **kwargs)
-
                 self_or_cls, gen = self.get_generator(
                     func, self_or_cls, need_proxy, *args, **kwargs)
 
                 async with gen as proxy_instance:
                     return await func(proxy_instance, *args, **kwargs)
+        elif self.asyncgen or inspect.isasyncgenfunction(func):
+            @wraps(func)
+            async def inner(self_or_cls, *args, **kwargs):
+                if self.debug_callback():
+                    async for i in func(self_or_cls, *args, **kwargs):
+                        yield i
+                else:
+                    self_or_cls, gen = self.get_generator(
+                        func, self_or_cls, need_proxy, *args, **kwargs)
+
+                    async with gen as proxy_instance:
+                        async for i in func(proxy_instance, *args, **kwargs):
+                            yield i
         else:
             @wraps(func)
             def inner(self_or_cls, *args, **kwargs):
@@ -100,14 +117,32 @@ class ConnectionManager(object):
 conn_manager = ConnectionManager()
 
 
+def conn_meta_add(meta_name):
+    def outer(meta_val):
+        def inner(func):
+            driver_meta = getattr(func, ConnectionManager.meta_name, dict())
+            driver_meta[meta_name] = meta_val
+            func.__driver_meta = driver_meta
+            return func
+        return inner
+    return outer
+
+
+# 对于使用PersistentMeta创建的类，conn_manager需要的参数通过这些装饰器来指定。
+conn_asyncable = conn_meta_add("asyncable")(True)
+conn_asyncgen = conn_meta_add("asyncgen")(True)
+conn_proxy_driver_names = conn_meta_add("proxy_driver_names")
+conn_debug = conn_meta_add("debug_callback")
+ignore_callback = conn_debug(lambda: True)
+
+
 def conn_ignore(func):
     """
     使用了持久化元类时，使方法忽略使用连接管理，该装饰器必须紧靠方法
     :param func:
     :return:
     """
-    func.conn_ignore = True
-    return func
+    return ignore_callback(func)
 
 
 class DriverMixin(object):
@@ -138,13 +173,18 @@ class PersistentMeta(type):
     def __new__(mcs, name, bases, attrs):
         for attr_name in attrs.keys():
             func = attrs[attr_name]
+            driver_meta = getattr(func, ConnectionManager.meta_name, None)
+            if driver_meta:
+                cm = conn_manager(**driver_meta)
+            else:
+                cm = conn_manager
             # 去掉魔术方法和私有方法
             if isinstance(func, FunctionType) and not func.__name__.startswith(
                     "__"):
-                attrs[attr_name] = conn_manager(func)
+                attrs[attr_name] = cm(func)
             if isinstance(func, classmethod):
                 func = func.__func__
                 if not func.__name__.startswith("__"):
-                    attrs[attr_name] = classmethod(conn_manager(func))
+                    attrs[attr_name] = classmethod(cm(func))
 
         return super(PersistentMeta, mcs).__new__(mcs, name, bases, attrs)

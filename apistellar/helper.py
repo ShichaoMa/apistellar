@@ -17,7 +17,7 @@ from types import FunctionType, MethodType
 from asyncio import Future, get_event_loop
 from argparse import Action, _SubParsersAction
 
-from toolkit import find_ancestor, cache_property
+from toolkit import find_ancestor, cache_property, cache_classproperty
 
 from apistar import Include, Route
 from apistar.http import PathParams, Response
@@ -553,22 +553,6 @@ class classproperty(object):
 
     def __get__(self, instance, owner):
         return self.func(owner)
-
-
-def cache_classproperty(func):
-    """
-    缓存类属性，只计算一次
-    :param func:
-    :return:
-    """
-    @classproperty
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        prop_name = "_" + func.__name__
-        if prop_name not in args[0].__dict__:
-            setattr(args[0], prop_name, func(*args, **kwargs))
-        return args[0].__dict__[prop_name]
-    return wrapper
 
 
 def proxy(obj, prop, prop_name):

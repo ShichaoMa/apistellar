@@ -59,7 +59,8 @@ class Component(IdentityInterface, _Component):
             return False
         return type(return_annotation) == typing._Union and \
                parameter.annotation in return_annotation.__args__ or \
-               parameter.annotation is return_annotation
+               parameter.annotation == return_annotation  # 之前is判断的，
+        # 后来由于typing.Dict[str, Cookie]在执行所有单测时对象发生了变化，所以暂时用==
 
 
 class ServiceComponent(Component, metaclass=Singleton):

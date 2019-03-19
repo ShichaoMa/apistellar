@@ -1,9 +1,11 @@
 import os
 import pytest
+import asyncio
 
 from apistellar.types import PersistentType
 from apistellar.persistence import DriverMixin, conn_ignore, \
-    get_callargs, proxy, contextmanager
+    get_callargs, proxy, contextmanager, conn_debug, conn_asyncgen, \
+    conn_asyncable, conn_proxy_driver_names
 
 
 class MyDriver(object):
@@ -33,14 +35,18 @@ class MyDriverMixin(DriverMixin):
     def get_store(cls, self_or_cls, **callargs):
         with super(MyDriverMixin, cls).get_store(
                 self_or_cls, **callargs) as self_or_cls:
-            driver = MyDriver()
-            try:
-                yield proxy(self_or_cls, prop_name="store", prop=driver)
-            except Exception as e:
-                driver.rollback()
-                raise e
+            prop_name = "store"
+            if self_or_cls._need_proxy(prop_name):
+                driver = MyDriver()
+                try:
+                     yield proxy(self_or_cls, prop_name=prop_name, prop=driver)
+                except Exception as e:
+                    driver.rollback()
+                    raise e
+                else:
+                    driver.close()
             else:
-                driver.close()
+                yield self_or_cls
 
 
 def custom_wrapper(func):
@@ -81,6 +87,14 @@ class Model(PersistentType, MyDriverMixin):
     def find_one_ignore_store(self):
         assert self.store is None
 
+    @conn_debug(lambda: True)
+    def find_one_debug_true(self):
+        assert self.store is None
+
+    @conn_debug(lambda: False)
+    def find_one_debug_false(self):
+        assert self.store is None
+
     @custom_wrapper
     def find_one_with_wrapper(self, a, b, c=3, d=4):
         self.store.find_one()
@@ -105,12 +119,15 @@ class DynamicTableNameMixin(DriverMixin):
     @classmethod
     @contextmanager
     def get_store(cls, self_or_cls, **callargs):
+        prop_name = "cur"
         with super(DynamicTableNameMixin, cls).get_store(
                 self_or_cls, **callargs) as self_or_cls:
-            driver = DynamicTableNameDriver(
-                self_or_cls.DYNAMIC_TABLE.format(**callargs),
-                self_or_cls.DYNAMIC_DB.format(**callargs))
-        yield proxy(self_or_cls, prop_name="cur", prop=driver)
+            if self_or_cls._need_proxy(prop_name):
+                driver = DynamicTableNameDriver(
+                    self_or_cls.DYNAMIC_TABLE.format(**callargs),
+                    self_or_cls.DYNAMIC_DB.format(**callargs))
+                self_or_cls = proxy(self_or_cls, prop_name=prop_name, prop=driver)
+        yield self_or_cls
 
 
 class DynamicTableNameModel(PersistentType, DynamicTableNameMixin):
@@ -133,6 +150,11 @@ class MultiDriverModel(PersistentType, DynamicTableNameMixin, MyDriverMixin):
         driver = self.store.find_one()
         return table1, db1, driver
 
+    @conn_proxy_driver_names(("cur", ))
+    def find_one_ignore_store(self, partition):
+        assert self.store is None
+        return self.cur.find_one()
+
 
 class AsyncDriverMixin(MyDriverMixin):
 
@@ -147,6 +169,18 @@ class AsyncDriverModel(PersistentType, AsyncDriverMixin):
     async def find_one(self):
         driver = self.store.find_one()
         return driver, self.a
+
+    @conn_asyncable
+    def find_one_async_with_future(self):
+        feature = asyncio.get_event_loop().create_future()
+        feature.set_result(self.store.find_one())
+        return feature
+
+    @conn_asyncgen
+    def async_with_asyncgen(self):
+        async def gen():
+            yield 1
+        return gen()
 
     def find_one_sync(self):
         driver = self.store.find_one()
@@ -187,6 +221,15 @@ class TestPersistence(object):
     def test_find_one_ignore_store(self):
         model = Model()
         model.find_one_ignore_store()
+
+    def test_find_one_debug_store(self):
+        model = Model()
+        model.find_one_debug_true()
+
+    def test_find_one_not_debug_store(self):
+        model = Model()
+        with pytest.raises(AssertionError):
+            model.find_one_debug_false()
 
     def test_find_one_with_wrapper(self):
         model = Model()
@@ -231,11 +274,25 @@ class TestPersistence(object):
         assert (table, db) == ("test_table_2", "test_db_2")
         assert isinstance(driver, MyDriver)
 
+    def test_multi_driver_with_specify_driver_names(self):
+        table, db = MultiDriverModel().find_one_ignore_store(2)
+        assert (table, db) == ("test_table_2", "test_db_2")
+
     @pytest.mark.asyncio
     async def test_async_driver_mixin(self):
         driver, a = await AsyncDriverModel().find_one()
         assert a == 111
         assert isinstance(driver, MyDriver)
+
+    @pytest.mark.asyncio
+    async def test_async_driver_with_future(self):
+        driver = await AsyncDriverModel().find_one_async_with_future()
+        assert isinstance(driver, MyDriver)
+
+    @pytest.mark.asyncio
+    async def test_async_driver_with_asyncgen(self):
+        async for i in AsyncDriverModel().async_with_asyncgen():
+            assert i == 1
 
     def test_async_driver_mixin_with_sync_method(self):
         driver = AsyncDriverModel().find_one_sync()

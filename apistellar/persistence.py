@@ -135,14 +135,7 @@ conn_proxy_driver_names = conn_meta_add("proxy_driver_names")
 conn_debug = conn_meta_add("debug_callback")
 ignore_callback = conn_debug(lambda: True)
 
-
-def conn_ignore(func):
-    """
-    使用了持久化元类时，使方法忽略使用连接管理，该装饰器必须紧靠方法
-    :param func:
-    :return:
-    """
-    return ignore_callback(func)
+conn_ignore = ignore_callback
 
 
 class DriverMixin(object):

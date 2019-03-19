@@ -25,7 +25,7 @@ erp 已创建。
 ```
 创建两个service模块
 ```
-➜  erp cd erp/erp
+➜  erp cd src/erp/erp
 ➜  erp apistar-create service -h
 usage: apistar-create service [-h] [-t TEMPLATES] name [name ...]
 
@@ -113,13 +113,13 @@ class UserController(Controller):
 ```
 执行以下命令
 ```
+➜  erp cd ..
 ➜  erp apistar-routes
 Name                                     Method  URI Pattern                              Controller#Action
 view:usercontroller:hello                GET     /user/                                   user:UserController#hello
 ```
 启动程序
 ```
-➜  erp cd ..
 ➜  erp python web_app.py
 DEBUG:apistellar.app:Route method: GET, url: /user/ to view:usercontroller:hello.
 DEBUG:asyncio:Using selector: KqueueSelector

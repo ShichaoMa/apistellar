@@ -91,6 +91,11 @@ class Model(PersistentType, MyDriverMixin):
     def find_one_debug_true(self):
         assert self.store is None
 
+    @classmethod
+    @conn_debug(lambda: True)
+    def classmethod_find_one_debug_true(cls):
+        assert cls.store is None
+
     @conn_debug(lambda: False)
     def find_one_debug_false(self):
         assert self.store is None
@@ -225,6 +230,10 @@ class TestPersistence(object):
     def test_find_one_debug_store(self):
         model = Model()
         model.find_one_debug_true()
+
+    def test_classmethod_find_one_debug_store(self):
+        model = Model()
+        model.classmethod_find_one_debug_true()
 
     def test_find_one_not_debug_store(self):
         model = Model()

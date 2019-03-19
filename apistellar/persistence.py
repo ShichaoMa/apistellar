@@ -166,7 +166,11 @@ class PersistentMeta(type):
     def __new__(mcs, name, bases, attrs):
         for attr_name in attrs.keys():
             func = attrs[attr_name]
-            driver_meta = getattr(func, ConnectionManager.meta_name, None)
+            # 类方法
+            if hasattr(func, "__func__"):
+                driver_meta = getattr(func.__func__, ConnectionManager.meta_name, None)
+            else:
+                driver_meta = getattr(func, ConnectionManager.meta_name, None)
             if driver_meta:
                 cm = conn_manager(**driver_meta)
             else:

@@ -1,4 +1,4 @@
-原生的apistar并没有session支持，apistellar将flask的session实现融合到了apistar中，我们可以很轻松的使用session。
+原生的apistar并没有session支持，apistellar将flask的session融合到了apistar中，我们可以很轻松的使用session。
 
 通过apistellar构建的项目，session是可以被直接注入的：
 ```python
@@ -40,3 +40,4 @@ class ArticleController(Controller, SettingsMixin):
 ```
 我们可以像使用flask中的session一样使用被注入的session。
 session的一些参数可以在settings.py中配置。
+从apistellar>=1.2.7开始，我们可以通过简单配置在全局对象coroutinelocal中直接使用session，详细参见[全局对象](https://github.com/ShichaoMa/apistellar/blob/master/docs/apistellar.wiki/全局对象.md)

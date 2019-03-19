@@ -68,9 +68,9 @@ class ArticleController(Controller, SettingsMixin):
                 "login.html", **article.to_dict())
 
 ```
-controller中使用了两种装饰器方法
+controller中使用了两种装饰器:
 
-route：指定了该controller当前的uri，如果controller继承自其它controller，uri也会被连接。
-get, post等：指定了该方法是一个Http 方法请求绑定的视图函数，第一个参数是url，同时会连接上controller的uri，省略的话url为/{方法名}。一个方法可以使用多个http请求方法装饰器。
+- route：指定了该controller当前的uri，如果controller继承自其它controller，uri会被连接。
+- get, post等：指定了该方法是一个Http请求绑定的视图函数，第一个参数是url，同时会连接上controller的uri，省略的话url为`/{方法名}`。一个方法可以使用多个http请求装饰器。
 
-controller中的action方法一般会调用注入的service对象，来完成复杂的业务逻辑。
+controller中的action方法通常会调用service对象，来完成复杂的业务逻辑。

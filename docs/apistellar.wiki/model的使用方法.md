@@ -76,12 +76,6 @@ class Name(Type):
     # 可以引用自身
     full_name = validators.Ref("Name", default="全名")
 
-    # 当Name作为其它对象的属性时，可以允许是Null
-    @classmethod
-    def allow_null(cls):
-        return True
-
-
 class Tape(Type):
     hours = validators.Integer()
     name = validators.String()
@@ -141,7 +135,7 @@ print(b.ipads[1].price)
 ```
 
 ### 使用Proxy代理一个model子类
-validator支持使用一个Proxy类代理一个model子类。使用这种方式比直接在父类使用子类做为属性要优越许多，可以声明不同的代理对象来获取不同的子类实现效果。如：
+validator支持使用一个Proxy类托管一个model子类。使用这种方式比直接在父类使用子类作为属性要优越许多，可以声明不同的托管对象来获取不同的子类实现效果。如：
 ```
 class Subject(Type):
     id = validators.String(allow_null=True)
@@ -158,7 +152,7 @@ class Teacher(Type):
 ```
 
 ### 自定义格式化类
-有时我们可能需要复杂数据类型，设想我们需要一个tags字段，在使用一个json进行model初始化时，tags字段可以是这样的：git,python，通过,链接所有tags。但是我们希望在调用format后，我们的model中的tags可以通过model.tags得到["git", "python"]，同时，当我们将model序列化时，tags又能被连接成字符串。
+有时我们可能需要复杂数据类型，设想我们需要一个tags字段，在使用一个json进行model初始化时，tags字段可以是这样的：git,python，通过`,`连接所有tags。但是我们希望在调用format后，我们的model中的tags可以通过model.tags得到`["git", "python"]`，同时，当我们将model序列化时，tags又能被连接成字符串。
 
 通过继承apistellar.types.format:BaseFormat，我们可以定义Format类，下面我们定义一个TagsFormat来讲解他的用法。
 ```python

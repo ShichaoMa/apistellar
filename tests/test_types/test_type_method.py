@@ -154,6 +154,18 @@ def test_format():
     e.format()
 
 
+def test_reformat():
+    class Example(Type):
+        field = validators.FormatDateTime(default=datetime.now)
+    e = Example()
+    e.reformat("field")
+    assert isinstance(e.field, datetime)
+    e = Example(field="2018-12-12 12:12:12")
+    assert isinstance(e.field, str)
+    e.reformat("field")
+    assert e.field == datetime(2018, 12, 12, 12, 12, 12)
+
+
 def test_is_valid():
     class Example(Type):
         field = validators.String()

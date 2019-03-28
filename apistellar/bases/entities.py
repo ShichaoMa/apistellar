@@ -287,9 +287,15 @@ class Local(object):
         return Task.current_task()
 
     def __getattr__(self, item):
-        return self.coroutinelocal[self.current_task()][item]
+        try:
+            return self[item]
+        except KeyError as e:
+            raise AttributeError(e)
 
     def __getitem__(self, item):
+        task = self.current_task()
+        if task is None:
+            raise KeyError("current task not found!")
         return self.coroutinelocal[self.current_task()][item]
 
     def get(self, item, default=None):

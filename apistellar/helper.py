@@ -657,6 +657,8 @@ def register(url, path=None, error_check=None, conn_timeout=9,
                     conn_timeout=conn_timeout, read_timeout=read_timeout,
                     cookies=cookies) as session:
                 self = args[0]
+                # 由于在生成rpc client时，self.url会被转换url字符串，
+                # 所以我们需要找到父类的url方法
                 u = await find_ancestor(self.__class__, "url").url(self, url)
 
                 if have_path_param:

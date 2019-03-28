@@ -190,6 +190,8 @@ class Type(MutableMapping, metaclass=TypeMetaclass):
                 self._dict[k] = v
 
     def reformat(self, field_name, value=None, allow_coerce=False):
+        if value is None:
+            value = self._dict.get(field_name)
         val = self.__class__.validator.properties[field_name].validate(
                     value, allow_coerce=allow_coerce)
         setattr(self, field_name, val)

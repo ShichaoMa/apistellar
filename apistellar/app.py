@@ -24,6 +24,9 @@ JSONResponse.options["default"] = TypeEncoder().default
 del JSONResponse.charset
 
 
+RESP_BUFFER_SIZE = 1024000
+
+
 class FixedAsyncApp(ASyncApp):
 
     def exception_handler(self, exc: Exception) -> Response:
@@ -45,7 +48,7 @@ class FixedAsyncApp(ASyncApp):
         return super().error_handler()
 
     async def read(self, response):
-        coroutine = response.content.read(1024000)
+        coroutine = response.content.read(RESP_BUFFER_SIZE)
         if asyncio.iscoroutine(coroutine) or asyncio.isfuture(coroutine):
             return await coroutine
         else:

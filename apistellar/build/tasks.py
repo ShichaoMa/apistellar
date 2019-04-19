@@ -11,7 +11,7 @@ from os.path import join, exists, abspath, dirname, isdir, basename
 from toolkit import load
 from apistellar.types import validators
 from apistellar.document import DocPainter
-from toolkit.markdown_helper import MarkDownRender
+from toolkit.tools.markdown_helper import MarkDownRender
 
 
 __all__ = ["Task", "Project", "Service", "Model", "Solo", "Document", "Rpc"]

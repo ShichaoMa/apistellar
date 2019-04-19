@@ -7,7 +7,7 @@ from datetime import timedelta
 from collections import namedtuple
 
 from toolkit.singleton import Singleton
-from toolkit.frozen import FrozenSettings
+from toolkit.settings import FrozenSettings
 
 from werkzeug.http import parse_options_header
 from werkzeug.datastructures import ImmutableMultiDict

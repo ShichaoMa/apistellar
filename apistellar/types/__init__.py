@@ -192,8 +192,11 @@ class Type(MutableMapping, metaclass=TypeMetaclass):
     def reformat(self, field_name, value=None, allow_coerce=False):
         if value is None:
             value = self._dict.get(field_name)
-        val = self.__class__.validator.properties[field_name].validate(
-                    value, allow_coerce=allow_coerce)
+        try:
+            val = self.__class__.validator.properties[field_name].validate(
+                        value, allow_coerce=allow_coerce)
+        except ValidationError as ex:
+            raise ValidationError(f"Field: {field_name} is {ex}")
         setattr(self, field_name, val)
         return val
 

@@ -1,11 +1,10 @@
 apistar<=0.5.42
-uvicorn==0.2.2
+uvicorn>=0.7.0
 gunicorn
-toolkity>=1.7.33
-ipython==6.4.0
+toolkity~=1.8.0
 whitenoise<=3.3.1
 pyaop
-Flask==1.0.2
+flask==1.0.2
 pytz
 aiofiles
 aiohttp

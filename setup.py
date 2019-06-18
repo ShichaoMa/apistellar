@@ -35,7 +35,11 @@ def install_requires(dev=False):
         cfg = ConfigParser()
         cfg.read('Pipfile')
         section_name = "%spackages" % ("dev-" if dev else "")
-        return [ _compact_ver(name, cfg.get(section_name, name))for name in cfg.options(section_name)]
+        requires = [_compact_ver(name, cfg.get(section_name, name))for name in cfg.options(section_name)]
+        if not dev:
+            with open("requirements.txt", "w") as f:
+                f.write("\n".join(requires))
+        return requires
     except OSError:
         return []
 

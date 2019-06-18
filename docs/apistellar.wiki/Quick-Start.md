@@ -126,7 +126,7 @@ DEBUG:asyncio:Using selector: KqueueSelector
 * Uvicorn running on http://127.0.0.1:8000 🦄 (Press CTRL+C to quit)
 INFO:root:Started worker [65783]
 ```
-注：也可以使用gunicorn启动`gunicorn -w 1 -k uvicorn.workers.UvicornWorker blog.web_app:app --reload -b :8000`
+注：也可以使用gunicorn启动`gunicorn -w 1 -k uvicorn.workers.UvicornWorker erp.web_app:app --reload -b :8000`
 
 执行以下命令
 ```

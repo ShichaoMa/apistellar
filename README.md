@@ -49,7 +49,7 @@ apistellar部分设计灵感参考ruby on rails
 
 ## Install
 ```
-# python 3.6 required
+# python 3.6+
 pip install apistellar
 ```
 

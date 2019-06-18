@@ -3,7 +3,7 @@ import websockets
 
 from apistar import http
 from apistellar import websocket, Controller, route
-from websockets.exceptions import ConnectionClosed
+from websockets.exceptions import InvalidStatusCode
 
 
 @route("/websocket")
@@ -56,7 +56,7 @@ class TestWebsocket(object):
             assert await ws.recv() == '{"success": "ok"}'
 
     async def test_websocket_not_found(self, server):
-        async with websockets.connect(
-                f"ws://127.0.0.1:{server.port}/websocket/not/found") as ws:
-            with pytest.raises(ConnectionClosed):
-                assert await ws.recv()
+        with pytest.raises(InvalidStatusCode):
+            async with websockets.connect(
+                    f"ws://127.0.0.1:{server.port}/websocket/not/found") as ws:
+                    assert await ws.recv()

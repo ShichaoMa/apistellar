@@ -22,6 +22,7 @@ from apistar import Route, exceptions, http, Component as _Component
 
 from apistellar.types import Type
 
+from .compact import getUnionClass
 from .controller import Controller
 from .entities import Session, Cookie, FormParam, FileStream, DummyFlaskApp, \
     SettingsMixin, MultiPartForm, UrlEncodeForm
@@ -57,7 +58,8 @@ class Component(IdentityInterface, _Component):
         return_annotation = inspect.signature(self.resolve).return_annotation
         if return_annotation is inspect.Signature.empty:
             return False
-        return type(return_annotation) == typing._Union and \
+
+        return type(return_annotation) == getUnionClass() and \
                parameter.annotation in return_annotation.__args__ or \
                parameter.annotation == return_annotation  # 之前is判断的，
         # 后来由于typing.Dict[str, Cookie]在执行所有单测时对象发生了变化，所以暂时用==

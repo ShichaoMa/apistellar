@@ -62,6 +62,18 @@ class TypeMetaclass(ABCMeta):
 
         return cls
 
+    def __subclasscheck__(self, subclass):
+        """
+        3.7.3 abc __subclasscheck__ 被抽象到builtin模块中，当subclass为非类时会报错：
+        TypeError: issubclass() arg 1 must be a class
+        :param subclass:
+        :return:
+        """
+        try:
+            return super(TypeMetaclass, self).__subclasscheck__(subclass)
+        except TypeError:
+            return False
+
 
 class Type(MutableMapping, metaclass=TypeMetaclass):
 

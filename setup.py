@@ -3,6 +3,7 @@ import os
 import re
 import string
 
+from configparser import ConfigParser
 from contextlib import contextmanager
 from setuptools import setup, find_packages
 
@@ -19,14 +20,22 @@ def get_version(package):
         raise RuntimeError("Cannot find version!")
 
 
-def install_requires():
+def _compact_ver(name, ver):
+    if ver == '"*"' or ver.startswith("{"):
+        ver = ""
+    return '%s%s' % (name, ver.strip('"'))
+
+
+def install_requires(dev=False):
     """
     Return requires in requirements.txt
     :return:
     """
     try:
-        with open("requirements.txt") as f:
-            return [line.strip() for line in f.readlines() if line.strip()]
+        cfg = ConfigParser()
+        cfg.read('Pipfile')
+        section_name = "%spackages" % ("dev-" if dev else "")
+        return [ _compact_ver(name, cfg.get(section_name, name))for name in cfg.options(section_name)]
     except OSError:
         return []
 
@@ -81,5 +90,5 @@ with cfg_manage(__file__.replace(".py", ".cfg.tpl")):
         include_package_data=True,
         zip_safe=True,
         setup_requires=["pytest-runner"],
-        tests_require=["pytest-apistellar", "pytest-asyncio", "pytest-cov"]
+        tests_require=install_requires(dev=True)
     )

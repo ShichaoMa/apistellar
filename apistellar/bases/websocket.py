@@ -2,22 +2,20 @@ import json
 import asyncio
 import logging
 
-from abc import ABCMeta
 from apistar import http
 from functools import partial
 from _collections_abc import _check_methods
 
 from ..helper import TypeEncoder
-
+from .compact import CompactAbcMeta
 
 logger = logging.getLogger("websocket")
 
 
-class WebSocketHandler(metaclass=ABCMeta):
+class WebSocketHandler(metaclass=CompactAbcMeta):
 
     async def websocket_connect(self, message, path: http.Path):
         logger.debug(f"Websocket of {path} connect. ")
-        return ""
 
     async def websocket_disconnect(self, message, path: http.Path):
         logger.debug(f"Websocket of {path} disconnect. ")
@@ -62,7 +60,7 @@ class WebSocketApp:
             'path_params': None,
             'route': None
         }
-        method = self.scope['method']
+        method = self.scope.get('method', "GET")
         path = self.scope['path']
         self._send = send
         try:
@@ -86,6 +84,11 @@ class WebSocketApp:
         raise exc
 
     async def send(self, buf, type="websocket.send"):
+        if type == "websocket.accept":
+            await self._send({"type": "websocket.accept"})
+            if buf:
+                await self.send(buf)
+            return
         message = {"type": type}
 
         if isinstance(buf, bytes):

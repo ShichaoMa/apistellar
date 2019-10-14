@@ -44,9 +44,9 @@ def install_requires(dev=False):
         return []
 
 try:
-    LONG_DESCRIPTION = open("README.rst").read()
+    LONG_DESCRIPTION = open("README.md").read()
 except UnicodeDecodeError:
-    LONG_DESCRIPTION = open("README.rst", encoding="utf-8").read()
+    LONG_DESCRIPTION = open("README.md", encoding="utf-8").read()
 
 
 @contextmanager
@@ -71,6 +71,7 @@ with cfg_manage(__file__.replace(".py", ".cfg.tpl")):
         version=get_version("apistellar"),
         description="enhance apistar web framework. ",
         long_description=LONG_DESCRIPTION,
+        long_description_content_type="text/markdown",
         classifiers=[
             "License :: OSI Approved :: MIT License",
             "Programming Language :: Python :: 3.6",

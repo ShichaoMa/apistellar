@@ -51,6 +51,7 @@ class Validator(object):
         # been declared in when used with `Type`.
         self._creation_counter = Validator._creation_counter
         Validator._creation_counter += 1
+        self.kwargs = kwargs
 
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():

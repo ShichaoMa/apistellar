@@ -5,4 +5,9 @@ test=pytest
 ;when run pytest command, add --rootdir here will be effective, but
 ;the printed message of rootdir is only can be changed by command
 ;line, so never mind!
-addopts = --rootdir=${pwd}/tests --cov-report=html:${pwd}/htmlcov --cov-branch --cov=${pwd}/{{name}}/  -vv --disable-warnings
+addopts = --rootdir=${pwd}/tests --cov-report=html:${pwd}/htmlcov --cov-branch --cov=${pwd}/src/{{name}}/  -vv --disable-warnings
+usefixtures =
+    mock
+;`UNIT_TEST_MODE` used to ignore DriverMixin's wrapper conn_manager
+env =
+    UNIT_TEST_MODE=true

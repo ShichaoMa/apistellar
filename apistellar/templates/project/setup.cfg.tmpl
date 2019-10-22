@@ -6,3 +6,8 @@ test=pytest
 ;the printed message of rootdir is only can be changed by command
 ;line, so never mind!
 addopts = --rootdir={{project_dir}}/tests --cov-report=html:{{project_dir}}/htmlcov --cov-branch --cov={{project_dir}}/{{name}}/  -vv --disable-warnings
+usefixtures =
+    mock
+;`UNIT_TEST_MODE` used to ignore DriverMixin's wrapper conn_manager
+env =
+    UNIT_TEST_MODE=true

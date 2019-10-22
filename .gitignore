@@ -1,5 +1,5 @@
 .coverage
-.lock
+*.lock
 *.pyc
 *egg-info
 dist/
@@ -12,3 +12,4 @@ htmlcov/
 *lock.json
 setup.cfg
 node_modules/
+tests/test_data/

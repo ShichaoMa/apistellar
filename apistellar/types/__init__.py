@@ -189,6 +189,9 @@ class Type(MutableMapping, metaclass=TypeMetaclass):
     def __iter__(self):
         return iter(self._dict)
 
+    def __bool__(self):
+        return bool(len(self))
+
     @classmethod
     def init(cls, **kwargs):
         for k, v in kwargs.items():

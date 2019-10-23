@@ -21,7 +21,6 @@ Flask = "==1.0.2"
 pytz = "*"
 aiofiles = "*"
 aiohttp = "*"
-databases = {extras = ["sqlite"],version = "*"}
 
 [requires]
 python_version = "3.7"

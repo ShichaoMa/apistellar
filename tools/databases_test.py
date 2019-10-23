@@ -1,10 +1,6 @@
 # Create a database instance, and connect to it.
 
 
-class SqlAlchemyType(PersistentType, metaclass=SqlAlchemyTypeMeta):
-    pass
-
-
 class HighScores(SqlAlchemyType, SqliteDriverMixin):
 
     TABLE = "HighScores"

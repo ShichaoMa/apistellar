@@ -98,8 +98,8 @@ class Type(MutableMapping, metaclass=TypeMetaclass):
                 # Instantiated with an object instance.
                 value = {}
                 for key, val in self.validator.properties.items():
-                    v = getattr(args[0], key, None)
-                    if v:
+                    v = getattr(args[0], key, validators.NO_DEFAULT)
+                    if v != validators.NO_DEFAULT:
                         value[key] = v
         else:
             # Instantiated with keyword arguments.

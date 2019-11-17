@@ -38,7 +38,7 @@ class TestUnion(object):
         e = self.Example()
         with pytest.raises(ValidationError) as exc_info:
             e.field1 = None
-        assert exc_info.value.args[0].code == "null"
+        assert exc_info.value.args[0]["field1"].code == "null"
 
     def test_allow_null_success(self):
         class Example(Type):
@@ -60,4 +60,4 @@ class TestUnion(object):
         e = self.Example()
         with pytest.raises(ValidationError) as exc_info:
             e.field1 = []
-        assert exc_info.value.args[0].code == "union"
+        assert exc_info.value.args[0]["field1"].code == "union"

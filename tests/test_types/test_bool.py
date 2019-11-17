@@ -15,7 +15,7 @@ class TestBooleanAllowNull(BoolTest):
         e = self.gen_class(self._type)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = None
-        assert exc_info.value.args[0].code == "null"
+        assert exc_info.value.args[0]["field"].code == "null"
 
     def test_success(self):
         e = self.gen_class(self._type, allow_null=True)()
@@ -77,7 +77,7 @@ class TestBooleanType(BoolTest):
         e = self.Example()
         with pytest.raises(ValidationError) as exc_info:
             e.field = 11
-        assert exc_info.value.args[0].code == "type"
+        assert exc_info.value.args[0]["field"].code == "type"
 
     def test_success(self):
         e = self.Example()

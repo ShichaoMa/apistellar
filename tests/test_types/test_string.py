@@ -17,7 +17,7 @@ class TestStringMaxLength(StringTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = "3333"
 
-        assert exc_info.value.args[0].code == "max_length"
+        assert exc_info.value.args[0]["field"].code == "max_length"
 
     def test_success(self):
         e = self.Example()
@@ -37,14 +37,14 @@ class TestStringMinLength(StringTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = "33"
 
-        assert exc_info.value.args[0].code == "min_length"
+        assert exc_info.value.args[0]["field"].code == "min_length"
 
     def test_blank_failed(self):
         e = self.gen_class(self._type, min_length=1)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = ""
 
-        assert exc_info.value.args[0].code == "blank"
+        assert exc_info.value.args[0]["field"].code == "blank"
 
     def test_success(self):
         e = self.Example()
@@ -62,7 +62,7 @@ class TestStringAllowNull(StringTest):
         e = self.gen_class(self._type)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = None
-        assert exc_info.value.args[0].code == "null"
+        assert exc_info.value.args[0]["field"].code == "null"
 
     def test_success(self):
         e = self.gen_class(self._type, allow_null=True)()
@@ -103,7 +103,7 @@ class TestStringType(StringTest):
         e = self.Example()
         with pytest.raises(ValidationError) as exc_info:
             e.field = 3
-        assert exc_info.value.args[0].code == "type"
+        assert exc_info.value.args[0]["field"].code == "type"
 
     def test_success(self):
         e = self.Example()
@@ -131,7 +131,7 @@ class TestStringPattern(StringTest):
         e = self.Example()
         with pytest.raises(ValidationError) as exc_info:
             e.field = "aaa"
-        assert exc_info.value.args[0].code == "pattern"
+        assert exc_info.value.args[0]["field"].code == "pattern"
 
     def test_success(self):
         e = self.Example()
@@ -149,13 +149,13 @@ class TestStringEnum(StringTest):
         e = self.Example()
         with pytest.raises(ValidationError) as exc_info:
             e.field = "c"
-        assert exc_info.value.args[0].code == "enum"
+        assert exc_info.value.args[0]["field"].code == "enum"
 
     def test_failed_exact(self):
         e = self.gen_class(self._type, enum=["a"])()
         with pytest.raises(ValidationError) as exc_info:
             e.field = "c"
-        assert exc_info.value.args[0].code == "exact"
+        assert exc_info.value.args[0]["field"].code == "exact"
 
     def test_success(self):
         e = self.Example()

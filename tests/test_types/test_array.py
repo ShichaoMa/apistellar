@@ -18,7 +18,7 @@ class TestArrayMaxItems(ArrayTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = ["aaa", "bbb", "ccc", "ddd"]
 
-        assert exc_info.value.args[0].code == "max_items"
+        assert exc_info.value.args[0]["field"].code == "max_items"
 
     def test_success(self):
         e = self.Example()
@@ -38,14 +38,14 @@ class TestArrayMinItems(ArrayTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = ["aaa", "bbb"]
 
-        assert exc_info.value.args[0].code == "min_items"
+        assert exc_info.value.args[0]["field"].code == "min_items"
 
     def test_empty_failed(self):
         e = self.gen_class(self._type, min_items=1)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = []
 
-        assert exc_info.value.args[0].code == "empty"
+        assert exc_info.value.args[0]["field"].code == "empty"
 
     def test_success(self):
         e = self.Example()
@@ -65,7 +65,7 @@ class TestArrayExactItems(ArrayTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = ["aaa", "bbb"]
 
-        assert exc_info.value.args[0].code == "exact_items"
+        assert exc_info.value.args[0]["field"].code == "exact_items"
 
     def test_success(self):
         e = self.Example()
@@ -79,7 +79,7 @@ class TestArrayAllowNull(ArrayTest):
         e = self.gen_class(self._type)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = None
-        assert exc_info.value.args[0].code == "null"
+        assert exc_info.value.args[0]["field"].code == "null"
 
     def test_success(self):
         e = self.gen_class(self._type, allow_null=True)()
@@ -120,7 +120,7 @@ class TestArrayType(ArrayTest):
         e = self.Example()
         with pytest.raises(ValidationError) as exc_info:
             e.field = 3
-        assert exc_info.value.args[0].code == "type"
+        assert exc_info.value.args[0]["field"].code == "type"
 
     def test_success(self):
         e = self.Example()
@@ -131,7 +131,7 @@ class TestArrayType(ArrayTest):
         e = self.gen_class(self._type, items=String())()
         with pytest.raises(ValidationError) as exc_info:
             e.field = [1]
-        assert exc_info.value.args[0][0].code == "type"
+        assert exc_info.value.args[0]["field"][0].code == "type"
 
     def test_success_inner_type_one(self):
         e = self.gen_class(self._type, items=String())()
@@ -142,8 +142,8 @@ class TestArrayType(ArrayTest):
         e = self.gen_class(self._type, items=[String(), Integer()])()
         with pytest.raises(ValidationError) as exc_info:
             e.field = [1, "1"]
-        assert exc_info.value.args[0][0].code == "type"
-        assert exc_info.value.args[0][1].code == "type"
+        assert exc_info.value.args[0]["field"][0].code == "type"
+        assert exc_info.value.args[0]["field"][1].code == "type"
 
     def test_success_inner_type_many(self):
         e = self.gen_class(self._type, items=[String(), Integer()])()
@@ -171,7 +171,7 @@ class TestArrayAdditionalItems(ArrayTest):
                            additional_items=False)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = ["1", 1, 1]
-        assert exc_info.value.args[0].code == "additional_items"
+        assert exc_info.value.args[0]["field"].code == "additional_items"
 
     def test_additional_items_success(self):
         e = self.gen_class(self._type, items=[String(), Integer()])()
@@ -183,7 +183,7 @@ class TestArrayAdditionalItems(ArrayTest):
                            additional_items=String())()
         with pytest.raises(ValidationError) as exc_info:
             e.field = ["1", 1, 1]
-        assert exc_info.value.args[0][2].code == "type"
+        assert exc_info.value.args[0]["field"][2].code == "type"
 
     def test_additional_items_validate_success(self):
         e = self.gen_class(self._type, items=[String(), Integer()],
@@ -202,7 +202,7 @@ class TestArrayUniqueItems(ArrayTest):
         e = self.gen_class(self._type, unique_items=True)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = ["1", 1, 1]
-        assert exc_info.value.args[0][2].code == "unique_items"
+        assert exc_info.value.args[0]["field"][2].code == "unique_items"
 
     def test_argument_error(self):
         with pytest.raises(AssertionError):

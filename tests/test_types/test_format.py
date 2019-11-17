@@ -148,3 +148,19 @@ def test_custom_format_set():
     assert "test" not in FORMATS
     FORMATS["test"] = CustomFormat
     assert "test" in FORMATS
+
+
+def test_format_field_error_with_field_name():
+    e = Example()
+    with pytest.raises(ValidationError) as err_info:
+        e.field5 = 3
+
+    assert err_info.value.detail["field5"] == 'Must be a string.'
+
+
+def test_reformat_field_error_with_field_name():
+    e = Example(field5=3)
+    with pytest.raises(ValidationError) as err_info:
+        e.reformat("field5")
+
+    assert err_info.value.detail["field5"] == 'Must be a string.'

@@ -22,7 +22,7 @@ class TestNumericTypeMinimum(NumericTypeTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = 9
 
-        assert exc_info.value.args[0].code == "minimum"
+        assert exc_info.value.args[0]["field"].code == "minimum"
 
     def test_success(self, _type):
         e = self.gen_class(_type, **self.kwargs)()
@@ -34,7 +34,7 @@ class TestNumericTypeMinimum(NumericTypeTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = 10
 
-        assert exc_info.value.args[0].code == "exclusive_minimum"
+        assert exc_info.value.args[0]["field"].code == "exclusive_minimum"
 
     def test_exclude_min_success(self, _type):
         e = self.gen_class(_type, **self.kwargs, exclusive_minimum=True)()
@@ -54,7 +54,7 @@ class TestNumericTypeMaximum(NumericTypeTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = 4
 
-        assert exc_info.value.args[0].code == "maximum"
+        assert exc_info.value.args[0]["field"].code == "maximum"
 
     def test_success(self, _type):
         e = self.gen_class(_type, **self.kwargs)()
@@ -66,7 +66,7 @@ class TestNumericTypeMaximum(NumericTypeTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = 3
 
-        assert exc_info.value.args[0].code == "exclusive_maximum"
+        assert exc_info.value.args[0]["field"].code == "exclusive_maximum"
 
     def test_exclude_max_success(self, _type):
         e = self.gen_class(_type, **self.kwargs, exclusive_maximum=True)()
@@ -84,7 +84,7 @@ class TestNumericTypeAllowNull(NumericTypeTest):
         e = self.gen_class(_type, **self.kwargs)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = None
-        assert exc_info.value.args[0].code == "null"
+        assert exc_info.value.args[0]["field"].code == "null"
 
     def test_success(self, _type):
         e = self.gen_class(_type, allow_null=True)()
@@ -125,7 +125,7 @@ class TestNumericTypeType(NumericTypeTest):
         e = self.gen_class(_type, **self.kwargs)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = "3"
-        assert exc_info.value.args[0].code == "type"
+        assert exc_info.value.args[0]["field"].code == "type"
 
     def test_success(self, _type):
         e = self.gen_class(_type, **self.kwargs)()
@@ -153,13 +153,13 @@ class TestNumericTypeMultiple(NumericTypeTest):
         e = self.gen_class(_type, **self.kwargs)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = 4
-        assert exc_info.value.args[0].code == "multiple_of"
+        assert exc_info.value.args[0]["field"].code == "multiple_of"
 
     def test_float_failed(self, _type):
         e = self.gen_class(_type, multiple_of=1.5)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = 4
-        assert exc_info.value.args[0].code == "multiple_of"
+        assert exc_info.value.args[0]["field"].code == "multiple_of"
 
     def test_success(self, _type):
         e = self.gen_class(_type, **self.kwargs)()
@@ -181,13 +181,13 @@ class TestNumericTypeEnum(NumericTypeTest):
         e = self.gen_class(_type, **self.kwargs)()
         with pytest.raises(ValidationError) as exc_info:
             e.field = 3
-        assert exc_info.value.args[0].code == "enum"
+        assert exc_info.value.args[0]["field"].code == "enum"
 
     def test_failed_exact(self, _type):
         e = self.gen_class(_type, enum=[1])()
         with pytest.raises(ValidationError) as exc_info:
             e.field = 2
-        assert exc_info.value.args[0].code == "exact"
+        assert exc_info.value.args[0]["field"].code == "exact"
 
     def test_success(self, _type):
         e = self.gen_class(_type, **self.kwargs)()
@@ -207,7 +207,7 @@ class TestInteger(NumericTypeTest):
         with pytest.raises(ValidationError) as exc_info:
            e.field = 1.1
 
-        assert exc_info.value.args[0].code == "integer"
+        assert exc_info.value.args[0]["field"].code == "integer"
 
     def test_allow_coerce(self, _type):
         e = self.gen_class(_type, **self.kwargs)(field="123")
@@ -223,4 +223,4 @@ class TestNumber(NumericTypeTest):
         with pytest.raises(ValidationError) as exc_info:
             e.field = float("inf")
 
-        assert exc_info.value.args[0].code == "finite"
+        assert exc_info.value.args[0]["field"].code == "finite"

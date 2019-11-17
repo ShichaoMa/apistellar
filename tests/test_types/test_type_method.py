@@ -162,7 +162,7 @@ class TestType(object):
         e = Example()
         with pytest.raises(ValidationError) as ex:
             e.reformat("field")
-        assert str(ex.value.args[0]) == "Field: field is None: May not be null."
+        assert ex.value.args[0]["field"].code == "null"
 
     def test_is_valid(self):
         class Example(Type):

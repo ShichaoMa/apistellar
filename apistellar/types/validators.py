@@ -2,12 +2,13 @@ import re
 import numbers
 
 from math import isfinite
-from toolkit import cache_property
+from toolkit import cache_property, cache_classproperty, load
 from collections.abc import Mapping
 from apistar.exceptions import ValidationError
 
 from .formats import FORMATS, ExchangeFormat
 
+from .error_desc import errors
 NO_DEFAULT = object()
 
 dict_type = dict
@@ -21,8 +22,25 @@ class ErrorMessage(str):
 
 
 class Validator(object):
-    errors = {}
     _creation_counter = 0
+
+    @cache_classproperty
+    def errors(cls):
+        err = errors.get(cls.__name__)
+        if err is None:
+            # here cannot use super
+            err = cls.__base__.errors
+        err = err or dict()
+        try:
+            # avoid import cycle
+            from apistellar import settings
+            local_errors = load(settings.get("ERROR_DESC"))
+            e = local_errors.get(cls.__name__)
+            if e is not None:
+                err.update(e)
+        except (ImportError, KeyError):
+            pass
+        return err or dict()
 
     def __init__(self, title='', description='', default=NO_DEFAULT,
                  allow_null=False, definitions=None, def_name=None, model=None, **kwargs):
@@ -56,7 +74,6 @@ class Validator(object):
     def validate(self, value, definitions=None, allow_coerce=False):
         if value is None and self.has_default():
             value = self.get_default()
-        self.value = value
         return value
 
     def is_valid(self, value):
@@ -111,9 +128,6 @@ class Validator(object):
 
 
 class Proxy(Validator):
-    errors = {
-        'null': '{value}: May not be null.',
-    }
 
     def __init__(self, type, **kwargs):
         super(Proxy, self).__init__(**kwargs)
@@ -130,17 +144,6 @@ class Proxy(Validator):
 
 
 class String(Validator):
-    errors = {
-        'type': '{value}: Must be a string.',
-        'null': '{value}: May not be null.',
-        'blank': '{value}: Must not be blank.',
-        'max_length': '{value}: Must have no more than {max_length} characters',
-        'min_length': '{value}: Must have at least {min_length} characters',
-        'pattern': '{value}: Must match the pattern /{pattern}/.',
-        'format': '{value}: Must be a valid {format}.',
-        'enum': '{value}: Must be one of {enum}.',
-        'exact': '{value}: Must be {exact}.'
-    }
 
     def __init__(self, max_length=None, min_length=None, pattern=None,
                  enum=None, format=None, **kwargs):
@@ -221,19 +224,6 @@ class NumericType(Validator):
     Base class for both `Number` and `Integer`.
     """
     numeric_type = None  # type: type
-    errors = {
-        'type': '{value}: Must be a number.',
-        'null': '{value}: May not be null.',
-        'integer': '{value}: Must be an integer.',
-        'finite': '{value}: Must be finite.',
-        'minimum': '{value}: Must be greater than or equal to {minimum}.',
-        'exclusive_minimum': '{value}: Must be greater than {minimum}.',
-        'maximum': '{value}: Must be less than or equal to {maximum}.',
-        'exclusive_maximum': '{value}: Must be less than {maximum}.',
-        'multiple_of': '{value}: Must be a multiple of {multiple_of}.',
-        'enum': '{value}: Must be one of {enum}.',
-        'exact': '{value}: Must be {exact}.'
-    }
 
     def __init__(self, minimum=None, maximum=None, exclusive_minimum=False,
                  exclusive_maximum=False, multiple_of=None, enum=None,
@@ -316,10 +306,6 @@ class Integer(NumericType):
 
 
 class Boolean(Validator):
-    errors = {
-        'type': '{value}: Must be a valid boolean.',
-        'null': '{value}: May not be null.',
-    }
     values = {
         'true': True,
         'false': False,
@@ -363,17 +349,6 @@ class Boolean(Validator):
 
 
 class Object(Validator):
-    errors = {
-        'type': '{value}: Must be an object.',
-        'null': '{value}: May not be null.',
-        'invalid_key': '{value}: Object keys must be strings.',
-        'required': '{value}: The "{field_name}" field is required.',
-        'invalid_property': '{value}: Invalid property name.',
-        'empty': '{value}: Must not be empty.',
-        'max_properties': '{value}: Must have no more than {max_properties} properties.',
-        'min_properties': '{value}: Must have at least {min_properties} properties.',
-    }
-
     def __init__(self, properties=None, pattern_properties=None,
                  additional_properties=True, min_properties=None,
                  max_properties=None, required=None,
@@ -496,23 +471,18 @@ class Object(Validator):
                     errors[key] = exc.detail
 
         if errors:
-            raise ValidationError(errors)
+            raise ValidationError(self.exchange_error(errors))
 
         return validated
 
+    def exchange_error(self, error_dict):
+        new_errors = dict()
+        for key, value in error_dict.items():
+            new_errors[self.properties[key].title or key] = value
+        return new_errors
+
 
 class Array(Validator):
-    errors = {
-        'type': '{value}: Must be an array.',
-        'null': '{value}: May not be null.',
-        'empty': '{value}: Must not be empty.',
-        'exact_items': '{value}: Must have {min_items} items.',
-        'min_items': '{value}: Must have at least {min_items} items.',
-        'max_items': '{value}: Must have no more than {max_items} items.',
-        'additional_items': '{value}: May not contain additional items.',
-        'unique_items': '{value}: This item is not unique.',
-    }
-
     def __init__(self, items=None, additional_items=None, min_items=None,
                  max_items=None, unique_items=False, **kwargs):
         super().__init__(**kwargs)
@@ -633,10 +603,6 @@ class Any(Validator):
 
 
 class Union(Validator):
-    errors = {
-        'null': '{value}: Must not be null.',
-        'union': '{value}: Must match one of the union types.'
-    }
 
     def __init__(self, items, **kwargs):
         super().__init__(**kwargs)

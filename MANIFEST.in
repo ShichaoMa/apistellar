@@ -1,4 +1,4 @@
-include README.rst
+include README.md
 include requirements.txt
 include Pipfile
 recursive-include apistellar/templates *

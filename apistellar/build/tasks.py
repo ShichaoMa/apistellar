@@ -123,9 +123,9 @@ class Service(ModuleTask):
         super().enrich_kwargs(words)
         father = None
 
-        if exists("__init__.py"):
+        if exists("controller.py"):
             regex = re.compile(r"class\s+(\w*?Controller)\(\w*Controller\):")
-            mth = regex.search(open("__init__.py").read())
+            mth = regex.search(open("controller.py").read())
             if mth:
                 father = mth.group(1)
         self.kwargs["father"] = father or "Controller"

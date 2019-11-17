@@ -16,7 +16,7 @@ class TestProxyAllowNull(ProxyTest):
         e = self.gen_class(self._type, self.nested())()
         with pytest.raises(ValidationError) as exc_info:
             e.field = None
-        assert exc_info.value.args[0].code == "null"
+        assert exc_info.value.args[0]["field"].code == "null"
 
     def test_success(self):
         e = self.gen_class(self._type, self.nested(), allow_null=True)()

@@ -1,6 +1,6 @@
 from apistar import http
 from apistellar import Controller, route, get, post
-{{'' if father == 'Controller' else 'from .. import ' + father + '\n'}}
+{{'' if father == 'Controller' else 'from ..controller import ' + father + '\n'}}
 
 @route("/{{module_name}}")
 class {{class_name}}Controller({{father}}):

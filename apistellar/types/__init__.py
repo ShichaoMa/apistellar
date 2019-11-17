@@ -137,7 +137,11 @@ class Type(MutableMapping, metaclass=TypeMetaclass):
     def __setattr__(self, key, value):
         if key not in self.validator.properties:
             raise AttributeError('Invalid attribute "%s"' % key)
-        value = self.validator.properties[key].validate(value)
+        validator = self.validator.properties[key]
+        try:
+            value = validator.validate(value)
+        except ValidationError as ex:
+            raise ValidationError({validator.title or key: ex.detail})
         self._dict[key] = value
 
     def __setitem__(self, key, value):
@@ -207,11 +211,11 @@ class Type(MutableMapping, metaclass=TypeMetaclass):
     def reformat(self, field_name, value=None, allow_coerce=False):
         if value is None:
             value = self._dict.get(field_name)
+        validator = self.__class__.validator.properties[field_name]
         try:
-            val = self.__class__.validator.properties[field_name].validate(
-                        value, allow_coerce=allow_coerce)
+            val = validator.validate(value, allow_coerce=allow_coerce)
         except ValidationError as ex:
-            raise ValidationError(f"Field: {field_name} is {ex}")
+            raise ValidationError({validator.title or field_name: ex.detail})
         setattr(self, field_name, val)
         return val
 

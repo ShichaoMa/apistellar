@@ -126,6 +126,11 @@ class Validator(object):
 
         return Union(items)
 
+    def __str__(self):
+        return self.__class__.__name__
+
+    __repr__ = __str__
+
 
 class Proxy(Validator):
 
@@ -164,7 +169,9 @@ class String(Validator):
 
     @property
     def formatter(self):
-        return FORMATS.get(self.format)
+        if "formatter" not in self.__dict__:
+            self.__dict__["formatter"] = FORMATS.get(self.format)
+        return self.__dict__["formatter"]
 
     def validate(self, value, definitions=None, allow_coerce=False):
         value = super().validate(value)
@@ -199,7 +206,10 @@ class String(Validator):
                 self.error('pattern')
 
         if self.formatter:
-            return self.formatter.validate(value)
+            try:
+                return self.formatter.validate(value)
+            except ValidationError:
+                self.error("format")
 
         return value
 
@@ -210,13 +220,12 @@ class Exchange(String):
         kwargs["format"] = "exchange_format"
         super(Exchange, self).__init__(**kwargs)
         self.cast = cast
-        self._formatter = None
 
     @property
     def formatter(self):
-        if not self._formatter:
-            self._formatter = ExchangeFormat(self.cast)
-        return self._formatter
+        if "formatter" not in self.__dict__:
+            self.__dict__["formatter"] =  ExchangeFormat(self.cast)
+        return self.__dict__["formatter"]
 
 
 class NumericType(Validator):

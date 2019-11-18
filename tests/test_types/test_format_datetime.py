@@ -24,5 +24,4 @@ class TestFormat(FormatDateTimeTest):
             e = self.gen_class(self._type, format="%Y-%m-%d", default="2018")()
             e.format()
 
-        assert exc_info.value.args[0]["field"] == \
-               "time data '2018' does not match format '%Y-%m-%d'"
+        assert exc_info.value.args[0]["field"] == "Must be a valid format_datetime."

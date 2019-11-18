@@ -1,7 +1,7 @@
 import pytest
 
 from apistellar import validators, Type
-
+from apistar.exceptions import ValidationError
 
 class TestValidator(object):
 
@@ -64,15 +64,15 @@ class TestValidatorWithCustomErrorSettings():
 
     def test_string(self):
         field = validators.String()
-        assert field.errors["exact"] == '必须是{exact}.'
+        assert field.errors["exact"] == '只能是{exact}'
 
     def test_integer(self):
         field = validators.Integer()
-        assert field.errors["exact"] == '必须是{exact}.'
+        assert field.errors["exact"] == '必须是{exact}'
 
     def test_number(self):
         field = validators.Number()
-        assert field.errors["exact"] == '必须是{exact}.'
+        assert field.errors["exact"] == '必须是{exact}'
 
     def test_boolean(self):
         field = validators.Boolean()
@@ -84,13 +84,20 @@ class TestValidatorWithCustomErrorSettings():
 
     def test_array(self):
         field = validators.Array(validators.String)
-        assert field.errors["type"] == '必须为数组.'
+        assert field.errors["type"] == '必须是数组'
 
     def test_object(self):
         class Example(Type):
             a = validators.String()
-        assert Example.validator.errors["type"] == '必须为对象'
+        assert Example.validator.errors["type"] == '必须是一个对象'
 
     def test_union(self):
         field = validators.Union([validators.String()])
-        assert field.errors["union"] == '必须为字段中指定的类型之一'
+        assert field.errors["union"] == '必须是{items}类型之一'
+
+    def test_union_type_failed(self):
+        class Example(Type):
+            field = validators.Union([validators.String(), validators.Integer()])
+        with pytest.raises(ValidationError) as exc_info:
+            Example().field = 1.2
+        assert exc_info.value.args[0]["field"] == '必须是[String, Integer]类型之一'

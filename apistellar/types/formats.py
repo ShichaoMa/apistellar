@@ -26,7 +26,7 @@ DATETIME_REGEX = re.compile(
 
 class BaseFormat(object):
     def __init__(self, **kwargs):
-        pass
+        self.name = ""
 
     def is_native_type(self, value):
         raise NotImplementedError()
@@ -36,6 +36,11 @@ class BaseFormat(object):
 
     def to_string(self, value):
         raise NotImplementedError()
+
+    def __str__(self):
+        return self.name
+
+    __repr__ = __str__
 
 
 class DateFormat(BaseFormat):
@@ -59,11 +64,6 @@ class DateFormat(BaseFormat):
         except AttributeError:
             if value is not None:
                 return str(value)
-
-    def __str__(self):
-        return "日期"
-
-    __repr__ = __str__
 
 
 class TimeFormat(BaseFormat):
@@ -89,11 +89,6 @@ class TimeFormat(BaseFormat):
         except AttributeError:
             if value is not None:
                 return str(value)
-
-    def __str__(self):
-        return "时间"
-
-    __repr__ = __str__
 
 
 class DateTimeFormat(BaseFormat):
@@ -134,11 +129,6 @@ class DateTimeFormat(BaseFormat):
             if value is not None:
                 return str(value)
 
-    def __str__(self):
-        return "日期时间"
-
-    __repr__ = __str__
-
 
 class FormatDatetime(BaseFormat):
     name = "format_datetime"
@@ -166,7 +156,7 @@ class FormatDatetime(BaseFormat):
             return value.strftime(self.format)
 
     def __str__(self):
-        return f"日期时间：{self.format}"
+        return f"{self.name}：{self.format}"
 
     __repr__ = __str__
 

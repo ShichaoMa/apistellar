@@ -60,6 +60,11 @@ class DateFormat(BaseFormat):
             if value is not None:
                 return str(value)
 
+    def __str__(self):
+        return "日期"
+
+    __repr__ = __str__
+
 
 class TimeFormat(BaseFormat):
     name = "time"
@@ -84,6 +89,11 @@ class TimeFormat(BaseFormat):
         except AttributeError:
             if value is not None:
                 return str(value)
+
+    def __str__(self):
+        return "时间"
+
+    __repr__ = __str__
 
 
 class DateTimeFormat(BaseFormat):
@@ -124,6 +134,11 @@ class DateTimeFormat(BaseFormat):
             if value is not None:
                 return str(value)
 
+    def __str__(self):
+        return "日期时间"
+
+    __repr__ = __str__
+
 
 class FormatDatetime(BaseFormat):
     name = "format_datetime"
@@ -150,6 +165,11 @@ class FormatDatetime(BaseFormat):
         else:
             return value.strftime(self.format)
 
+    def __str__(self):
+        return f"日期时间：{self.format}"
+
+    __repr__ = __str__
+
 
 class UUIDFormat(BaseFormat):
     name = "UUID"
@@ -164,6 +184,11 @@ class UUIDFormat(BaseFormat):
     def to_string(self, value):
         if value is not None:
             return str(value)
+
+    def __str__(self):
+        return "UUID"
+
+    __repr__ = __str__
 
 
 class ExchangeFormat(BaseFormat):
@@ -187,6 +212,11 @@ class ExchangeFormat(BaseFormat):
             return value.__serialize__()
         elif value is not None:
             return str(value)
+
+    def __str__(self):
+        return self.type
+
+    __repr__ = __str__
 
 
 FORMATS = ChildrenFactory(BaseFormat)

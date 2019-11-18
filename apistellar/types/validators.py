@@ -2,9 +2,9 @@ import re
 import numbers
 
 from math import isfinite
-from toolkit import cache_property, cache_classproperty, load
 from collections.abc import Mapping
 from apistar.exceptions import ValidationError
+from toolkit import cache_property, cache_classproperty, load
 
 from .formats import FORMATS, ExchangeFormat
 

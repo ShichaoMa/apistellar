@@ -148,7 +148,14 @@ class WebContextHook(Local):
         raise AttributeError()
 
     def on_request(self, **kwargs):
-        self.coroutinelocal[self.current_task()] = kwargs
+        for key, value in kwargs.items():
+            self[key] = value
+
+    def on_response(self):
+        self.clear()
+
+    def on_error(self):
+        self.clear()
 
 
 class Hook(object):

@@ -21,6 +21,7 @@ Flask = "==1.0.2"
 pytz = "*"
 aiofiles = "*"
 aiohttp = "*"
+contextvars = "*"
 
 [requires]
 python_version = "3.7"

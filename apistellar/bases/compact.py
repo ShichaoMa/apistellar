@@ -4,8 +4,11 @@ import typing
 from abc import ABCMeta
 
 
-def getUnionClass():
-    if sys.version_info[:2] == (3, 7):
+PYTHON_VERSION = sys.version_info[:3]
+
+
+def get_union_class():
+    if PYTHON_VERSION >= (3, 7, 0):
         return typing.Union
     else:
         return typing._Union

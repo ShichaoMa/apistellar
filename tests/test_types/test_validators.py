@@ -3,6 +3,7 @@ import pytest
 from apistellar import validators, Type
 from apistar.exceptions import ValidationError
 
+
 class TestValidator(object):
 
     def test_string(self):

@@ -1,4 +1,5 @@
 import os
+import asyncio
 import pytest
 import aiofiles
 import requests
@@ -6,7 +7,7 @@ import requests
 from toolkit import readexactly
 from aiohttp import ClientSession, FormData
 from apistellar.bases.response import FileResponse
-from apistellar.bases.entities import File, SettingsMixin, init_settings
+from apistellar.bases.entities import File, SettingsMixin, init_settings, coroutinelocal
 from apistellar import Controller, FileStream, post, get, route
 
 
@@ -142,3 +143,26 @@ class TestFileStream(object):
                     chunk = await readexactly(resp.content, 1024000)
                 await f.flush()
                 assert await f.tell() == os.path.getsize(path)
+
+
+class TestLocal(object):
+    @pytest.mark.asyncio
+    async def test_local(self):
+        coroutinelocal["a"] = 11
+        loop = asyncio.get_event_loop()
+
+        async def fun():
+            return coroutinelocal["a"]
+
+        async def bar():
+            coroutinelocal["a"] = 33
+            return coroutinelocal["a"]
+
+        task2 = loop.create_task(bar())
+        await asyncio.gather(task2)
+        task1 = loop.create_task(fun())
+
+        await asyncio.gather(task1)
+        assert task1.result() == 11
+        assert task2.result() == 33
+

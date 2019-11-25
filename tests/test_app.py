@@ -29,7 +29,7 @@ class TestException(object):
         server.app.debug = True
         url = f"http://127.0.0.1:{server.port}/exception"
         async with ClientSession(conn_timeout=10, read_timeout=10) as session:
-            resp = await  session.get(url)
+            resp = await session.get(url)
             data = await resp.json()
             assert data["code"] == 999
             assert data["errcode"] == 999

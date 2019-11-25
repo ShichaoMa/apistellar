@@ -154,8 +154,7 @@ class WebContextHook(Local):
     def on_response(self):
         self.clear()
 
-    def on_error(self):
-        self.clear()
+    on_error = on_response
 
 
 class Hook(object):

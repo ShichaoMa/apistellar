@@ -30,6 +30,11 @@ RESP_BUFFER_SIZE = 1024000
 class FixedAsyncApp(ASyncApp):
 
     def exception_handler(self, exc: Exception) -> Response:
+        """
+        如果是HTTP的异常，不会走on_error逻辑，否则，走on_error逻辑
+        :param exc:
+        :return:
+        """
         if isinstance(exc, exceptions.HTTPException):
             payload = {
                 "type": "http",
@@ -42,7 +47,9 @@ class FixedAsyncApp(ASyncApp):
             return JSONResponse(payload, exc.status_code, exc.get_headers())
         raise exc
 
-    def error_handler(self, return_value: ReturnValue) -> Response:
+    def error_handler(self, return_value: ReturnValue, resp: Response) -> Response:
+        if resp is not None:
+            return resp
         if isinstance(return_value, Response):
             return return_value
         return super().error_handler()

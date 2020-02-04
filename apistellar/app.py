@@ -117,8 +117,7 @@ def application(app_name,
         # ComposeTypeComponent是用来兜底的，所以要放到最后
         components.append(ComposeTypeComponent())
         custom_hooks = sorted(find_children(Hook), key=lambda x: x.order)
-        hooks = [WebContextHook(), AccessLogHook(),
-                 SessionHook(), ErrorHook()] + custom_hooks
+        hooks = [WebContextHook(), SessionHook(), ErrorHook()] + custom_hooks
         app = FixedAsyncApp(
             routes,
             template_dir=settings.get("TEMPLATE_DIR"),

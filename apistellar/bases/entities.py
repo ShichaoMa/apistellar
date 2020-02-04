@@ -1,13 +1,13 @@
 import re
 import os
 import typing
-import contextvars
 
 from enum import Enum
 from urllib.parse import unquote
 from collections import namedtuple
 from flask.sessions import SecureCookieSession
 
+from toolkit.async_context import Context
 from toolkit import global_cache_classproperty, load
 from toolkit.settings import SettingsLoader, Settings, FrozenSettings
 
@@ -260,14 +260,13 @@ def init_settings(settings_path):
     settings._json.update(SettingsMixin.settings._json)
 
 
-class Local(object):
+class Local(Context):
     """
     提供一个协程的上下文，使用set_default在此上文中预设一些请求相关的可注入对象
     如：ASGIScope, session等
     """
 
     _default = dict(scope="apistar.server.asgi.ASGIScope")
-    cotextvar_mappings = dict()
 
     @global_cache_classproperty
     def local_variable(cls):
@@ -281,40 +280,6 @@ class Local(object):
         for k, v in lv.items():
             var_types[k] = load(v)
         return var_types
-
-    def __getattr__(self, item):
-        try:
-            return self[item]
-        except KeyError as e:
-            raise AttributeError(e)
-
-    def __getitem__(self, item):
-        key = self.cotextvar_mappings.get(item)
-        if key is None:
-            raise KeyError(f"{item} not found!")
-        return key.get()
-
-    def get(self, item, default=None):
-        try:
-            return self[item]
-        except KeyError:
-            return default
-
-    def __setitem__(self, key, value):
-        if key not in self.cotextvar_mappings:
-            self.cotextvar_mappings[key] = contextvars.ContextVar(key)
-        self.cotextvar_mappings[key].set(value)
-
-    def __setattr__(self, key, value):
-        self[key] = value
-
-    def set(self, key, value):
-        self[key] = value
-
-    def clear(self):
-        ctx = contextvars.copy_context()
-        for var in ctx.keys():
-            var.set(None)
 
     @classmethod
     def set_default(cls, name, val_path):

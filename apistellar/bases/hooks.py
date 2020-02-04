@@ -8,7 +8,7 @@ from apistar import App, http
 from flask.sessions import SecureCookieSessionInterface
 
 from ..helper import HookReturn
-from .entities import Session, DummyFlaskApp, Local
+from .entities import Session, DummyFlaskApp, Local, coroutinelocal
 
 
 class SessionHook(object):
@@ -130,29 +130,26 @@ class AccessLogHook(object):
                                     "agent": agent})
 
 
-class WebContextHook(Local):
+class WebContextHook(object):
 
     def __init__(self):
         params = [inspect.Parameter("self", inspect._POSITIONAL_OR_KEYWORD)]
 
-        for param_name, param_type in self.local_variable.items():
+        for param_name, param_type in Local.local_variable.items():
             params.append(inspect.Parameter(
                 param_name, inspect._POSITIONAL_OR_KEYWORD,
                 annotation=param_type))
 
         self.on_request.__func__.__signature__ = inspect.Signature(params)
 
-        self.on_request.__func__.__annotations__.update(self.local_variable)
-
-    def __getattr__(self, item):
-        raise AttributeError()
+        self.on_request.__func__.__annotations__.update(Local.local_variable)
 
     def on_request(self, **kwargs):
         for key, value in kwargs.items():
-            self[key] = value
+            coroutinelocal[key] = value
 
     def on_response(self):
-        self.clear()
+        coroutinelocal.clear()
 
     on_error = on_response
 

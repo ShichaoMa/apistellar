@@ -158,6 +158,11 @@ class TestLocal(object):
             coroutinelocal["a"] = 33
             return coroutinelocal["a"]
 
+        async def foo():
+            coroutinelocal.clear()
+            return coroutinelocal["a"]
+        task3 = loop.create_task(foo())
+        await asyncio.gather(task3)
         task2 = loop.create_task(bar())
         await asyncio.gather(task2)
         task1 = loop.create_task(fun())
@@ -165,4 +170,5 @@ class TestLocal(object):
         await asyncio.gather(task1)
         assert task1.result() == 11
         assert task2.result() == 33
+        assert task3.result() is None
 

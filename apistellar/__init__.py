@@ -30,4 +30,4 @@ from apistellar.route import route, get, post, delete, put, options, websocket
 
 from apistellar.helper import redirect, require, return_wrapped, proxy
 
-__version__ = "1.3.11"
+__version__ = "1.3.12"

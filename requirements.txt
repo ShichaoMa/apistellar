@@ -1,7 +1,7 @@
 apistar<=0.5.42
 uvicorn>=0.7.0
 gunicorn
-toolkity>=1.9.3
+toolkity>=1.9.5
 whitenoise<=3.3.1
 pyaop
 flask==1.0.2
